@@ -72,14 +72,14 @@ const LoginPage = () => {
 
       const user = response?.user;
       if (user?.role === "admin") {
-        navigate("/admin");
+        navigate("/admin", { replace: true });
       } else {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     } catch (err) {
       const errorMsg =
         err.response?.data?.message ||
-        "Invalid email or password. Please try again.";
+        "Unable to sign in.Please verify your credentials";
       setServerError(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -129,9 +129,12 @@ const LoginPage = () => {
                 await loginWithGoogle({
                   idToken: credentialResponse.credential,
                 });
-                navigate("/"); // 🚀 Logged in! Take them to the store!
+                navigate("/", { replace: true }); // 🚀 Logged in! Take them to the store!
               } catch (err) {
-                setServerError("Google sign-in failed. Please try again.");
+                const errorMsg =
+                  err.response?.data?.message ||
+                  "Google sign-in failed.Please try again";
+                setServerError(errorMsg);
               }
             }}
             onError={() => {
