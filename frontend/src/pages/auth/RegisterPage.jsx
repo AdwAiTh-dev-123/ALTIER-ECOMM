@@ -1,27 +1,26 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { GoogleLogin } from '@react-oauth/google';
-import '../../styles/auth.css';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google";
+import "../../styles/auth.css";
 
 const RegisterPage = () => {
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [fieldErrors, setFieldErrors] = useState({});
-  const [serverError, setServerError] = useState('');
+  const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  
   const passwordChecks = {
     length: formData.password.length >= 8,
     upper: /[A-Z]/.test(formData.password),
@@ -40,10 +39,10 @@ const RegisterPage = () => {
     }));
 
     if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     }
     if (serverError) {
-      setServerError('');
+      setServerError("");
     }
   };
 
@@ -53,27 +52,27 @@ const RegisterPage = () => {
     const trimmedEmail = formData.email.trim();
 
     if (!trimmedName) {
-      errors.name = 'Please provide your full name';
+      errors.name = "Please provide your full name";
     } else if (trimmedName.length < 2) {
-      errors.name = 'Name must be at least 2 characters long';
+      errors.name = "Name must be at least 2 characters long";
     }
 
     if (!trimmedEmail) {
-      errors.email = 'Please provide your email address';
+      errors.email = "Please provide your email address";
     } else if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
-      errors.email = 'Please enter a valid email address';
+      errors.email = "Please enter a valid email address";
     }
 
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = "Password is required";
     } else if (!isPasswordSecure) {
-      errors.password = 'Please meet all password security rules below';
+      errors.password = "Please meet all password security rules below";
     }
 
     if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password';
+      errors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
+      errors.confirmPassword = "Passwords do not match";
     }
 
     return errors;
@@ -81,7 +80,7 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setServerError('');
+    setServerError("");
 
     const errors = validate();
     if (Object.keys(errors).length > 0) {
@@ -100,10 +99,10 @@ const RegisterPage = () => {
       });
 
       // Automatically logged in on register -> redirect to home!
-      navigate('/');
+      navigate("/", { replace: true });
     } catch (err) {
       const errorMsg =
-        err.response?.data?.message || 'Registration failed. Please try again.';
+        err.response?.data?.message || "Registration failed. Please try again.";
       setServerError(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -144,18 +143,25 @@ const RegisterPage = () => {
         )}
 
         {/* One-Click Google Sign-up */}
-        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <div
+          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+        >
           <GoogleLogin
             onSuccess={async (credentialResponse) => {
               try {
-                await loginWithGoogle({ idToken: credentialResponse.credential });
-                navigate('/');
+                await loginWithGoogle({
+                  idToken: credentialResponse.credential,
+                });
+                navigate("/", { replace: true });
               } catch (err) {
-                setServerError('Google registration failed. Please try again.');
+                const errorMsg =
+                  err.response?.data?.message ||
+                  "Google registration failed. Please try again.";
+                setServerError(errorMsg);
               }
             }}
             onError={() => {
-              setServerError('Google signup was cancelled or failed.');
+              setServerError("Google signup was cancelled or failed.");
             }}
           />
         </div>
@@ -179,7 +185,7 @@ const RegisterPage = () => {
                 type="text"
                 autoComplete="name"
                 placeholder="e.g. John Doe"
-                className={`form-input ${fieldErrors.name ? 'input-error' : ''}`}
+                className={`form-input ${fieldErrors.name ? "input-error" : ""}`}
                 value={formData.name}
                 onChange={handleChange}
                 disabled={isSubmitting}
@@ -202,7 +208,7 @@ const RegisterPage = () => {
                 type="email"
                 autoComplete="email"
                 placeholder="name@domain.com"
-                className={`form-input ${fieldErrors.email ? 'input-error' : ''}`}
+                className={`form-input ${fieldErrors.email ? "input-error" : ""}`}
                 value={formData.email}
                 onChange={handleChange}
                 disabled={isSubmitting}
@@ -222,10 +228,10 @@ const RegisterPage = () => {
               <input
                 id="password"
                 name="password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Create a strong password"
-                className={`form-input ${fieldErrors.password ? 'input-error' : ''}`}
+                className={`form-input ${fieldErrors.password ? "input-error" : ""}`}
                 value={formData.password}
                 onChange={handleChange}
                 disabled={isSubmitting}
@@ -235,9 +241,9 @@ const RegisterPage = () => {
                 className="toggle-password-btn"
                 onClick={() => setShowPassword((prev) => !prev)}
                 tabIndex="-1"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? "Hide" : "Show"}
               </button>
             </div>
             {fieldErrors.password && (
@@ -248,20 +254,30 @@ const RegisterPage = () => {
             <div className="password-checklist">
               <span className="checklist-title">Password Security Rules:</span>
               <div className="checklist-grid">
-                <span className={`check-item ${passwordChecks.length ? 'met' : ''}`}>
-                  {passwordChecks.length ? '✓' : '○'} 8+ characters
+                <span
+                  className={`check-item ${passwordChecks.length ? "met" : ""}`}
+                >
+                  {passwordChecks.length ? "✓" : "○"} 8+ characters
                 </span>
-                <span className={`check-item ${passwordChecks.upper ? 'met' : ''}`}>
-                  {passwordChecks.upper ? '✓' : '○'} Uppercase letter
+                <span
+                  className={`check-item ${passwordChecks.upper ? "met" : ""}`}
+                >
+                  {passwordChecks.upper ? "✓" : "○"} Uppercase letter
                 </span>
-                <span className={`check-item ${passwordChecks.lower ? 'met' : ''}`}>
-                  {passwordChecks.lower ? '✓' : '○'} Lowercase letter
+                <span
+                  className={`check-item ${passwordChecks.lower ? "met" : ""}`}
+                >
+                  {passwordChecks.lower ? "✓" : "○"} Lowercase letter
                 </span>
-                <span className={`check-item ${passwordChecks.number ? 'met' : ''}`}>
-                  {passwordChecks.number ? '✓' : '○'} Number (0–9)
+                <span
+                  className={`check-item ${passwordChecks.number ? "met" : ""}`}
+                >
+                  {passwordChecks.number ? "✓" : "○"} Number (0–9)
                 </span>
-                <span className={`check-item ${passwordChecks.special ? 'met' : ''}`}>
-                  {passwordChecks.special ? '✓' : '○'} Symbol (!@#$%^&*)
+                <span
+                  className={`check-item ${passwordChecks.special ? "met" : ""}`}
+                >
+                  {passwordChecks.special ? "✓" : "○"} Symbol (!@#$%^&*)
                 </span>
               </div>
             </div>
@@ -276,10 +292,10 @@ const RegisterPage = () => {
               <input
                 id="confirmPassword"
                 name="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Confirm your password"
-                className={`form-input ${fieldErrors.confirmPassword ? 'input-error' : ''}`}
+                className={`form-input ${fieldErrors.confirmPassword ? "input-error" : ""}`}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 disabled={isSubmitting}
@@ -289,23 +305,23 @@ const RegisterPage = () => {
                 className="toggle-password-btn"
                 onClick={() => setShowConfirmPassword((prev) => !prev)}
                 tabIndex="-1"
-                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
               >
-                {showConfirmPassword ? 'Hide' : 'Show'}
+                {showConfirmPassword ? "Hide" : "Show"}
               </button>
             </div>
             {fieldErrors.confirmPassword && (
-              <span className="inline-error">{fieldErrors.confirmPassword}</span>
+              <span className="inline-error">
+                {fieldErrors.confirmPassword}
+              </span>
             )}
           </div>
 
           {/* Submit CTA Button */}
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Creating Account...' : 'Create Account →'}
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Creating Account..." : "Create Account →"}
           </button>
         </form>
 

@@ -19,7 +19,8 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: "An account with this email already exists",
+        message:
+          "An account with this email already exists.Please sign in instead",
       });
     }
 
@@ -69,7 +70,7 @@ const login = async (req, res) => {
     if (!findUser) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "User does not exist.Pls create your account",
       });
     }
 
@@ -151,7 +152,7 @@ const googleAuth = async (req, res) => {
       if (user.isBlocked) {
         return res.status(403).json({
           success: false,
-          message: "Account access has been restricted",
+          message: "Your account has been suspended by an administrator",
         });
       }
 
@@ -195,4 +196,4 @@ const googleAuth = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, logOut, googleAuth};
+module.exports = { register, login, getMe, logOut, googleAuth };
