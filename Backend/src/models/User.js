@@ -17,6 +17,14 @@ const UserSchema = mongoose.Schema(
       type: String,
       select: false,
     },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
+    },
     role: {
       type: String,
       enum: ["customer", "admin"],
@@ -26,15 +34,15 @@ const UserSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    googleId:{
-      type:String,
-      unique:true,
-      sparse:true
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
-    avatar:{
-      type:String,
-      default:""
-    }
+    avatar: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );

@@ -74,6 +74,20 @@
   margin-bottom: 20px;
 }
 
+.auth-alert-success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #F0FDF4;
+  border: 1px solid #86EFAC;
+  color: #166534;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 20px;
+}
+
 /* Google Social Button */
 .social-btn {
   width: 100%;

@@ -7,6 +7,8 @@ import GuestRoute from "./routes/GuestRoute";
 import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
 import ShopPage from "./pages/storefront/ShopPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 
 import "./App.css";
 import "./styles/storefront.css";
@@ -28,6 +30,22 @@ function App() {
           element={
             <GuestRoute>
               <RegisterPage />
+            </GuestRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <GuestRoute>
+              <ForgotPasswordPage />
+            </GuestRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <GuestRoute>
+              <ResetPasswordPage />
             </GuestRoute>
           }
         />
