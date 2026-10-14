@@ -1,14 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const {
-  register,
-  login,
-  getMe,
-  logOut,
-  googleAuth,
-  forgotPassword,
-  resetPassword,
-} = require("../controllers/authController");
+const register = require("../controllers/auth/register");
+const login = require("../controllers/auth/login");
+const getMe = require("../controllers/auth/getMe");
+const logOut = require("../controllers/auth/logout");
+const googleAuth = require("../controllers/auth/googleAuth");
+const forgotPassword = require("../controllers/auth/forgotPassword");
+const resetPassword = require("../controllers/auth/resetPassword");
 const { authMiddleware } = require("../middlewares/authMiddleware");
 
 router.post("/register", register);
