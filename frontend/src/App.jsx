@@ -52,13 +52,15 @@ function App() {
         <Route
           path="/"
           element={
-            <div className="app-root">
-              <Navbar />
-              <main className="main-content">
-                <ShopPage />
-              </main>
-              <Footer />
-            </div>
+            <ProtectedRoute>
+              <div className="app-root">
+                <Navbar />
+                <main className="main-content">
+                  <ShopPage />
+                </main>
+                <Footer />
+              </div>
+            </ProtectedRoute>
           }
         />
       </Routes>
