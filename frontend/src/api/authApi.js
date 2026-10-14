@@ -1,7 +1,11 @@
 import api from "./axiosClient";
 
-export function register({ email, password, name }) {
-  return api.post("/auth/register", { email, password, name });
+export function register({ email, password, name, otp }) {
+  return api.post("/auth/register", { email, password, name, otp });
+}
+
+export function sendOtp({ email }) {
+  return api.post("/auth/send-otp", { email });
 }
 
 export function login({ email, password }) {

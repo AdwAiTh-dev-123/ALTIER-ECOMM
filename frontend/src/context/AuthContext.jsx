@@ -40,8 +40,8 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
-  const handleRegister = async ({ email, password, name }) => {
-    const res = await register({ email, password, name });
+  const handleRegister = async ({ email, password, name, otp }) => {
+    const res = await register({ email, password, name, otp });
     setUser(res.data.user);
     return res.data;
   };

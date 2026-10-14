@@ -12,20 +12,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #FBFBFA;
+  background-color: #fbfbfa;
   padding: 32px 16px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #1C1917;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  color: #1c1917;
   box-sizing: border-box;
 }
 
 .auth-card {
   width: 100%;
   max-width: 440px;
-  background-color: #FFFFFF;
-  border: 1px solid #E7E5E4;
+  background-color: #ffffff;
+  border: 1px solid #e7e5e4;
   border-radius: 12px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 4px 20px -2px rgba(0, 0, 0, 0.05),
+    0 2px 6px -1px rgba(0, 0, 0, 0.02);
   padding: 36px 32px;
   box-sizing: border-box;
 }
@@ -40,7 +44,7 @@
   font-weight: 700;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: #78716C;
+  color: #78716c;
   margin-bottom: 12px;
 }
 
@@ -48,13 +52,13 @@
   font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #1C1917;
+  color: #1c1917;
   margin: 0 0 6px 0;
 }
 
 .auth-subtitle {
   font-size: 14px;
-  color: #78716C;
+  color: #78716c;
   margin: 0;
   line-height: 1.5;
 }
@@ -64,9 +68,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: #FEF2F2;
-  border: 1px solid #FCA5A5;
-  color: #991B1B;
+  background-color: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
   padding: 12px 14px;
   border-radius: 8px;
   font-size: 13px;
@@ -78,8 +82,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: #F0FDF4;
-  border: 1px solid #86EFAC;
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
   color: #166534;
   padding: 12px 14px;
   border-radius: 8px;
@@ -95,20 +99,22 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background-color: #FFFFFF;
-  border: 1px solid #E7E5E4;
+  background-color: #ffffff;
+  border: 1px solid #e7e5e4;
   border-radius: 8px;
   padding: 11px 16px;
   font-size: 14px;
   font-weight: 500;
-  color: #1C1917;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  color: #1c1917;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
   cursor: pointer;
 }
 
 .social-btn:hover {
-  background-color: #F5F4F0;
-  border-color: #D6D3D1;
+  background-color: #f5f4f0;
+  border-color: #d6d3d1;
 }
 
 .social-btn:disabled {
@@ -134,7 +140,7 @@
 .auth-divider::after {
   content: "";
   flex: 1;
-  border-bottom: 1px solid #E7E5E4;
+  border-bottom: 1px solid #e7e5e4;
 }
 
 .auth-divider span {
@@ -143,7 +149,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #A8A29E;
+  color: #a8a29e;
 }
 
 /* Form Groups & Controls */
@@ -175,33 +181,36 @@
   width: 100%;
   height: 42px;
   padding: 0 14px;
-  border: 1px solid #E7E5E4;
+  border: 1px solid #e7e5e4;
   border-radius: 8px;
-  background-color: #FAFAFA;
+  background-color: #fafafa;
   font-size: 14px;
-  color: #1C1917;
+  color: #1c1917;
   outline: none;
-  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 
 .form-input:focus {
-  border-color: #1C1917;
-  background-color: #FFFFFF;
-  box-shadow: 0 0 0 1px #1C1917;
+  border-color: #1c1917;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px #1c1917;
 }
 
 .form-input.input-error {
-  border-color: #EF4444;
-  background-color: #FFFDFD;
+  border-color: #ef4444;
+  background-color: #fffdfd;
 }
 
 .form-input.input-error:focus {
-  box-shadow: 0 0 0 1px #EF4444;
+  box-shadow: 0 0 0 1px #ef4444;
 }
 
 .form-input::placeholder {
-  color: #A8A29E;
+  color: #a8a29e;
 }
 
 /* Password Visibility Toggle */
@@ -213,7 +222,7 @@
   background: none;
   border: none;
   padding: 4px 6px;
-  color: #78716C;
+  color: #78716c;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -222,13 +231,13 @@
 }
 
 .toggle-password-btn:hover {
-  color: #1C1917;
+  color: #1c1917;
 }
 
 /* Contextual Inline Error Messages */
 .inline-error {
   font-size: 12px;
-  color: #DC2626;
+  color: #dc2626;
   margin-top: 2px;
   line-height: 1.3;
 }
@@ -246,7 +255,7 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #57534E;
+  color: #57534e;
   cursor: pointer;
   user-select: none;
 }
@@ -255,21 +264,21 @@
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 1px solid #D6D3D1;
-  accent-color: #1C1917;
+  border: 1px solid #d6d3d1;
+  accent-color: #1c1917;
   cursor: pointer;
 }
 
 .forgot-link {
   font-size: 13px;
   font-weight: 500;
-  color: #57534E;
+  color: #57534e;
   text-decoration: none;
   cursor: pointer;
 }
 
 .forgot-link:hover {
-  color: #1C1917;
+  color: #1c1917;
   text-decoration: underline;
 }
 
@@ -277,8 +286,8 @@
 .btn-primary {
   width: 100%;
   height: 44px;
-  background-color: #1C1917;
-  color: #FFFFFF;
+  background-color: #1c1917;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -289,7 +298,9 @@
   justify-content: center;
   gap: 8px;
   margin-top: 6px;
-  transition: background-color 0.15s ease, opacity 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
   cursor: pointer;
 }
 
@@ -307,11 +318,11 @@
   text-align: center;
   margin-top: 24px;
   font-size: 13px;
-  color: #78716C;
+  color: #78716c;
 }
 
 .auth-footer-link {
-  color: #1C1917;
+  color: #1c1917;
   font-weight: 600;
   text-decoration: underline;
   margin-left: 4px;
@@ -326,8 +337,8 @@
    Live Password Security Checklist (Brocamp Guideline #4)
    ========================================================= */
 .password-checklist {
-  background-color: #FAFAFA;
-  border: 1px solid #E7E5E4;
+  background-color: #fafafa;
+  border: 1px solid #e7e5e4;
   border-radius: 8px;
   padding: 12px 14px;
   margin-top: 6px;
@@ -336,7 +347,7 @@
 
 .checklist-title {
   font-weight: 600;
-  color: #78716C;
+  color: #78716c;
   display: block;
   margin-bottom: 6px;
 }
@@ -348,7 +359,7 @@
 }
 
 .check-item {
-  color: #A8A29E;
+  color: #a8a29e;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -357,6 +368,60 @@
 }
 
 .check-item.met {
-  color: #15803D;
+  color: #15803d;
   font-weight: 600;
+}
+/* OTP Inputs Container */
+.otp-container {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0 24px;
+}
+
+.otp-box {
+  width: 44px;
+  height: 52px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  color: #1c1917;
+  background-color: #ffffff;
+  border: 1px solid #e7e5e4;
+  border-radius: 8px;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.otp-box:focus {
+  border-color: #18181b;
+  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.08);
+}
+
+.otp-resend-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #78716c;
+  margin-top: 16px;
+}
+
+.otp-resend-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c1917;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.otp-resend-btn:disabled {
+  color: #a8a29e;
+  cursor: not-allowed;
+  text-decoration: none;
 }

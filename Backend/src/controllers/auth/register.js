@@ -1,19 +1,40 @@
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const User = require("../../models/User");
 const generateToken = require("../../utils/tokenHelper");
+const Otp = require("../../models/Otp");
 
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, otp } = req.body;
 
-    if (!email || !name || !password) {
+    if (!email || !name || !password || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Name,email and password is required",
+        message: "Name,email, password and verification code are required",
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    const trimmedEmail = email.toLowerCase().trim();
+
+    const hashSubmitOtp = crypto
+      .createHash("sha256")
+      .update(otp.trim())
+      .digest("hex");
+
+    const recordOtp = await Otp.findOne({
+      email: trimmedEmail,
+      otp: hashSubmitOtp,
+    });
+
+    if (!recordOtp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification token",
+      });
+    }
+
+    const existingUser = await User.findOne({ email: trimmedEmail });
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -29,6 +50,8 @@ const register = async (req, res) => {
       email,
       password: hashPassword,
     });
+
+    await Otp.deleteMany({ email: trimmedEmail });
 
     const token = generateToken(newUser);
     res.cookie("token", token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
