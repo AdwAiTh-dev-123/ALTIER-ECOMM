@@ -25,9 +25,6 @@ const getAllUsers = async (req, res) => {
       .select("-password -resetPasswordToken -resetPasswordExpires")
       .sort({ createdAt: -1 });
 
-    // const totalUsers = await User.countDocuments();
-    // const blockedUsers = await User.countDocuments({ isBlocked: true });
-    // const activeUsers = await User.countDocuments({ isBlocked: false });
 
     const [totalUsers, blockedUsers, activeUsers] = await Promise.all([
       User.countDocuments(basefilter),
