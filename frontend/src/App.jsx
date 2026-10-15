@@ -9,6 +9,10 @@ import Footer from "./components/common/Footer";
 import ShopPage from "./pages/storefront/ShopPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import AdminRoute from "./routes/AdminRoute";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminLayout from "./components/admin/AdminLayout";
 
 import "./App.css";
 import "./styles/storefront.css";
@@ -63,6 +67,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

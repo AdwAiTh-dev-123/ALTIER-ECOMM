@@ -1,0 +1,111 @@
+// frontend/src/components/admin/AdminSidebar.jsx
+import React from "react";
+import { NavLink, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+
+const AdminSidebar = () => {
+  const { user, logout } = useAuth();
+
+  return (
+    <aside className="admin-sidebar">
+      <div className="admin-sidebar-header">
+        <Link to="/admin" className="admin-brand">
+          <span className="admin-brand-main">ATELIER</span>
+          <span className="admin-brand-badge">ADMIN</span>
+        </Link>
+      </div>
+
+      <div className="admin-sidebar-nav">
+        <span className="admin-nav-section-label">MAIN MENU</span>
+
+        {/* Dashboard Link */}
+        <NavLink
+          to="/admin"
+          end
+          className={({ isActive }) =>
+            `admin-nav-item ${isActive ? "active" : ""}`
+          }
+        >
+          <svg
+            className="admin-nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect x="3" y="3" width="7" height="9" rx="1" />
+            <rect x="14" y="3" width="7" height="5" rx="1" />
+            <rect x="14" y="12" width="7" height="9" rx="1" />
+            <rect x="3" y="16" width="7" height="5" rx="1" />
+          </svg>
+          <span>Dashboard</span>
+        </NavLink>
+
+        {/* Users Link */}
+        <NavLink
+          to="/admin/users"
+          className={({ isActive }) =>
+            `admin-nav-item ${isActive ? "active" : ""}`
+          }
+        >
+          <svg
+            className="admin-nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span>Users</span>
+        </NavLink>
+      </div>
+
+      <div className="admin-sidebar-footer">
+        <Link to="/" className="admin-nav-item-exit">
+          <svg
+            className="admin-nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          <span>Back to Storefront</span>
+        </Link>
+
+        <div className="admin-user-profile-card">
+          <div className="admin-avatar">
+            {(user?.name || "A").charAt(0).toUpperCase()}
+          </div>
+          <div className="admin-profile-info">
+            <div className="admin-profile-name">{user?.name || "Admin"}</div>
+            <div className="admin-profile-email">{user?.email}</div>
+          </div>
+          <button
+            onClick={logout}
+            className="admin-sidebar-logout-btn"
+            title="Log Out"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+};
+
+export default AdminSidebar;
