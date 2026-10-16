@@ -6,7 +6,7 @@ const getAllUsers = async (req, res) => {
 
     const basefilter = { role: { $ne: "admin" } };
 
-    const query = {...basefilter};
+    const query = { ...basefilter };
 
     if (search.trim()) {
       query.$or = [
@@ -25,14 +25,11 @@ const getAllUsers = async (req, res) => {
       .select("-password -resetPasswordToken -resetPasswordExpires")
       .sort({ createdAt: -1 });
 
-
     const [totalUsers, blockedUsers, activeUsers] = await Promise.all([
       User.countDocuments(basefilter),
-      User.countDocuments({...basefilter,isBlocked:true}),
-      User.countDocuments({...basefilter,isBlocked:true})
-    ])
-
-
+      User.countDocuments({ ...basefilter, isBlocked: true }),
+      User.countDocuments({ ...basefilter, isBlocked: false }),
+    ]);
 
     return res.status(200).json({
       success: true,

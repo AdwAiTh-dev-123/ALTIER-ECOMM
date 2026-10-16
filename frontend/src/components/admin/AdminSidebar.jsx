@@ -62,6 +62,25 @@ const AdminSidebar = () => {
           </svg>
           <span>Users</span>
         </NavLink>
+
+        {/* Categories Link */}
+        <NavLink
+          to="/admin/categories"
+          className={({ isActive }) =>
+            `admin-nav-item ${isActive ? "active" : ""}`
+          }
+        >
+          <svg
+            className="admin-nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M4 6h16M4 12h16M4 18h7" />
+          </svg>
+          <span>Categories</span>
+        </NavLink>
       </div>
 
       <div className="admin-sidebar-footer">

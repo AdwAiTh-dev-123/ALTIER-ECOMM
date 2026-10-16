@@ -238,7 +238,7 @@ const AdminUsersPage = () => {
                             type="button"
                             disabled={isActionLoading}
                             onClick={() => handleToggleClick(item)}
-                            className={`admin-action-btn ${item.isBlocked ? "btn-unblock" : "btn-block"}`}
+                            className={`admin-action-btn btn-toggle ${item.isBlocked ? "btn-unblock" : "btn-block"}`}
                           >
                             {isActionLoading
                               ? "Updating..."

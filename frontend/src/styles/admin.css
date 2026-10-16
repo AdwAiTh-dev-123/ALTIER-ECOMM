@@ -529,12 +529,45 @@
 
 /* Buttons */
 .admin-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.35rem 0.85rem;
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.admin-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Stable fixed width for List/Unlist and Block/Unblock toggle buttons */
+.admin-action-btn.btn-toggle {
+  width: 86px;
+  min-width: 86px;
+  text-align: center;
+}
+
+/* Dedicated Delete Button */
+.admin-action-btn.btn-delete {
+  width: 72px;
+  min-width: 72px;
+  background-color: #ffffff;
+  border: 1px solid #fca5a5;
+  color: var(--danger, #dc2626);
+  text-align: center;
+}
+
+.admin-action-btn.btn-delete:hover:not(:disabled) {
+  background-color: var(--danger, #dc2626);
+  border-color: var(--danger, #dc2626);
+  color: #ffffff;
 }
 
 .btn-block {
@@ -543,7 +576,7 @@
   color: var(--danger, #dc2626);
 }
 
-.btn-block:hover {
+.btn-block:hover:not(:disabled) {
   background-color: var(--danger, #dc2626);
   color: #ffffff;
 }
@@ -554,7 +587,7 @@
   color: var(--success, #15803d);
 }
 
-.btn-unblock:hover {
+.btn-unblock:hover:not(:disabled) {
   background-color: var(--success, #15803d);
   color: #ffffff;
 }
