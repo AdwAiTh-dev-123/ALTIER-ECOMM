@@ -21,6 +21,8 @@ const AdminUsersPage = () => {
     totalItems: 0,
     limit: 10,
   });
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState({
@@ -35,6 +37,8 @@ const AdminUsersPage = () => {
       const res = await getAdminUsers({
         search: debouncedSearch,
         status: statusFilter,
+        sortBy,
+        sortOrder,
         page: currentPage,
         limit: 10,
       });
@@ -48,7 +52,7 @@ const AdminUsersPage = () => {
       setTableLoading(false);
       setInitialLoading(false);
     }
-  }, [debouncedSearch, statusFilter, currentPage]);
+  }, [debouncedSearch, statusFilter, sortBy, sortOrder, currentPage]);
 
   useEffect(() => {
     loadUsers();
@@ -154,17 +158,47 @@ const AdminUsersPage = () => {
           )}
         </div>
 
-        <div className="admin-filter-tabs">
-          {["all", "active", "blocked"].map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={`admin-filter-tab ${statusFilter === tab ? "active" : ""}`}
-              onClick={() => setStatusFilter(tab)}
+        <div className="admin-controls-right">
+          {/*Sort*/}
+          <div className="admin-sort-wrap">
+            <label htmlFor="user-sort" className="admin-sort-label">
+              Sort By:
+            </label>
+            <select
+              id="user-sort"
+              className="admin-select"
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [newField, newOrder] = e.target.value.split("-");
+                setSortBy(newField);
+                setSortOrder(newOrder);
+                setCurrentPage(1);
+              }}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+              <option value="createdAt-desc">Newest First</option>
+              <option value="createdAt-asc">Oldest First</option>
+              <option value="name-asc">Name (A – Z)</option>
+              <option value="name-desc">Name (Z – A)</option>
+              <option value="email-asc">Email (A – Z)</option>
+              <option value="email-desc">Email (Z – A)</option>
+            </select>
+          </div>
+
+          <div className="admin-filter-tabs">
+            {["all", "active", "blocked"].map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                className={`admin-filter-tab ${statusFilter === tab ? "active" : ""}`}
+                onClick={() => {
+                  setStatusFilter(tab);
+                  setCurrentPage(1);
+                }}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

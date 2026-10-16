@@ -5,9 +5,19 @@ const {
 } = require("../../utils/paginationHelper");
 
 const getAllUsers = async (req, res) => {
-  try {
-    const { search = "", status = "all" } = req.query;
+    const {
+      search = "",
+      status = "all",
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
     const { page, limit, skip } = getPagination(req.query, 10);
+
+    const allowedSortFields = ["name", "email", "createdAt", "isBlocked"];
+    const field = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+
+    const order = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+    const sortConfig = { [field]: order };
 
     const basefilter = { role: { $ne: "admin" } };
 
@@ -29,7 +39,7 @@ const getAllUsers = async (req, res) => {
       await Promise.all([
         User.find(query)
           .select("-password -resetPasswordToken -resetPasswordExpires")
-          .sort({ createdAt: -1 })
+          .sort(sortConfig)
           .skip(skip)
           .limit(limit),
         User.countDocuments(query),
