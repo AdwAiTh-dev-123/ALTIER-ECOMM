@@ -5,6 +5,7 @@ const {
 } = require("../../utils/paginationHelper");
 
 const getAllUsers = async (req, res) => {
+  try {
     const {
       search = "",
       status = "all",
