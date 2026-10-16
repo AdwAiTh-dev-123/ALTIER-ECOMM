@@ -20,6 +20,8 @@ const AdminCategoriesPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successToast, setSuccessToast] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [pagination, setPagination] = useState({
     totalPages: 1,
     totalItems: 0,
@@ -56,6 +58,8 @@ const AdminCategoriesPage = () => {
       const res = await getAdminCategories({
         search: debouncedSearch,
         status: statusFilter,
+        sortBy,
+        sortOrder,
         page: currentPage,
         limit: 10,
       });
@@ -75,7 +79,7 @@ const AdminCategoriesPage = () => {
       setTableLoading(false);
       setInitialLoading(false);
     }
-  }, [debouncedSearch, statusFilter, currentPage]);
+  }, [debouncedSearch, statusFilter, sortBy, sortOrder, currentPage]);
 
   // Triggers instantly on page change or filter change
   useEffect(() => {
@@ -286,21 +290,49 @@ const AdminCategoriesPage = () => {
           )}
         </div>
 
-        <div className="admin-filter-tabs">
-          {[
-            { id: "all", label: "All" },
-            { id: "active", label: "Listed" },
-            { id: "unlisted", label: "Unlisted" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`admin-filter-tab ${statusFilter === tab.id ? "active" : ""}`}
-              onClick={() => setStatusFilter(tab.id)}
+        <div className="admin-controls-right">
+          {/*Sort*/}
+          <div className="admin-sort-wrap">
+            <label htmlFor="category-sort" className="admin-sort-label">
+              Sort By:
+            </label>
+            <select
+              id="category-sort"
+              className="admin-select"
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [newField, newOrder] = e.target.value.split("-");
+                setSortBy(newField);
+                setSortOrder(newOrder);
+                setCurrentPage(1);
+              }}
             >
-              {tab.label}
-            </button>
-          ))}
+              <option value="createdAt-desc">Newest First</option>
+              <option value="createdAt-asc">Oldest First</option>
+              <option value="name-asc">Name (A – Z)</option>
+              <option value="name-desc">Name (Z – A)</option>
+            </select>
+          </div>
+
+          <div className="admin-filter-tabs">
+            {[
+              { id: "all", label: "All" },
+              { id: "active", label: "Listed" },
+              { id: "unlisted", label: "Unlisted" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`admin-filter-tab ${statusFilter === tab.id ? "active" : ""}`}
+                onClick={() => {
+                  setStatusFilter(tab.id);
+                  setCurrentPage(1);
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

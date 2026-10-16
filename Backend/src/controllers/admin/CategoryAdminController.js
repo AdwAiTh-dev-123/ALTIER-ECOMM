@@ -91,9 +91,20 @@ const deleteCategory = async (req, res) => {
 
 const getAllCategories = async (req, res) => {
   try {
-    const { search = "", status = "all" } = req.query;
+    const {
+      search = "",
+      status = "all",
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
 
     const { page, limit, skip } = getPagination(req.query, 10);
+
+    const allowedSortFields = ["name", "createdAt", "isListed"];
+    const field = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+
+    const order = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+    const sortConfig = { [field]: order };
 
     const query = {};
 
@@ -112,7 +123,7 @@ const getAllCategories = async (req, res) => {
 
     const [categories, totalFilteredCategories, total, active, unlisted] =
       await Promise.all([
-        Category.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+        Category.find(query).sort(sortConfig).skip(skip).limit(limit),
         Category.countDocuments(query),
         Category.countDocuments(),
         Category.countDocuments({ isListed: true }),
