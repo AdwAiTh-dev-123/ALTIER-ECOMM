@@ -2,11 +2,22 @@ const User = require("../../models/User");
 
 const getAllUsers = async (req, res) => {
   try {
-    const { search = "", status = "all" } = req.query;
+    const {
+      search = "",
+      status = "all",
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    const allowedSortFields = ["name", "email", "createdAt", "isBlocked"];
+    const field = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+
+    const order = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+    const sortConfig = { [field]: order };
 
     const basefilter = { role: { $ne: "admin" } };
 
-    const query = {...basefilter};
+    const query = { ...basefilter };
 
     if (search.trim()) {
       query.$or = [
@@ -23,16 +34,13 @@ const getAllUsers = async (req, res) => {
 
     const users = await User.find(query)
       .select("-password -resetPasswordToken -resetPasswordExpires")
-      .sort({ createdAt: -1 });
-
+      .sort(sortConfig);
 
     const [totalUsers, blockedUsers, activeUsers] = await Promise.all([
       User.countDocuments(basefilter),
-      User.countDocuments({...basefilter,isBlocked:true}),
-      User.countDocuments({...basefilter,isBlocked:true})
-    ])
-
-
+      User.countDocuments({ ...basefilter, isBlocked: true }),
+      User.countDocuments({ ...basefilter, isBlocked: false }),
+    ]);
 
     return res.status(200).json({
       success: true,
