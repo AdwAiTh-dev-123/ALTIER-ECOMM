@@ -6,16 +6,25 @@ import {
   toggleCategoryStatus,
   deleteAdminCategory,
 } from "../../api/adminApi";
+import Pagination from "../../components/common/Pagination";
 
 const AdminCategoriesPage = () => {
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState({ total: 0, active: 0, unlisted: 0 });
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [successToast, setSuccessToast] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    totalItems: 0,
+    limit: 10,
+  });
 
   // Confirmation modal state for unlisting/listing
   const [confirmModal, setConfirmModal] = useState({
@@ -29,12 +38,32 @@ const AdminCategoriesPage = () => {
     category: null,
   });
 
+  // ✅ AFTER
+  // Debounce search typing only (resets page to 1 on new search)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Fetch function: Only affects tableLoading
   const loadCategories = useCallback(async () => {
-    setLoading(true);
+    setTableLoading(true);
     setErrorMessage("");
     try {
-      const res = await getAdminCategories({ search, status: statusFilter });
+      const res = await getAdminCategories({
+        search: debouncedSearch,
+        status: statusFilter,
+        page: currentPage,
+        limit: 10,
+      });
       setCategories(res.data.data || []);
+
+      if (res.data.pagination) {
+        setPagination(res.data.pagination);
+      }
       if (res.data.stats) {
         setStats(res.data.stats);
       }
@@ -43,16 +72,14 @@ const AdminCategoriesPage = () => {
         err.response?.data?.message || "Failed to load categories",
       );
     } finally {
-      setLoading(false);
+      setTableLoading(false);
+      setInitialLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [debouncedSearch, statusFilter, currentPage]);
 
-  // Debounced search query
+  // Triggers instantly on page change or filter change
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadCategories();
-    }, 300);
-    return () => clearTimeout(timer);
+    loadCategories();
   }, [loadCategories]);
 
   const handleToggleClick = (targetCategory) => {
@@ -84,6 +111,20 @@ const AdminCategoriesPage = () => {
         ),
       );
 
+      // Automatically update category stats
+      if (res.data.stats) {
+        setStats(res.data.stats);
+      } else {
+        setStats((prev) => {
+          const wasListed = targetCategory.isListed;
+          return {
+            ...prev,
+            active: wasListed ? Math.max(0, prev.active - 1) : prev.active + 1,
+            unlisted: wasListed ? prev.unlisted + 1 : Math.max(0, prev.unlisted - 1),
+          };
+        });
+      }
+
       setSuccessToast(res.data.message);
       setTimeout(() => setSuccessToast(""), 4000);
     } catch (err) {
@@ -107,6 +148,19 @@ const AdminCategoriesPage = () => {
       const res = await deleteAdminCategory(target._id);
       // Remove deleted category from local list immediately
       setCategories((prev) => prev.filter((c) => c._id !== target._id));
+
+      // Automatically update category stats on delete
+      if (res.data.stats) {
+        setStats(res.data.stats);
+      } else {
+        setStats((prev) => ({
+          ...prev,
+          total: Math.max(0, prev.total - 1),
+          active: target.isListed ? Math.max(0, prev.active - 1) : prev.active,
+          unlisted: !target.isListed ? Math.max(0, prev.unlisted - 1) : prev.unlisted,
+        }));
+      }
+
       setSuccessToast(res.data.message);
       setTimeout(() => setSuccessToast(""), 4000);
     } catch (err) {
@@ -164,7 +218,7 @@ const AdminCategoriesPage = () => {
             <span className="admin-stat-icon-wrap">🏷️</span>
           </div>
           <div className="admin-stat-value">
-            {loading ? "..." : stats.total || categories.length}
+            {initialLoading ? "..." : stats.total}
           </div>
           <span className="admin-stat-note">All catalog categories</span>
         </div>
@@ -175,9 +229,7 @@ const AdminCategoriesPage = () => {
             <span className="admin-stat-icon-wrap">✓</span>
           </div>
           <div className="admin-stat-value">
-            {loading
-              ? "..."
-              : (stats.active ?? categories.filter((c) => c.isListed).length)}
+            {initialLoading ? "..." : stats.active}
           </div>
           <span className="admin-stat-note">
             Visible on storefront navigation
@@ -190,10 +242,7 @@ const AdminCategoriesPage = () => {
             <span className="admin-stat-icon-wrap">✕</span>
           </div>
           <div className="admin-stat-value">
-            {loading
-              ? "..."
-              : (stats.unlisted ??
-                categories.filter((c) => !c.isListed).length)}
+            {initialLoading ? "..." : stats.unlisted}
           </div>
           <span className="admin-stat-note">Hidden from customer catalog</span>
         </div>
@@ -268,14 +317,19 @@ const AdminCategoriesPage = () => {
                 <th style={{ textAlign: "right", width: "190px" }}>Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {loading ? (
+            <tbody
+              style={{
+                opacity: tableLoading ? 0.6 : 1,
+                transition: "opacity 0.15s ease",
+              }}
+            >
+              {initialLoading ? (
                 <tr>
                   <td
                     colSpan="5"
                     style={{
                       textAlign: "center",
-                      padding: "2rem",
+                      padding: "3rem",
                       color: "var(--text-muted, #78716c)",
                     }}
                   >
@@ -343,7 +397,13 @@ const AdminCategoriesPage = () => {
                           {item.isListed ? "Listed" : "Unlisted"}
                         </span>
                       </td>
-                      <td style={{ textAlign: "right", width: "190px", whiteSpace: "nowrap" }}>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          width: "190px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         <div
                           style={{
                             display: "inline-flex",
@@ -379,7 +439,6 @@ const AdminCategoriesPage = () => {
                           </button>
                         </div>
                       </td>
-                      
                     </tr>
                   );
                 })
@@ -387,6 +446,14 @@ const AdminCategoriesPage = () => {
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          limit={pagination.limit || 10}
+          onPageChange={(page) => setCurrentPage(page)}
+          loading={tableLoading}
+        />
       </div>
 
       {/* Confirmation Modal */}

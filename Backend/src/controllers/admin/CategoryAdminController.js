@@ -1,4 +1,5 @@
 const Category = require("../../models/Category");
+const {getPagination, formatPaginatedResponse} = require("../../utils/paginationHelper");
 
 const createCategory = async (req, res) => {
   try {
@@ -68,9 +69,16 @@ const deleteCategory = async (req, res) => {
 
     await Category.findByIdAndDelete(id);
 
+    const [total, active, unlisted] = await Promise.all([
+      Category.countDocuments(),
+      Category.countDocuments({ isListed: true }),
+      Category.countDocuments({ isListed: false }),
+    ]);
+
     return res.status(200).json({
       success: true,
       message: `Category ${category.name} deleted successfully`,
+      stats: { total, active, unlisted },
     });
   } catch (err) {
     return res.status(500).json({
@@ -84,6 +92,8 @@ const deleteCategory = async (req, res) => {
 const getAllCategories = async (req, res) => {
   try {
     const { search = "", status = "all" } = req.query;
+
+    const { page, limit, skip } = getPagination(req.query, 10);
 
     const query = {};
 
@@ -100,20 +110,30 @@ const getAllCategories = async (req, res) => {
       query.isListed = false;
     }
 
-    const categories = await Category.find(query).sort({ createdAt: -1 });
+    const [categories, totalFilteredCategories, total, active, unlisted] =
+      await Promise.all([
+        Category.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+        Category.countDocuments(query),
+        Category.countDocuments(),
+        Category.countDocuments({ isListed: true }),
+        Category.countDocuments({ isListed: false }),
+      ]);
 
-    const [total, active, unlisted] = await Promise.all([
-      Category.countDocuments(),
-      Category.countDocuments({ isListed: true }),
-      Category.countDocuments({ isListed: false }),
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      count: categories.length,
-      stats: [total, active, unlisted],
-      data: categories,
-    });
+    return res.status(200).json(
+      formatPaginatedResponse({
+        page,
+        limit,
+        totalItems: totalFilteredCategories,
+        data: categories,
+        extraFields: {
+          stats: {
+            total,
+            active,
+            unlisted,
+          },
+        },
+      }),
+    );
   } catch (err) {
     return res.status(500).json({
       success: false,
@@ -138,10 +158,17 @@ const toggleCategoryListing = async (req, res) => {
     category.isListed = !category.isListed;
     await category.save();
 
+    const [total, active, unlisted] = await Promise.all([
+      Category.countDocuments(),
+      Category.countDocuments({ isListed: true }),
+      Category.countDocuments({ isListed: false }),
+    ]);
+
     return res.status(200).json({
       success: true,
       message: `Category successfully ${category.isListed ? "Listed" : "Unlisted"}`,
       data: category,
+      stats: { total, active, unlisted },
     });
   } catch (err) {
     return res.status(500).json({

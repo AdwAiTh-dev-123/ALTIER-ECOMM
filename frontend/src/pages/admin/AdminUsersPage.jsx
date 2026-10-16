@@ -2,16 +2,25 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getAdminUsers, toggleBlockUserStatus } from "../../api/adminApi";
 import { useAuth } from "../../context/AuthContext";
+import Pagination from "../../components/common/Pagination";
 
 const AdminUsersPage = () => {
   const { user: currentAdmin } = useAuth();
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [successToast, setSuccessToast] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    totalItems: 0,
+    limit: 10,
+  });
 
   // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState({
@@ -20,27 +29,39 @@ const AdminUsersPage = () => {
   });
 
   const loadUsers = useCallback(async () => {
-    setLoading(true);
+    setTableLoading(true);
     setErrorMessage("");
     try {
-      const res = await getAdminUsers({ search, status: statusFilter });
+      const res = await getAdminUsers({
+        search: debouncedSearch,
+        status: statusFilter,
+        page: currentPage,
+        limit: 10,
+      });
       setUsers(res.data.data || []);
+      if (res.data.pagination) setPagination(res.data.pagination);
     } catch (err) {
       setErrorMessage(
         err.response?.data?.message || "Failed to load users list",
       );
     } finally {
-      setLoading(false);
+      setTableLoading(false);
+      setInitialLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [debouncedSearch, statusFilter, currentPage]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   // Debounced search query
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadUsers();
+      setDebouncedSearch(search);
+      setCurrentPage(1);
     }, 300);
     return () => clearTimeout(timer);
-  }, [loadUsers]);
+  }, [search]);
 
   const handleToggleClick = (targetUser) => {
     // Open confirmation dialog
@@ -161,8 +182,13 @@ const AdminUsersPage = () => {
                 <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {loading ? (
+            <tbody
+              style={{
+                opacity: tableLoading ? 0.6 : 1,
+                transition: "opacity 0.15s ease",
+              }}
+            >
+              {initialLoading ? (
                 <tr>
                   <td colSpan="6" className="admin-loading-cell">
                     <div className="admin-spinner-inline"></div> Loading
@@ -255,6 +281,14 @@ const AdminUsersPage = () => {
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          limit={pagination.limit || 10}
+          onPageChange={(page) => setCurrentPage(page)}
+          loading={tableLoading}
+        />
       </div>
 
       {/* Confirmation Modal */}

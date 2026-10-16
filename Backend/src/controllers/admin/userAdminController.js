@@ -1,8 +1,13 @@
 const User = require("../../models/User");
+const {
+  formatPaginatedResponse,
+  getPagination,
+} = require("../../utils/paginationHelper");
 
 const getAllUsers = async (req, res) => {
   try {
     const { search = "", status = "all" } = req.query;
+    const { page, limit, skip } = getPagination(req.query, 10);
 
     const basefilter = { role: { $ne: "admin" } };
 
@@ -20,27 +25,34 @@ const getAllUsers = async (req, res) => {
     } else if (status === "blocked") {
       query.isBlocked = true;
     }
+    const [users, totalFilteredUsers, totalUsers, blockedUsers, activeUsers] =
+      await Promise.all([
+        User.find(query)
+          .select("-password -resetPasswordToken -resetPasswordExpires")
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit),
+        User.countDocuments(query),
+        User.countDocuments(basefilter),
+        User.countDocuments({ ...basefilter, isBlocked: true }),
+        User.countDocuments({ ...basefilter, isBlocked: false }),
+      ]);
 
-    const users = await User.find(query)
-      .select("-password -resetPasswordToken -resetPasswordExpires")
-      .sort({ createdAt: -1 });
-
-    const [totalUsers, blockedUsers, activeUsers] = await Promise.all([
-      User.countDocuments(basefilter),
-      User.countDocuments({ ...basefilter, isBlocked: true }),
-      User.countDocuments({ ...basefilter, isBlocked: false }),
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      count: users.length,
-      stats: {
-        total: totalUsers,
-        blocked: blockedUsers,
-        active: activeUsers,
-      },
-      data: users,
-    });
+    return res.status(200).json(
+      formatPaginatedResponse({
+        page,
+        limit,
+        totalItems: totalFilteredUsers,
+        data: users,
+        extraFields: {
+          stats: {
+            total: totalUsers,
+            blocked: blockedUsers,
+            active: activeUsers,
+          },
+        },
+      }),
+    );
   } catch (err) {
     return res.status(500).json({
       success: false,
