@@ -14,13 +14,26 @@ const {
   deleteCategory,
 } = require("../controllers/admin/CategoryAdminController");
 
+const {
+  createProductWithVariants,
+  getAllProducts,
+  toggleProductListing,
+  deleteProduct,
+} = require("../controllers/admin/productAdminController");
+
 router.use(authMiddleware, adminMiddleware);
 
 router.get("/users", getAllUsers);
 router.patch("/users/:id", toggleisBlocked);
+
 router.get("/category", getAllCategories);
 router.post("/category", createCategory);
 router.patch("/category/:id", toggleCategoryListing);
 router.delete("/category/:id", deleteCategory);
+
+router.get("/products", getAllProducts);
+router.post("/products", createProductWithVariants);
+router.patch("/products/:id", toggleProductListing);
+router.delete("/products/:id", deleteProduct);
 
 module.exports = router;

@@ -23,3 +23,19 @@ export function deleteAdminCategory(categoryId) {
 export function toggleCategoryStatus(categoryId) {
   return api.patch(`/admin/category/${categoryId}`);
 }
+
+export function getAdminProducts(params = {}) {
+  return api.get("/admin/products", { params });
+}
+
+export function createAdminProduct(data) {
+  return api.post("/admin/products", data);
+}
+
+export function toggleProductStatus(productId) {
+  return api.patch(`/admin/products/${productId}`);
+}
+
+export function deleteProduct(productId) {
+  return api.delete(`/admin/products/${productId}`);
+}

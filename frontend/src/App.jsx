@@ -15,6 +15,7 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
 import AdminAddCategoryPage from "./pages/admin/AdminAddCategoryPage";
+import AdminProductsPage from "./pages/admin/AdminProductsPage"
 
 import "./App.css";
 import "./styles/storefront.css";
@@ -82,6 +83,7 @@ function App() {
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="categories/add" element={<AdminAddCategoryPage />} />
+          <Route path="products" element={<AdminProductsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

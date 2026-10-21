@@ -8,9 +8,7 @@ const Pagination = ({
   onPageChange,
   loading = false,
 }) => {
-  // If no items or only 1 page, don't show pagination
-  if (totalPages <= 1 && totalItems <= limit) return null;
-
+  const safeTotalPages = Math.max(1, totalPages || 1);
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * limit + 1;
   const endItem = Math.min(currentPage * limit, totalItems);
 
@@ -21,10 +19,10 @@ const Pagination = ({
     const rangeWithDots = [];
     let l;
 
-    for (let i = 1; i <= totalPages; i++) {
+    for (let i = 1; i <= safeTotalPages; i++) {
       if (
         i === 1 ||
-        i === totalPages ||
+        i === safeTotalPages ||
         (i >= currentPage - delta && i <= currentPage + delta)
       ) {
         range.push(i);
@@ -92,10 +90,10 @@ const Pagination = ({
         <button
           type="button"
           className="admin-pagination-btn"
-          disabled={currentPage >= totalPages}
+          disabled={currentPage >= safeTotalPages}
           onClick={(e) => {
             e.preventDefault();
-            if (!loading && currentPage < totalPages) onPageChange(currentPage + 1);
+            if (!loading && currentPage < safeTotalPages) onPageChange(currentPage + 1);
           }}
         >
           Next ›
