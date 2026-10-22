@@ -1,11 +1,12 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import GuestRoute from "./routes/GuestRoute";
 import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
+import HomePage from "./pages/storefront/HomePage";
 import ShopPage from "./pages/storefront/ShopPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
@@ -15,15 +16,28 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
 import AdminAddCategoryPage from "./pages/admin/AdminAddCategoryPage";
-import AdminProductsPage from "./pages/admin/AdminProductsPage"
+import AdminProductsPage from "./pages/admin/AdminProductsPage";
+import ProductDetailsPage from "./pages/storefront/ProductDetailsPage";
+import CartPage from "./pages/storefront/CartPage";
+import WishlistPage from "./pages/storefront/WishlistPage";
 
 import "./App.css";
 import "./styles/storefront.css";
+
+// Shared Public Storefront Layout
+const StorefrontLayout = ({ children }) => (
+  <div className="app-root">
+    <Navbar />
+    <main className="main-content">{children}</main>
+    <Footer />
+  </div>
+);
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Auth routes for guest users only */}
         <Route
           path="/login"
           element={
@@ -56,21 +70,69 @@ function App() {
             </GuestRoute>
           }
         />
+
+        {/* Public Storefront Routes */}
         <Route
           path="/"
           element={
+            <StorefrontLayout>
+              <HomePage />
+            </StorefrontLayout>
+          }
+        />
+        <Route
+          path="/collections"
+          element={
+            <StorefrontLayout>
+              <ShopPage />
+            </StorefrontLayout>
+          }
+        />
+        <Route
+          path="/products/:id"
+          element={
+            <StorefrontLayout>
+              <ProductDetailsPage />
+            </StorefrontLayout>
+          }
+        />
+
+        {/* User-Specific Storefront Routes (Protected: Logged-in only) */}
+        <Route
+          path="/cart"
+          element={
             <ProtectedRoute>
-              <div className="app-root">
-                <Navbar />
-                <main className="main-content">
-                  <ShopPage />
-                </main>
-                <Footer />
-              </div>
+              <StorefrontLayout>
+                <CartPage />
+              </StorefrontLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wishlist"
+          element={
+            <ProtectedRoute>
+              <StorefrontLayout>
+                <WishlistPage />
+              </StorefrontLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <StorefrontLayout>
+                <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
+                  <h2>User Profile</h2>
+                  <p>Account details and past orders</p>
+                </div>
+              </StorefrontLayout>
             </ProtectedRoute>
           }
         />
 
+        {/* Admin Console Routes */}
         <Route
           path="/admin"
           element={
@@ -85,6 +147,9 @@ function App() {
           <Route path="categories/add" element={<AdminAddCategoryPage />} />
           <Route path="products" element={<AdminProductsPage />} />
         </Route>
+
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,26 +1,41 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const WishlistContext = createContext();
 
 export const WishlistProvider = ({ children }) => {
-  const [wishlist, setWishlist] = useState(() => {
-    try {
-      const saved = localStorage.getItem('atelier_wishlist');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { user } = useAuth();
+  const userId = user?._id || user?.id || null;
 
+  // Initialize wishlist state (keyed by logged-in user ID)
+  const [wishlist, setWishlist] = useState([]);
   const [feedback, setFeedback] = useState(null);
 
+  // When user changes (login, logout, switch accounts), load only their private wishlist
   useEffect(() => {
+    if (!userId) {
+      setWishlist([]);
+      return;
+    }
+
     try {
-      localStorage.setItem('atelier_wishlist', JSON.stringify(wishlist));
+      const saved = localStorage.getItem(`atelier_wishlist_${userId}`);
+      setWishlist(saved ? JSON.parse(saved) : []);
+    } catch {
+      setWishlist([]);
+    }
+  }, [userId]);
+
+  // Persist only to active user's private key
+  useEffect(() => {
+    if (!userId) return;
+
+    try {
+      localStorage.setItem(`atelier_wishlist_${userId}`, JSON.stringify(wishlist));
     } catch (e) {
       console.error('Failed to save wishlist to localStorage:', e);
     }
-  }, [wishlist]);
+  }, [wishlist, userId]);
 
   // Clear feedback notification after 3 seconds
   useEffect(() => {
@@ -30,34 +45,46 @@ export const WishlistProvider = ({ children }) => {
   }, [feedback]);
 
   const isInWishlist = (productId) => {
-    return wishlist.some(item => item._id === productId);
+    return wishlist.some((item) => item._id === productId);
   };
 
   const toggleWishlist = (product) => {
-    if (!product || !product._id) return;
+    if (!userId) {
+      setFeedback({
+        type: 'error',
+        message: 'Please sign in to save garments to your wishlist.',
+      });
+      return false;
+    }
+
+    if (!product || !product._id) return false;
+
+    const title = product.name || product.title || 'Garment';
 
     if (isInWishlist(product._id)) {
-      setWishlist(prev => prev.filter(item => item._id !== product._id));
+      setWishlist((prev) => prev.filter((item) => item._id !== product._id));
       setFeedback({
         type: 'remove',
-        message: `"${product.title}" removed from your saved items.`
+        message: `"${title}" removed from your saved items.`,
       });
+      return false;
     } else {
-      setWishlist(prev => [product, ...prev]);
+      setWishlist((prev) => [product, ...prev]);
       setFeedback({
         type: 'add',
-        message: `"${product.title}" saved to your wishlist.`
+        message: `"${title}" saved to your wishlist.`,
       });
+      return true;
     }
   };
 
   const removeFromWishlist = (productId) => {
-    const item = wishlist.find(p => p._id === productId);
-    setWishlist(prev => prev.filter(p => p._id !== productId));
+    const item = wishlist.find((p) => p._id === productId);
+    setWishlist((prev) => prev.filter((p) => p._id !== productId));
     if (item) {
       setFeedback({
         type: 'remove',
-        message: `"${item.title}" removed from your saved items.`
+        message: `"${item.name || item.title}" removed from your saved items.`,
       });
     }
   };
@@ -66,7 +93,7 @@ export const WishlistProvider = ({ children }) => {
     setWishlist([]);
     setFeedback({
       type: 'info',
-      message: 'All saved items cleared.'
+      message: 'All saved items cleared.',
     });
   };
 
@@ -79,7 +106,7 @@ export const WishlistProvider = ({ children }) => {
         toggleWishlist,
         removeFromWishlist,
         clearWishlist,
-        feedback
+        feedback,
       }}
     >
       {children}

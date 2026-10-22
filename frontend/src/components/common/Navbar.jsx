@@ -1,8 +1,8 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
-import { useAuth } from '../../context/AuthContext';
-import { useWishlist } from '../../context/WishlistContext';
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
+import { useWishlist } from "../../context/WishlistContext";
 
 export const Navbar = () => {
   const { getTotalCount } = useCart();
@@ -10,13 +10,14 @@ export const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
   const cartCount = getTotalCount ? getTotalCount() : 0;
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  const isAdmin = user?.role === 'admin';
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  const isAdmin = user?.role === "admin";
 
   const handleLogout = async () => {
     await logout();
-    navigate('/', { replace: true });
+    navigate("/", { replace: true });
   };
 
   return (
@@ -32,40 +33,84 @@ export const Navbar = () => {
         <nav className="navbar-nav">
           <Link
             to="/"
-            className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+            className={`nav-link ${location.pathname === "/" ? "active" : ""}`}
           >
-            Collection
+            Home
           </Link>
+
+          <Link
+            to="/collections"
+            className={`nav-link ${location.pathname.startsWith("/collections") ? "active" : ""}`}
+          >
+            Collections
+          </Link>
+
+          {user && (
+            <>
+              <Link
+                to="/wishlist"
+                className={`nav-link ${location.pathname === "/wishlist" ? "active" : ""}`}
+              >
+                Wishlist
+                {wishlistCount > 0 && (
+                  <span
+                    className="cart-badge badge-saved"
+                    style={{ marginLeft: "6px" }}
+                  >
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+
+              <Link
+                to="/cart"
+                className={`nav-link ${location.pathname === "/cart" ? "active" : ""}`}
+              >
+                Cart
+                {cartCount > 0 && (
+                  <span className="cart-badge" style={{ marginLeft: "6px" }}>
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            </>
+          )}
 
           {isAdmin && (
             <Link
               to="/admin"
-              className={`nav-link nav-link-admin ${isAdminRoute ? 'active' : ''}`}
+              className={`nav-link nav-link-admin ${isAdminRoute ? "active" : ""}`}
             >
               <span className="admin-dot-indicator">●</span> Admin Console
             </Link>
           )}
         </nav>
 
-        {/* Right Actions */}
+        {/* User Profile & Auth Section */}
         <div className="navbar-actions">
           {user ? (
             <div className="navbar-user-menu">
-              <Link to="/profile" className="user-profile-badge" title="My Account">
+              <Link
+                to="/profile"
+                className="user-profile-badge"
+                title="My Profile"
+              >
                 {user.picture || user.avatar ? (
                   <img
                     src={user.picture || user.avatar}
                     alt={user.name}
                     className="user-avatar-initial"
-                    style={{ objectFit: 'cover' }}
+                    style={{ objectFit: "cover" }}
                   />
                 ) : (
                   <span className="user-avatar-initial">
-                    {(user.name || 'User').charAt(0).toUpperCase()}
+                    {(user.name || "User").charAt(0).toUpperCase()}
                   </span>
                 )}
-                <span className="user-name-text">{(user.name || 'User').split(' ')[0]}</span>
-                {user.role === 'admin' && (
+                <span className="user-name-text">
+                  {(user.name || "User").split(" ")[0]}
+                </span>
+                {user.role === "admin" && (
                   <span className="nav-role-tag">Admin</span>
                 )}
               </Link>
@@ -83,23 +128,14 @@ export const Navbar = () => {
               <Link to="/login" className="action-link">
                 Sign In
               </Link>
-              <Link to="/register" className="btn btn-secondary btn-sm nav-reg-btn">
+              <Link
+                to="/register"
+                className="btn btn-secondary btn-sm nav-reg-btn"
+              >
                 Register
               </Link>
             </div>
           )}
-
-          {/* Saved Items */}
-          <Link to="/wishlist" className="action-wishlist-btn" title="Saved Items">
-            <span>Saved</span>
-            {wishlistCount > 0 && <span className="cart-badge badge-saved">{wishlistCount}</span>}
-          </Link>
-
-          {/* Shopping Bag */}
-          <Link to="/cart" className="action-cart-btn" title="View Bag">
-            <span>Bag</span>
-            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-          </Link>
         </div>
       </div>
     </header>
