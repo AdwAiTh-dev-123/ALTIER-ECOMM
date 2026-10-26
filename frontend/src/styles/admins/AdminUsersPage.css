@@ -1,0 +1,58 @@
+/* frontend/src/styles/admins/AdminUsersPage.css */
+
+.admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-avatar-sm {
+  width: 32px;
+  height: 32px;
+  background-color: var(--bg-muted, #f5f4f0);
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-user-name {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-you-tag {
+  font-size: 0.65rem;
+  background-color: var(--bg-muted, #f5f4f0);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--text-muted, #78716c);
+}
+
+.admin-email-text {
+  color: var(--text-secondary, #44403c);
+}
+
+/* User Role Badges */
+.admin-role-badge {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.badge-admin {
+  background-color: #1c1917;
+  color: #ffffff;
+}
+
+.badge-customer {
+  background-color: var(--bg-muted, #f5f4f0);
+  color: var(--text-secondary, #44403c);
+}

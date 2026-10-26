@@ -1,5 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import {
+  getCartApi,
+  addToCartApi,
+  updateCartQuantityApi,
+  removeFromCartApi,
+  clearCartApi,
+} from '../api/shopApi';
+
+
 
 const CartContext = createContext();
 
@@ -7,38 +16,67 @@ export const CartProvider = ({ children }) => {
   const { user } = useAuth();
   const userId = user?._id || user?.id || null;
 
-  // Initialize cart state (keyed by logged-in user ID)
   const [cartItems, setCartItems] = useState([]);
   const [cartToast, setCartToast] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // When user changes (login, logout, switch user), load only their private cart
-  useEffect(() => {
+  /**
+   * Helper to normalize raw database cart items into component-friendly format
+   */
+  const formatCartItems = useCallback((items = []) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((item) => item && (item.variant || item.product))
+      .map((item) => {
+        const variant = typeof item.variant === 'object' && item.variant !== null ? item.variant : {};
+        const product = typeof item.product === 'object' && item.product !== null ? item.product : {};
+        const variantId = String(variant._id || item.variant || '');
+        const productId = String(product._id || item.product || '');
+
+        return {
+          cartItemId: variantId || String(item._id),
+          productId,
+          title: product.name || product.title || 'Garment',
+          slug: product.slug || '',
+          image: variant.images?.[0] || product.images?.[0] || '',
+          variantId,
+          color: variant.color || '',
+          size: variant.size || '',
+          sku: variant.sku || '',
+          price: Number(item.price ?? variant.price ?? 0),
+          stock: Number(variant.stock ?? 0),
+          quantity: Number(item.quantity ?? 1),
+        };
+      });
+  }, []);
+
+  /**
+   * Fetch authenticated user's cart from MongoDB
+   */
+  const fetchCart = useCallback(async () => {
     if (!userId) {
       setCartItems([]);
       return;
     }
-
     try {
-      const saved = localStorage.getItem(`atelier_cart_${userId}`);
-      setCartItems(saved ? JSON.parse(saved) : []);
-    } catch (e) {
-      console.error('Failed to load user cart:', e);
+      setLoading(true);
+      const res = await getCartApi();
+      const items = res.data?.data?.items || [];
+      setCartItems(formatCartItems(items));
+    } catch (err) {
+      console.error('Failed to load user cart from database:', err);
       setCartItems([]);
+    } finally {
+      setLoading(false);
     }
-  }, [userId]);
+  }, [userId, formatCartItems]);
 
-  // Persist only to the active user's private storage key
+  // Load database cart whenever authenticated user changes
   useEffect(() => {
-    if (!userId) return;
+    fetchCart();
+  }, [fetchCart]);
 
-    try {
-      localStorage.setItem(`atelier_cart_${userId}`, JSON.stringify(cartItems));
-    } catch (e) {
-      console.error('Failed to save cart to localStorage:', e);
-    }
-  }, [cartItems, userId]);
-
-  // Auto-clear toast notification
+  // Auto-clear toast notification after 3.5 seconds
   useEffect(() => {
     if (!cartToast) return;
     const timer = setTimeout(() => setCartToast(null), 3500);
@@ -46,135 +84,90 @@ export const CartProvider = ({ children }) => {
   }, [cartToast]);
 
   /**
-   * Add product variant to active user's cart with stock validation and max quantity checks
+   * Add garment variant to MongoDB cart
    */
-  const addToCart = (product, selectedVariant, quantity = 1) => {
+  const addToCart = async (product, selectedVariant, quantity = 1) => {
     if (!userId) {
       setCartToast({ type: 'error', message: 'Please sign in to add garments to your bag.' });
       return false;
     }
 
-    const availableStock = selectedVariant?.stock || 0;
-
-    // Rule 1: Prevent adding unavailable products
-    if (availableStock <= 0) {
-      setCartToast({ type: 'error', message: 'This variant is currently out of stock.' });
+    if (!selectedVariant || !selectedVariant._id) {
+      setCartToast({ type: 'error', message: 'Please select a garment variant.' });
       return false;
     }
 
-    let success = true;
-
-    setCartItems((prev) => {
-      const existingIndex = prev.findIndex(
-        (item) => item.variantId === selectedVariant._id
-      );
-
-      if (existingIndex > -1) {
-        const currentQty = prev[existingIndex].quantity;
-        const targetQty = currentQty + quantity;
-
-        // Rule 2: Stock validation
-        if (targetQty > availableStock) {
-          setCartToast({
-            type: 'error',
-            message: `Only ${availableStock} units available in stock.`,
-          });
-          success = false;
-          return prev;
-        }
-
-        // Rule 3: Enforce max quantity limit (5 units per variant)
-        if (targetQty > 5) {
-          setCartToast({
-            type: 'error',
-            message: 'Maximum limit of 5 units per garment reached.',
-          });
-          success = false;
-          return prev;
-        }
-
-        const updated = [...prev];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          quantity: targetQty,
-          stock: availableStock,
-        };
-        return updated;
-      }
-
-      // New item insertion with strict stock limits
-      const safeQty = Math.min(quantity, availableStock, 5);
-      const newItem = {
-        cartItemId: `${product._id}-${selectedVariant._id}`,
-        productId: product._id,
-        title: product.name || product.title,
-        slug: product.slug,
-        image: selectedVariant.images?.[0] || product.images?.[0] || '',
-        variantId: selectedVariant._id,
-        color: selectedVariant.color,
-        size: selectedVariant.size,
-        sku: selectedVariant.sku,
-        price: Number(selectedVariant.price),
-        stock: availableStock,
-        quantity: safeQty,
-      };
-
-      return [...prev, newItem];
-    });
-
-    if (success) {
+    try {
+      const res = await addToCartApi(product._id, selectedVariant._id, quantity);
+      const updatedItems = res.data?.data?.items || [];
+      setCartItems(formatCartItems(updatedItems));
       setCartToast({
         type: 'success',
         message: `Added ${product.name || product.title} (${selectedVariant.color}, ${selectedVariant.size}) to your bag.`,
       });
+      return true;
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to add item to bag.';
+      setCartToast({ type: 'error', message });
+      return false;
     }
-
-    return success;
   };
 
   /**
-   * Update quantity with real-time stock validation
+   * Update quantity directly in MongoDB
    */
-  const updateCartQuantity = (cartItemId, newQty) => {
+  const updateCartQuantity = async (cartItemId, newQty) => {
     if (!userId) return;
 
     if (newQty <= 0) {
-      removeFromCart(cartItemId);
+      await removeFromCart(cartItemId);
       return;
     }
 
-    setCartItems((prev) =>
-      prev.map((item) => {
-        if (item.cartItemId !== cartItemId) return item;
-
-        if (newQty > item.stock) {
-          setCartToast({
-            type: 'error',
-            message: `Cannot exceed available stock of ${item.stock} pieces.`,
-          });
-          return item;
-        }
-
-        if (newQty > 5) {
-          setCartToast({
-            type: 'error',
-            message: 'Maximum 5 units allowed per garment.',
-          });
-          return item;
-        }
-
-        return { ...item, quantity: newQty };
-      })
-    );
+    try {
+      const res = await updateCartQuantityApi(cartItemId, newQty);
+      const updatedItems = res.data?.data?.items || [];
+      setCartItems(formatCartItems(updatedItems));
+    } catch (err) {
+      const message = err.response?.data?.message || 'Could not update quantity in bag.';
+      setCartToast({ type: 'error', message });
+    }
   };
 
-  const removeFromCart = (cartItemId) => {
-    setCartItems((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
+  /**
+   * Remove item from MongoDB cart
+   */
+  const removeFromCart = async (cartItemId) => {
+    if (!userId) return;
+
+    try {
+      const res = await removeFromCartApi(cartItemId);
+      const updatedItems = res.data?.data?.items || [];
+      setCartItems(formatCartItems(updatedItems));
+      setCartToast({
+        type: 'info',
+        message: 'Item removed from your bag.',
+      });
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to remove item from bag.';
+      setCartToast({ type: 'error', message });
+    }
   };
 
-  const clearCart = () => {
-    setCartItems([]);
+  /**
+   * Clear entire cart
+   */
+  const clearCart = async () => {
+    if (!userId) return;
+    try {
+      await clearCartApi();
+      setCartItems([]);
+      setCartToast({ type: 'info', message: 'Your bag has been cleared.' });
+    } catch (err) {
+      console.error('Failed to clear cart:', err);
+    }
   };
+
 
   // Calculations
   const getSubtotal = () => {
@@ -195,7 +188,6 @@ export const CartProvider = ({ children }) => {
     return getSubtotal() + getShippingFee();
   };
 
-  // Check if any cart item exceeds stock or is invalid
   const hasInvalidItems = () => {
     return cartItems.some((item) => item.quantity > item.stock || item.stock <= 0);
   };
@@ -214,6 +206,8 @@ export const CartProvider = ({ children }) => {
         getTotalAmount,
         hasInvalidItems,
         cartToast,
+        loading,
+        fetchCart,
       }}
     >
       {children}
@@ -228,3 +222,4 @@ export const useCart = () => {
   }
   return context;
 };
+

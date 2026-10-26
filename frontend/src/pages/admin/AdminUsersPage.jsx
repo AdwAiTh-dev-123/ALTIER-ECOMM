@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { getAdminUsers, toggleBlockUserStatus } from "../../api/adminApi";
 import { useAuth } from "../../context/AuthContext";
 import Pagination from "../../components/common/Pagination";
+import "../../styles/admins/AdminUsersPage.css";
 
 const AdminUsersPage = () => {
   const { user: currentAdmin } = useAuth();

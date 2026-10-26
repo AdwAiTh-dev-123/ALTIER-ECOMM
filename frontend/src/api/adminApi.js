@@ -16,6 +16,9 @@ export function createAdminCategory(data) {
   return api.post("/admin/category", data);
 }
 
+export function updateAdminCategory(categoryId, data) {
+  return api.put(`/admin/category/${categoryId}`, data);
+}
 export function deleteAdminCategory(categoryId) {
   return api.delete(`/admin/category/${categoryId}`);
 }
@@ -30,6 +33,10 @@ export function getAdminProducts(params = {}) {
 
 export function createAdminProduct(data) {
   return api.post("/admin/products", data);
+}
+
+export function updateAdminProduct(productId, data) {
+  return api.put(`/admin/products/${productId}`, data);
 }
 
 export function toggleProductStatus(productId) {

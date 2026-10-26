@@ -1,0 +1,14 @@
+/* frontend/src/styles/admins/AdminCategoriesPage.css */
+
+/* Category Page Specific Enhancements */
+.admin-categories-page .admin-table th:last-child,
+.admin-categories-page .admin-table td:last-child {
+  width: 240px;
+  text-align: right;
+}
+
+.category-description-cell {
+  max-width: 260px;
+  color: var(--text-secondary, #44403c);
+  font-size: 0.82rem;
+}

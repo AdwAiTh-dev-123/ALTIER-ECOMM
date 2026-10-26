@@ -2,6 +2,7 @@
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import "../../styles/admins/AdminSidebar.css";
 
 const AdminSidebar = () => {
   const { user, logout } = useAuth();

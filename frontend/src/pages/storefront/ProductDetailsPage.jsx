@@ -266,11 +266,12 @@ export const ProductDetailsPage = () => {
                             <span>{quantity}</span>
                             <button
                                 type="button"
-                                disabled={quantity >= Math.min(5, currentStock) || isOutOfStock}
+                                disabled={quantity >= currentStock || isOutOfStock}
                                 onClick={() => setQuantity((q) => q + 1)}
                             >
                                 +
                             </button>
+
                         </div>
 
                         {/* Add to Bag Button */}

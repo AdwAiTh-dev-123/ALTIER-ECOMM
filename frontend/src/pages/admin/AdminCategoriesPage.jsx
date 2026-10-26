@@ -5,8 +5,10 @@ import {
   getAdminCategories,
   toggleCategoryStatus,
   deleteAdminCategory,
+  updateAdminCategory,
 } from "../../api/adminApi";
 import Pagination from "../../components/common/Pagination";
+import "../../styles/admins/AdminCategoriesPage.css";
 
 const AdminCategoriesPage = () => {
   const [categories, setCategories] = useState([]);
@@ -39,6 +41,17 @@ const AdminCategoriesPage = () => {
     isOpen: false,
     category: null,
   });
+
+  const [editModal, setEditModal] = useState({
+    isOpen: false,
+    categoryId: null,
+    name: "",
+    description: "",
+    isListed: true,
+    loading: false,
+    error: "",
+  });
+
 
   // ✅ AFTER
   // Debounce search typing only (resets page to 1 on new search)
@@ -175,6 +188,64 @@ const AdminCategoriesPage = () => {
       setActionLoadingId(null);
     }
   };
+
+  const handleOpenEdit = (category) => {
+    setEditModal({
+      isOpen: true,
+      categoryId: category._id,
+      name: category.name,
+      description: category.description || "",
+      isListed: category.isListed,
+      loading: false,
+      error: "",
+    });
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editModal.name.trim()) {
+      setEditModal((prev) => ({ ...prev, error: "Category name is required." }));
+      return;
+    }
+
+    setEditModal((prev) => ({ ...prev, loading: true, error: "" }));
+
+    try {
+      const res = await updateAdminCategory(editModal.categoryId, {
+        name: editModal.name.trim(),
+        description: editModal.description.trim(),
+        isListed: editModal.isListed,
+      });
+
+      const updated = res.data.data;
+
+      // Update table state locally
+      setCategories((prev) =>
+        prev.map((c) => (c._id === updated._id ? { ...c, ...updated } : c))
+      );
+
+      // Keep category statistics in sync if visibility changed
+      const prevCat = categories.find((c) => c._id === updated._id);
+      if (prevCat && prevCat.isListed !== updated.isListed) {
+        setStats((prev) => ({
+          ...prev,
+          active: updated.isListed ? prev.active + 1 : Math.max(0, prev.active - 1),
+          unlisted: updated.isListed ? Math.max(0, prev.unlisted - 1) : prev.unlisted + 1,
+        }));
+      }
+
+      setSuccessToast(res.data?.message || "Category updated successfully.");
+      setTimeout(() => setSuccessToast(""), 4000);
+      setEditModal({ isOpen: false, categoryId: null, name: "", description: "", isListed: true, loading: false, error: "" });
+    } catch (err) {
+      setEditModal((prev) => ({
+        ...prev,
+        loading: false,
+        error: err.response?.data?.message || "Failed to update category.",
+      }));
+    }
+  };
+
 
   return (
     <div className="admin-page-container">
@@ -346,7 +417,7 @@ const AdminCategoriesPage = () => {
                 <th>Description</th>
                 <th>Created Date</th>
                 <th>Visibility</th>
-                <th style={{ textAlign: "right", width: "190px" }}>Actions</th>
+                <th style={{ textAlign: "right", width: "240px" }}>Actions</th>
               </tr>
             </thead>
             <tbody
@@ -410,20 +481,19 @@ const AdminCategoriesPage = () => {
                       <td className="admin-date-text">
                         {item.createdAt
                           ? new Date(item.createdAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )
                           : "—"}
                       </td>
                       <td>
                         <span
-                          className={`admin-status-badge ${
-                            item.isListed ? "status-active" : "status-blocked"
-                          }`}
+                          className={`admin-status-badge ${item.isListed ? "status-active" : "status-blocked"
+                            }`}
                         >
                           <span className="status-dot"></span>
                           {item.isListed ? "Listed" : "Unlisted"}
@@ -432,7 +502,7 @@ const AdminCategoriesPage = () => {
                       <td
                         style={{
                           textAlign: "right",
-                          width: "190px",
+                          width: "240px",
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -448,15 +518,24 @@ const AdminCategoriesPage = () => {
                             type="button"
                             disabled={isActionLoading}
                             onClick={() => handleToggleClick(item)}
-                            className={`admin-action-btn btn-toggle ${
-                              item.isListed ? "btn-block" : "btn-unblock"
-                            }`}
+                            className={`admin-action-btn btn-toggle ${item.isListed ? "btn-block" : "btn-unblock"
+                              }`}
                           >
                             {isActionLoading
                               ? "Updating..."
                               : item.isListed
                                 ? "Unlist"
                                 : "List"}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() => handleOpenEdit(item)}
+                            className="admin-action-btn admin-btn-secondary"
+                            style={{ padding: "0.35rem 0.75rem", fontSize: "0.8rem" }}
+                          >
+                            Edit
                           </button>
 
                           <button
@@ -521,11 +600,10 @@ const AdminCategoriesPage = () => {
               </button>
               <button
                 type="button"
-                className={`admin-modal-confirm-btn ${
-                  confirmModal.category?.isListed
-                    ? "btn-confirm-block"
-                    : "btn-confirm-unblock"
-                }`}
+                className={`admin-modal-confirm-btn ${confirmModal.category?.isListed
+                  ? "btn-confirm-block"
+                  : "btn-confirm-unblock"
+                  }`}
                 onClick={handleConfirmToggle}
               >
                 Yes,{" "}
@@ -568,6 +646,155 @@ const AdminCategoriesPage = () => {
                 Delete Permanently
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Category Modal */}
+      {editModal.isOpen && (
+        <div
+          className="admin-modal-backdrop"
+          onClick={() =>
+            !editModal.loading &&
+            setEditModal((prev) => ({ ...prev, isOpen: false }))
+          }
+        >
+          <div
+            className="admin-modal-box"
+            style={{ maxWidth: "500px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="admin-modal-title">Edit Category</h3>
+            <p className="admin-modal-message" style={{ marginBottom: "1.25rem" }}>
+              Update category details and storefront visibility.
+            </p>
+
+            {editModal.error && (
+              <div
+                className="admin-alert-banner alert-danger"
+                style={{ marginBottom: "1rem" }}
+              >
+                {editModal.error}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEdit}>
+              <div style={{ marginBottom: "1rem" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "0.4rem",
+                    fontSize: "0.85rem",
+                    fontWeight: "600",
+                    color: "#1c1917",
+                  }}
+                >
+                  Category Name *
+                </label>
+                <input
+                  type="text"
+                  className="admin-search-input"
+                  style={{ paddingLeft: "0.85rem", width: "100%" }}
+                  value={editModal.name}
+                  onChange={(e) =>
+                    setEditModal((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., Heavyweight Knitwear"
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "0.4rem",
+                    fontSize: "0.85rem",
+                    fontWeight: "600",
+                    color: "#1c1917",
+                  }}
+                >
+                  Description
+                </label>
+                <textarea
+                  className="admin-search-input"
+                  style={{
+                    paddingLeft: "0.85rem",
+                    width: "100%",
+                    minHeight: "80px",
+                    resize: "vertical",
+                  }}
+                  value={editModal.description}
+                  onChange={(e) =>
+                    setEditModal((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Brief description of products within this category..."
+                  rows={3}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  marginBottom: "1.5rem",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="editIsListed"
+                  checked={editModal.isListed}
+                  onChange={(e) =>
+                    setEditModal((prev) => ({
+                      ...prev,
+                      isListed: e.target.checked,
+                    }))
+                  }
+                  style={{
+                    width: "17px",
+                    height: "17px",
+                    cursor: "pointer",
+                  }}
+                />
+                <label
+                  htmlFor="editIsListed"
+                  style={{
+                    fontSize: "0.86rem",
+                    cursor: "pointer",
+                    color: "#44403c",
+                  }}
+                >
+                  Publish &amp; List on Storefront
+                </label>
+              </div>
+
+              <div className="admin-modal-actions">
+                <button
+                  type="button"
+                  className="admin-btn-secondary"
+                  onClick={() =>
+                    setEditModal((prev) => ({ ...prev, isOpen: false }))
+                  }
+                  disabled={editModal.loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="admin-btn-primary"
+                  disabled={editModal.loading}
+                >
+                  {editModal.loading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

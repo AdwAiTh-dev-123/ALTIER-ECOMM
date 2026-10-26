@@ -1,0 +1,61 @@
+/* frontend/src/styles/admins/AdminLayout.css */
+
+.admin-root-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--bg-main, #fbfbfa);
+  color: var(--text-primary, #1c1917);
+  font-family: var(--font-family, inherit);
+}
+
+/* Main Viewport */
+.admin-main-viewport {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.admin-top-header {
+  height: 60px;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-subtle, #e7e5e4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  flex-shrink: 0;
+}
+
+.admin-top-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.admin-portal-tag {
+  color: var(--text-muted, #78716c);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.admin-breadcrumb-sep {
+  color: var(--border-strong, #d6d3d1);
+}
+
+.admin-breadcrumb-current {
+  color: var(--text-primary, #1c1917);
+}
+
+.admin-content-area {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  background-color: var(--bg-main, #fbfbfa);
+}

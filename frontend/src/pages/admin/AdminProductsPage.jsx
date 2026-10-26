@@ -6,6 +6,7 @@ import {
 } from "../../api/adminApi";
 import AddProductModal from "../../components/admin/AdminProductModal";
 import Pagination from "../../components/common/Pagination";
+import "../../styles/admins/AdminProductsPage.css";
 
 const AdminProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -13,6 +14,7 @@ const AdminProductsPage = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [successToast, setSuccessToast] = useState("");
@@ -133,7 +135,10 @@ const AdminProductsPage = () => {
           </div>
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingProduct(null);
+              setIsModalOpen(true);
+            }}
             className="admin-btn-primary"
           >
             <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>+</span>
@@ -193,7 +198,7 @@ const AdminProductsPage = () => {
                 <th>Variants Count</th>
                 <th>Sizes & Colors</th>
                 <th>Status</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
+                <th style={{ textAlign: "right", width: "230px" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -379,7 +384,13 @@ const AdminProductsPage = () => {
                       </td>
 
                       {/* Actions: Matching Category/User styling */}
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          width: "230px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         <div
                           style={{
                             display: "inline-flex",
@@ -402,6 +413,23 @@ const AdminProductsPage = () => {
                               : product.isListed
                                 ? "Unlist"
                                 : "List"}
+                          </button>
+
+                          {/* Edit Button */}
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() => {
+                              setEditingProduct(product);
+                              setIsModalOpen(true);
+                            }}
+                            className="admin-action-btn admin-btn-secondary"
+                            style={{
+                              padding: "0.35rem 0.75rem",
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            Edit
                           </button>
 
                           {/* Delete Button */}
@@ -470,11 +498,23 @@ const AdminProductsPage = () => {
         </div>
       )}
 
-      {/* Add Product Modal */}
+      {/* Add / Edit Product Modal */}
       <AddProductModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={() => loadProducts()}
+        productToEdit={editingProduct}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingProduct(null);
+        }}
+        onSuccess={() => {
+          loadProducts();
+          setSuccessToast(
+            editingProduct
+              ? "Product updated successfully"
+              : "Product created successfully"
+          );
+          setTimeout(() => setSuccessToast(""), 3000);
+        }}
       />
     </div>
   );

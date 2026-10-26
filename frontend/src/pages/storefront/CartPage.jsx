@@ -169,13 +169,13 @@ export const CartPage = () => {
                         <button
                           type="button"
                           onClick={() => updateCartQuantity(item.cartItemId, item.quantity + 1)}
-                          disabled={item.quantity >= Math.min(5, item.stock)}
+                          disabled={item.quantity >= item.stock}
                         >
                           +
                         </button>
                       </div>
-                      <span className="max-qty-note">Max 5 units</span>
                     </div>
+
 
                     {/* Total for Row */}
                     <div className="cart-cell cart-cell-total">
@@ -229,13 +229,8 @@ export const CartPage = () => {
             >
               {invalid ? 'Resolve Stock Issues' : 'Proceed to Checkout'}
             </button>
-
-            <div className="summary-trust-badges">
-              <span>🔒 256-Bit SSL Encrypted Checkout</span>
-              <span>📦 Dispatched in small conscious batches</span>
-              <span>↺ 14-Day easy returns & exchanges</span>
-            </div>
           </aside>
+
         </div>
       )}
     </div>

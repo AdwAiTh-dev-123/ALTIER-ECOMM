@@ -27,14 +27,9 @@ export const Footer = () => {
             <Link to="/cart" className="footer-link">Shopping Bag</Link>
             <Link to="/admin" className="footer-link">Admin Portal</Link>
           </div>
-
-          <div className="footer-col">
-            <h4 className="footer-col-title">Info</h4>
-            <span className="footer-text">Built strictly per Brocamp MERN Stack Guidelines.</span>
-            <span className="footer-text">Two-level Variant System (Size & Color).</span>
-          </div>
         </div>
       </div>
+
 
       <div className="footer-bottom">
         <p className="copyright-text">

@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { getAdminCategories, createAdminProduct } from "../../api/adminApi";
+import {
+  getAdminCategories,
+  createAdminProduct,
+  updateAdminProduct,
+} from "../../api/adminApi";
+import "../../styles/admins/AdminProductModal.css";
 
 const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
 const AVAILABLE_COLORS = [
@@ -23,7 +28,12 @@ const createEmptyVariant = () => ({
   images: [], // array of base64 preview strings
 });
 
-const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
+const AddProductModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  productToEdit = null,
+}) => {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -37,26 +47,53 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
   // Variants State
   const [variants, setVariants] = useState([createEmptyVariant()]);
 
-  // Fetch active categories when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      loadCategories();
-    }
-  }, [isOpen]);
-
   const loadCategories = async () => {
     setCategoriesLoading(true);
     try {
       const res = await getAdminCategories({ limit: 100, status: "active" });
       const list = res.data.data || [];
       setCategories(list);
-      if (list.length > 0) setCategoryId(list[0]._id);
+      if (!productToEdit && list.length > 0) setCategoryId(list[0]._id);
     } catch (err) {
       setError("Failed to load categories for dropdown.");
     } finally {
       setCategoriesLoading(false);
     }
   };
+
+  // Pre-populate when editing or reset when adding
+  useEffect(() => {
+    if (isOpen) {
+      loadCategories();
+      if (productToEdit) {
+        setName(productToEdit.name || "");
+        setCategoryId(
+          productToEdit.category?._id || productToEdit.category || ""
+        );
+        setDescription(productToEdit.description || "");
+        if (
+          Array.isArray(productToEdit.variants) &&
+          productToEdit.variants.length > 0
+        ) {
+          setVariants(
+            productToEdit.variants.map((v) => ({
+              _id: v._id,
+              id: v._id || Date.now() + Math.random(),
+              size: v.size || "M",
+              color: v.color || "Black",
+              price: v.price !== undefined ? v.price : "",
+              stock: v.stock !== undefined ? v.stock : "",
+              images: Array.isArray(v.images) ? v.images : [],
+            }))
+          );
+        } else {
+          setVariants([createEmptyVariant()]);
+        }
+      } else {
+        resetForm();
+      }
+    }
+  }, [isOpen, productToEdit]);
 
   // Add a new variant block
   const handleAddVariant = () => {
@@ -151,17 +188,31 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
 
     setSubmitting(true);
     try {
-      await createAdminProduct({
-        name,
-        categoryId,
-        description,
-        variants,
-      });
+      if (productToEdit) {
+        await updateAdminProduct(productToEdit._id, {
+          name,
+          categoryId,
+          description,
+          variants,
+        });
+      } else {
+        await createAdminProduct({
+          name,
+          categoryId,
+          description,
+          variants,
+        });
+      }
       resetForm();
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create product.");
+      setError(
+        err.response?.data?.message ||
+          (productToEdit
+            ? "Failed to update product."
+            : "Failed to create product.")
+      );
     } finally {
       setSubmitting(false);
     }
@@ -195,7 +246,7 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
         >
           <div>
             <h2 className="admin-modal-title" style={{ margin: 0 }}>
-              Add New Product
+              {productToEdit ? "Edit Product" : "Add New Product"}
             </h2>
             <p
               style={{
@@ -204,7 +255,9 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
                 color: "#78716c",
               }}
             >
-              Define base details and configure unique size/color variants.
+              {productToEdit
+                ? "Update product details and configure size/color variants."
+                : "Define base details and configure unique size/color variants."}
             </p>
           </div>
           <button
@@ -592,7 +645,13 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
               className="admin-btn-primary"
               disabled={submitting}
             >
-              {submitting ? "Creating Product..." : "Add Product"}
+              {submitting
+                ? productToEdit
+                  ? "Saving Changes..."
+                  : "Creating Product..."
+                : productToEdit
+                  ? "Save Changes"
+                  : "Add Product"}
             </button>
           </div>
         </form>

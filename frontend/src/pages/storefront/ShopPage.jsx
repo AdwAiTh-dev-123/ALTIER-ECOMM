@@ -20,7 +20,9 @@ export const ShopPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
+  const [debouncedMinPrice, setDebouncedMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -59,7 +61,17 @@ export const ShopPage = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // 3. Fetch all products from backend whenever filters or page change
+  // 3. Debounce price filter inputs (400ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedMinPrice(minPrice);
+      setDebouncedMaxPrice(maxPrice);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [minPrice, maxPrice]);
+
+  // 4. Fetch all products from backend whenever filters or page change
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -72,8 +84,8 @@ export const ShopPage = () => {
 
       if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
       if (selectedCategory !== 'all') params.category = selectedCategory;
-      if (minPrice !== '') params.minPrice = minPrice;
-      if (maxPrice !== '') params.maxPrice = maxPrice;
+      if (debouncedMinPrice !== '') params.minPrice = debouncedMinPrice;
+      if (debouncedMaxPrice !== '') params.maxPrice = debouncedMaxPrice;
 
       const res = await getStorefrontProducts(params);
       setProducts(res.data.data || []);
@@ -87,7 +99,8 @@ export const ShopPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, sortBy, debouncedSearch, selectedCategory, minPrice, maxPrice]);
+  }, [currentPage, sortBy, debouncedSearch, selectedCategory, debouncedMinPrice, debouncedMaxPrice]);
+
 
   useEffect(() => {
     fetchProducts();
@@ -112,7 +125,9 @@ export const ShopPage = () => {
     setSearchQuery('');
     setDebouncedSearch('');
     setMinPrice('');
+    setDebouncedMinPrice('');
     setMaxPrice('');
+    setDebouncedMaxPrice('');
     setSortBy('newest');
     setCurrentPage(1);
     setSelectedCategory('all');
@@ -121,6 +136,7 @@ export const ShopPage = () => {
     nextParams.delete('category');
     setSearchParams(nextParams);
   };
+
 
   // Scroll ribbon helper
   const handleRibbonScroll = (direction) => {

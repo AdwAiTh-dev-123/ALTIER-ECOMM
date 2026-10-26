@@ -1,5 +1,5 @@
 const Category = require("../../models/Category");
-const {getPagination, formatPaginatedResponse} = require("../../utils/paginationHelper");
+const { getPagination, formatPaginatedResponse } = require("../../utils/paginationHelper");
 
 const createCategory = async (req, res) => {
   try {
@@ -67,12 +67,14 @@ const deleteCategory = async (req, res) => {
       });
     }
 
-    await Category.findByIdAndDelete(id);
+    category.isDeleted = true;
+    category.isListed = false;
+    await category.save()
 
     const [total, active, unlisted] = await Promise.all([
-      Category.countDocuments(),
-      Category.countDocuments({ isListed: true }),
-      Category.countDocuments({ isListed: false }),
+      Category.countDocuments({ isDeleted: { $ne: true } }),
+      Category.countDocuments({ isListed: true, isDeleted: { $ne: true } }),
+      Category.countDocuments({ isListed: false, isDeleted: { $ne: true } }),
     ]);
 
     return res.status(200).json({
@@ -106,7 +108,8 @@ const getAllCategories = async (req, res) => {
     const order = sortOrder.toLowerCase() === "asc" ? 1 : -1;
     const sortConfig = { [field]: order };
 
-    const query = {};
+    const query = { isDeleted: { $ne: true } };
+
 
     if (search.trim()) {
       query.$or = [
@@ -125,9 +128,9 @@ const getAllCategories = async (req, res) => {
       await Promise.all([
         Category.find(query).sort(sortConfig).skip(skip).limit(limit),
         Category.countDocuments(query),
-        Category.countDocuments(),
-        Category.countDocuments({ isListed: true }),
-        Category.countDocuments({ isListed: false }),
+        Category.countDocuments({ isDeleted: { $ne: true } }),
+        Category.countDocuments({ isListed: true, isDeleted: { $ne: true } }),
+        Category.countDocuments({ isListed: false, isDeleted: { $ne: true } }),
       ]);
 
     return res.status(200).json(
@@ -170,9 +173,9 @@ const toggleCategoryListing = async (req, res) => {
     await category.save();
 
     const [total, active, unlisted] = await Promise.all([
-      Category.countDocuments(),
-      Category.countDocuments({ isListed: true }),
-      Category.countDocuments({ isListed: false }),
+      Category.countDocuments({ isDeleted: { $ne: true } }),
+      Category.countDocuments({ isListed: true, isDeleted: { $ne: true } }),
+      Category.countDocuments({ isListed: false, isDeleted: { $ne: true } }),
     ]);
 
     return res.status(200).json({
@@ -190,9 +193,82 @@ const toggleCategoryListing = async (req, res) => {
   }
 };
 
+const updateCategory = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+    const { name, description, isListed } = req.body;
+
+    const category = await Category.findOne({
+      _id: id,
+      isDeleted: { $ne: true }
+    });
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      })
+    }
+
+    if (name && name.trim()) {
+      const trimmedName = name.trim();
+      const slug = trimmedName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "");
+
+      const existing = await Category.findOne({
+        _id: { $ne: id },
+        $or: [
+          { name: { $regex: new RegExp(`^${trimmedName}$`, "i") } },
+          { slug }
+        ],
+        isDeleted: { $ne: true }
+      })
+
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          message: "A category with this name already exists",
+        })
+      }
+
+      category.name = trimmedName;
+      category.slug = slug;
+    }
+
+    if (description !== undefined) {
+      category.description = description.trim()
+    }
+
+    if (isListed !== undefined) {
+      category.isListed = isListed
+    }
+
+    await category.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      data: category
+    })
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update category",
+      error: err.message,
+    })
+
+  }
+}
+
+
 module.exports = {
   createCategory,
   getAllCategories,
   toggleCategoryListing,
   deleteCategory,
+  updateCategory,
 };
