@@ -1,6 +1,6 @@
-const bcrypt = require("bcrypt");
-const User = require("../../models/User");
-const generateToken = require("../../utils/tokenHelper");
+import bcrypt from "bcrypt";
+import User from "../../models/User.js";
+import generateToken from "../../utils/tokenHelper.js";
 
 const login = async (req, res) => {
   try {
@@ -60,4 +60,4 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = login;
+export default login;

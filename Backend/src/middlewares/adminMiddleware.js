@@ -1,4 +1,4 @@
-const adminMiddleware = async (req, res, next) => {
+export const adminMiddleware = async (req, res, next) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -22,5 +22,3 @@ const adminMiddleware = async (req, res, next) => {
     });
   }
 };
-
-module.exports = { adminMiddleware };

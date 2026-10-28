@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const VariantSchema = mongoose.Schema(
   {
@@ -49,4 +49,4 @@ const VariantSchema = mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.model("Variant", VariantSchema);
+export default mongoose.model("Variant", VariantSchema);

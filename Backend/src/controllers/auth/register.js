@@ -1,8 +1,8 @@
-const bcrypt = require("bcrypt");
-const crypto = require("crypto");
-const User = require("../../models/User");
-const generateToken = require("../../utils/tokenHelper");
-const Otp = require("../../models/Otp");
+import bcrypt from "bcrypt";
+import crypto from "crypto";
+import User from "../../models/User.js";
+import generateToken from "../../utils/tokenHelper.js";
+import Otp from "../../models/Otp.js";
 
 const register = async (req, res) => {
   try {
@@ -15,7 +15,23 @@ const register = async (req, res) => {
       });
     }
 
+    const trimmedName = name.trim();
+
     const trimmedEmail = email.toLowerCase().trim();
+
+    if (trimmedName.length < 2 || trimmedName.length > 50) {
+      return res.status(400).json({
+        success: false,
+        message: "Name must be between 2 and 50 characters",
+      });
+    }
+    if (/\d/.test(trimmedName) || !/^[a-zA-Z\s'-]+$/.test(trimmedName)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Name can only contain alphabetic letters and cannot contain numbers",
+      });
+    }
 
     const hashSubmitOtp = crypto
       .createHash("sha256")
@@ -34,6 +50,17 @@ const register = async (req, res) => {
       });
     }
 
+    const isExpired =
+      Date.now() - new Date(recordOtp.createdAt).getTime() > 60 * 1000;
+
+    if (isExpired) {
+      await Otp.deleteMany({ email: trimmedEmail });
+      return res.status(400).json({
+        success: false,
+        message: "Verification code has expired. Pls request a new one",
+      });
+    }
+
     const existingUser = await User.findOne({ email: trimmedEmail });
     if (existingUser) {
       return res.status(409).json({
@@ -46,8 +73,8 @@ const register = async (req, res) => {
     const hashPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
-      name,
-      email,
+      name: trimmedName,
+      email: trimmedEmail,
       password: hashPassword,
     });
 
@@ -75,4 +102,4 @@ const register = async (req, res) => {
   }
 };
 
-module.exports = register;
+export default register;

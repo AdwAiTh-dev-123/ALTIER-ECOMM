@@ -5,6 +5,8 @@ import {
   updateAdminProduct,
 } from "../../api/adminApi";
 import "../../styles/admins/AdminProductModal.css";
+import ImageCropperModal from "./ImageCropperModal";
+import axiosClient from "../../api/axiosClient";
 
 const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
 const AVAILABLE_COLORS = [
@@ -38,6 +40,12 @@ const AddProductModal = ({
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  // Image cropper queue state
+  const [cropQueue, setCropQueue] = useState([]); // [{ fileSrc, variantId }]
+  const [currentCropIndex, setCurrentCropIndex] = useState(0);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [uploadingVariants, setUploadingVariants] = useState({}); // { [variantId]: count }
+  const isAnyUploading = Object.values(uploadingVariants).some((count) => count > 0);
 
   // Product Core State
   const [name, setName] = useState("");
@@ -68,7 +76,7 @@ const AddProductModal = ({
       if (productToEdit) {
         setName(productToEdit.name || "");
         setCategoryId(
-          productToEdit.category?._id || productToEdit.category || ""
+          productToEdit.category?._id || productToEdit.category || "",
         );
         setDescription(productToEdit.description || "");
         if (
@@ -84,7 +92,7 @@ const AddProductModal = ({
               price: v.price !== undefined ? v.price : "",
               stock: v.stock !== undefined ? v.stock : "",
               images: Array.isArray(v.images) ? v.images : [],
-            }))
+            })),
           );
         } else {
           setVariants([createEmptyVariant()]);
@@ -95,12 +103,10 @@ const AddProductModal = ({
     }
   }, [isOpen, productToEdit]);
 
-  // Add a new variant block
   const handleAddVariant = () => {
     setVariants((prev) => [...prev, createEmptyVariant()]);
   };
 
-  // Remove a variant block
   const handleRemoveVariant = (idToRemove) => {
     if (variants.length <= 1) {
       setError("Product must have at least one variant.");
@@ -110,32 +116,74 @@ const AddProductModal = ({
     setVariants((prev) => prev.filter((v) => v.id !== idToRemove));
   };
 
-  // Update a field inside a specific variant
   const handleVariantFieldChange = (id, field, value) => {
     setVariants((prev) =>
       prev.map((v) => (v.id === id ? { ...v, [field]: value } : v)),
     );
   };
 
-  // Handle uploading multiple image files per variant (converts to base64 for instant preview)
-  const handleVariantImageUpload = (id, e) => {
+  const handleVariantImageUpload = (variantId, e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setVariants((prev) =>
-          prev.map((v) => {
-            if (v.id === id) {
-              return { ...v, images: [...v.images, reader.result] };
-            }
-            return v;
-          }),
-        );
-      };
-      reader.readAsDataURL(file);
-    });
+    e.target.value = "";
+
+    const queued = files.map((file) => ({
+      fileSrc: URL.createObjectURL(file),
+      variantId,
+    }));
+    setCropQueue(queued);
+    setCurrentCropIndex(0);
+    setIsCropModalOpen(true);
+  };
+
+  const handleCropComplete = async (croppedBlob) => {
+    const currentItem = cropQueue[currentCropIndex];
+    if (!currentItem) return;
+    URL.revokeObjectURL(currentItem.fileSrc);
+    const targetVariantId = currentItem.variantId;
+
+    if (currentCropIndex + 1 < cropQueue.length) {
+      setCurrentCropIndex((prev) => prev + 1);
+    } else {
+      setIsCropModalOpen(false);
+      setCropQueue([]);
+      setCurrentCropIndex(0);
+    }
+
+    setUploadingVariants((prev) => ({
+      ...prev,
+      [targetVariantId]: (prev[targetVariantId] || 0) + 1,
+    }));
+
+    try {
+      const formData = new FormData();
+      formData.append("image", croppedBlob, "product.webp");
+      const res = await axiosClient.post("/admin/upload-image", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const cloudinaryUrl = res.data.url;
+
+      setVariants((prev) =>
+        prev.map((v) => {
+          if (v.id === targetVariantId) {
+            return { ...v, images: [...v.images, cloudinaryUrl] };
+          }
+          return v;
+        }),
+      );
+    } catch (err) {
+      setError("Failed to upload image to Cloudinary. Please try again.");
+    } finally {
+      setUploadingVariants((prev) => {
+        const count = (prev[targetVariantId] || 1) - 1;
+        if (count <= 0) {
+          const { [targetVariantId]: _, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [targetVariantId]: count };
+      });
+    }
   };
 
   // Remove a single photo from a variant
@@ -211,7 +259,7 @@ const AddProductModal = ({
         err.response?.data?.message ||
           (productToEdit
             ? "Failed to update product."
-            : "Failed to create product.")
+            : "Failed to create product."),
       );
     } finally {
       setSubmitting(false);
@@ -613,6 +661,36 @@ const AddProductModal = ({
                             </button>
                           </div>
                         ))}
+
+                        {/* Loading Skeleton Tile while uploading to Cloudinary */}
+                        {Array.from({
+                          length: uploadingVariants[v.id] || 0,
+                        }).map((_, i) => (
+                          <div
+                            key={`uploading-${i}`}
+                            className="admin-preview-square-tile"
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: "#f5f4f0",
+                              border: "1px dashed #a8a29e",
+                              gap: "6px",
+                            }}
+                          >
+                            <div className="admin-spinner" />
+                            <span
+                              style={{
+                                fontSize: "0.68rem",
+                                fontWeight: 600,
+                                color: "#78716c",
+                              }}
+                            >
+                              Uploading...
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -643,19 +721,34 @@ const AddProductModal = ({
             <button
               type="submit"
               className="admin-btn-primary"
-              disabled={submitting}
+              disabled={submitting || isAnyUploading}
             >
-              {submitting
-                ? productToEdit
-                  ? "Saving Changes..."
-                  : "Creating Product..."
-                : productToEdit
-                  ? "Save Changes"
-                  : "Add Product"}
+              {isAnyUploading
+                ? "Uploading Photos..."
+                : submitting
+                  ? productToEdit
+                    ? "Saving Changes..."
+                    : "Creating Product..."
+                  : productToEdit
+                    ? "Save Changes"
+                    : "Add Product"}
             </button>
           </div>
         </form>
       </div>
+      <ImageCropperModal
+        isOpen={isCropModalOpen}
+        imageSrc={cropQueue[currentCropIndex]?.fileSrc}
+        currentIndex={currentCropIndex}
+        totalImages={cropQueue.length}
+        onClose={() => {
+          cropQueue.forEach((item) => URL.revokeObjectURL(item.fileSrc));
+          setIsCropModalOpen(false);
+          setCropQueue([]);
+          setCurrentCropIndex(0);
+        }}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 };

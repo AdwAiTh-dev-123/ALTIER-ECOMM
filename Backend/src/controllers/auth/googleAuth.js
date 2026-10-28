@@ -1,7 +1,8 @@
-const { OAuth2Client } = require("google-auth-library");
+import { OAuth2Client } from "google-auth-library";
+import User from "../../models/User.js";
+import generateToken from "../../utils/tokenHelper.js";
+
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const User = require("../../models/User");
-const generateToken = require("../../utils/tokenHelper");
 
 const googleAuth = async (req, res) => {
   try {
@@ -72,4 +73,4 @@ const googleAuth = async (req, res) => {
   }
 };
 
-module.exports = googleAuth;
+export default googleAuth;

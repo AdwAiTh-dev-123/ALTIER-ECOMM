@@ -1,5 +1,11 @@
 import React from "react";
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   register,
   login,
@@ -13,20 +19,41 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [blockedToast, setBlockedToast] = useState(null);
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const res = await getProfile();
-        setUser(res.data.data);
-      } catch (err) {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+    const handleBlocked = (e) => {
+      setUser(null);
+      setBlockedToast(
+        e.detail?.message ||
+          "Account access has been restricted by administrator",
+      );
     };
-    checkSession();
+    window.addEventListener("auth:user_blocked", handleBlocked);
+    return () => window.removeEventListener("auth:user_blocked", handleBlocked);
   }, []);
+  useEffect(() => {
+    if (!blockedToast) return;
+    const timer = setTimeout(() => setBlockedToast(null), 6000);
+    return () => clearTimeout(timer);
+  }, [blockedToast]);
+
+  const checkSession = useCallback(async () => {
+    try {
+      const res = await getProfile();
+      setUser(res.data.data);
+      return res.data.data;
+    } catch (err) {
+      setUser(null);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
 
   const handleLogin = async ({ email, password }) => {
     const res = await login({ email, password });
@@ -58,6 +85,7 @@ export const AuthProvider = ({ children }) => {
         currentUser: user,
         isAdmin: user?.role === "admin",
         loading,
+        checkSession,
         login: handleLogin,
         register: handleRegister,
         logout: handleLogout,
@@ -65,6 +93,11 @@ export const AuthProvider = ({ children }) => {
       }}
     >
       {children}
+
+      {/* Floating warning toast shown instantly upon being blocked */}
+      {blockedToast && (
+        <div className="cart-floating-toast error">⚠️ {blockedToast}</div>
+      )}
     </AuthContext.Provider>
   );
 };

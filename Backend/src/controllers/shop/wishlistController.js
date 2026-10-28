@@ -1,6 +1,8 @@
-const Wishlist = require("../../models/Wishlist");
-const Cart = require("../../models/Cart");
-const Variant = require("../../models/Variants");
+import Wishlist from "../../models/Wishlist.js";
+import Cart from "../../models/Cart.js";
+import Variant from "../../models/Variants.js";
+import Product from "../../models/Products.js";
+import Category from "../../models/Category.js";
 
 const getWishlist = async (req, res) => {
   try {
@@ -72,6 +74,13 @@ const getWishlist = async (req, res) => {
 
 const toggleWishlist = async (req, res) => {
   try {
+    if (req.user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Administrators cannot save items to wishlist",
+      });
+    }
+
     const { productId } = req.body;
     let wishlist = await Wishlist.findOne({ user: req.user._id });
 
@@ -87,6 +96,30 @@ const toggleWishlist = async (req, res) => {
     if (index > -1) {
       wishlist.products.splice(index, 1);
     } else {
+      const product = await Product.findOne({
+        _id: productId,
+        isListed: true,
+        isDeleted: { $ne: true },
+      }).populate("category");
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "This product is no longer available",
+        });
+      }
+
+      if (
+        !product.category ||
+        !product.category.isListed ||
+        product.category.isDeleted
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "The category for this product is currently unavailable",
+        });
+      }
+
       wishlist.products.push(productId);
       added = true;
     }
@@ -108,13 +141,44 @@ const toggleWishlist = async (req, res) => {
 
 const moveToBag = async (req, res) => {
   try {
+    if (req.user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Administrators cannot move items to bag",
+      });
+    }
+
     const { productId, variantId } = req.body;
 
-    const variant = await Variant.findById(variantId);
+    const product = await Product.findOne({
+      _id: productId,
+      isListed: true,
+      isDeleted: { $ne: true },
+    }).populate("category");
+
+    if (
+      !product ||
+      !product.category ||
+      !product.category.isListed ||
+      product.category.isDeleted
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "This product or its category is currently unavailable",
+      });
+    }
+
+    const variant = await Variant.findOne({
+      _id: variantId,
+      product: productId,
+      isListed: true,
+      isDeleted: { $ne: true },
+    });
+
     if (!variant || variant.stock <= 0) {
       return res
         .status(400)
-        .json({ success: false, message: "Item is out of stock" });
+        .json({ success: false, message: "Item is out of stock or unavailable" });
     }
 
     let cart = await Cart.findOne({ user: req.user._id });
@@ -177,4 +241,4 @@ const clearWishlist = async (req, res) => {
   }
 };
 
-module.exports = { getWishlist, toggleWishlist, moveToBag, clearWishlist };
+export { getWishlist, toggleWishlist, moveToBag, clearWishlist };

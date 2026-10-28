@@ -45,7 +45,7 @@ export const Navbar = () => {
             Collections
           </Link>
 
-          {user && (
+          {user && !isAdmin && (
             <>
               <Link
                 to="/wishlist"

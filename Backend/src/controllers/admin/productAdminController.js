@@ -1,10 +1,14 @@
-const Product = require("../../models/Products");
-const Variant = require("../../models/Variants");
-const Category = require("../../models/Category");
-const {
+import Product from "../../models/Products.js";
+import Variant from "../../models/Variants.js";
+import Category from "../../models/Category.js";
+import {
   getPagination,
   formatPaginatedResponse,
-} = require("../../utils/paginationHelper");
+} from "../../utils/paginationHelper.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../../config/cloudinary.js";
 
 const generateSlug = (text) => {
   return text
@@ -15,7 +19,16 @@ const generateSlug = (text) => {
 
 const getAllProducts = async (req, res) => {
   try {
-    const { search = "", category = "all", page = 1, limit = 10 } = req.query;
+    const {
+      search = "",
+      category = "all",
+      status = "all",
+      stock = "all",
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      page = 1,
+      limit = 10,
+    } = req.query;
     const { skip, limit: pageLimit } = getPagination(req.query, 10);
 
     const query = { isDeleted: { $ne: true } };
@@ -24,23 +37,53 @@ const getAllProducts = async (req, res) => {
       query.name = { $regex: search.trim(), $options: "i" };
     }
 
-    if (category != "all" && category) {
+    if (category !== "all" && category && category.trim()) {
       query.category = category;
     }
 
-    const [products, totalCount, totalProducts, listedProducts, unlistedProducts] =
-      await Promise.all([
-        Product.find(query)
-          .populate("category", "name slug")
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(pageLimit)
-          .lean(),
-        Product.countDocuments(query),
-        Product.countDocuments({ isDeleted: { $ne: true } }),
-        Product.countDocuments({ isDeleted: { $ne: true }, isListed: true }),
-        Product.countDocuments({ isDeleted: { $ne: true }, isListed: false }),
-      ]);
+    if (status === "listed") {
+      query.isListed = true;
+    } else if (status === "unlisted") {
+      query.isListed = false;
+    }
+
+    if (stock === "inStock") {
+      const inStockProductIds = await Variant.distinct("product", {
+        stock: { $gt: 0 },
+        isDeleted: { $ne: true },
+      });
+      query._id = { $in: inStockProductIds };
+    } else if (stock === "outOfStock") {
+      const inStockProductIds = await Variant.distinct("product", {
+        stock: { $gt: 0 },
+        isDeleted: { $ne: true },
+      });
+      query._id = { $nin: inStockProductIds };
+    }
+
+    const allowedSortFields = ["name", "createdAt"];
+    const field = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+    const order = sortOrder?.toLowerCase() === "asc" ? 1 : -1;
+    const sortConfig = { [field]: order };
+
+    const [
+      products,
+      totalCount,
+      totalProducts,
+      listedProducts,
+      unlistedProducts,
+    ] = await Promise.all([
+      Product.find(query)
+        .populate("category", "name slug")
+        .sort(sortConfig)
+        .skip(skip)
+        .limit(pageLimit)
+        .lean(),
+      Product.countDocuments(query),
+      Product.countDocuments({ isDeleted: { $ne: true } }),
+      Product.countDocuments({ isDeleted: { $ne: true }, isListed: true }),
+      Product.countDocuments({ isDeleted: { $ne: true }, isListed: false }),
+    ]);
 
     const productIds = products.map((p) => p._id);
     const variants = await Variant.find({
@@ -114,18 +157,28 @@ const createProductWithVariants = async (req, res) => {
       isListed: true,
     });
 
-    const variantDocs = variants.map((v, index) => ({
-      product: newProduct._id,
-      color: v.color || "Standard",
-      size: v.size || "M",
-      price: Number(v.price) || 0,
-      stock: Number(v.stock) || 0,
-      images: Array.isArray(v.images) ? v.images : [],
-      sku: `${generateSlug(name).toUpperCase().slice(0, 4)}-${v.color?.slice(0, 3).toUpperCase()}-${v.size}-${index + 1}`,
-      isListed: true,
-    }));
+    const processedVariants = await Promise.all(
+      variants.map(async (v, index) => {
+        const uploadedImages = await Promise.all(
+          (v.images || []).map((img) =>
+            uploadToCloudinary(img, "altier/products"),
+          ),
+        );
 
-    const createdVarients = await Variant.insertMany(variantDocs);
+        return {
+          product: newProduct._id,
+          color: v.color || "Standard",
+          size: v.size || "M",
+          price: Number(v.price) || 0,
+          stock: Number(v.stock) || 0,
+          images: uploadedImages,
+          sku: `${generateSlug(name).toUpperCase().slice(0, 4)}-${v.color?.slice(0, 3).toUpperCase()}-${v.size}-${index + 1}`,
+          isListed: true,
+        };
+      }),
+    );
+
+    const createdVarients = await Variant.insertMany(processedVariants);
 
     return res.status(201).json({
       success: true,
@@ -156,6 +209,11 @@ const deleteProduct = async (req, res) => {
         message: "Product not found",
       });
     }
+
+    const variants = await Variant.find({ product: id });
+    const allImages = variants.flatMap((v) => v.images || []);
+
+    await Promise.all(allImages.map((imgUrl) => deleteFromCloudinary(imgUrl)));
 
     await Product.findByIdAndDelete(id);
 
@@ -252,46 +310,68 @@ const updateProductWithVariants = async (req, res) => {
 
     await product.save();
 
+    // Fetch existing variants before updating to track removed images
+    const currentVariants = await Variant.find({ product: product._id });
+    const currentImages = currentVariants.flatMap((v) => v.images || []);
+
     const keptVariantIds = [];
 
-    for (let i = 0; i < variants.length; i++) {
-      const v = variants[i];
-      const isExisting = v._id && v._id.toString().match(/^[0-9a-fA-F]{24}$/);
+    const updatedVariants = await Promise.all(
+      variants.map(async (v, index) => {
+        const uploadedImages = await Promise.all(
+          (v.images || []).map((img) =>
+            uploadToCloudinary(img, "altier/products"),
+          ),
+        );
 
-      if (isExisting) {
-        await Variant.findByIdAndUpdate(v._id, {
-          color: v.color || "Standard",
-          size: v.size || "M",
-          price: Number(v.price) || 0,
-          stock: Number(v.stock) || 0,
-          images: Array.isArray(v.images) ? v.images : [],
-          sku: `${generateSlug(trimmedName).toUpperCase().slice(0, 4)}-${v.color?.slice(0, 3).toUpperCase()}-${v.size}-${Date.now().toString().slice(-4)}`,
-          isListed: true,
-        });
+        const isExisting = v._id && v._id.toString().match(/^[0-9a-fA-F]{24}$/);
 
-        keptVariantIds.push(v._id);
-      } else {
-        const newVariant = await Variant.create({
-          product: product._id,
-          color: v.color || "Standard",
-          size: v.size || "M",
-          price: Number(v.price) || 0,
-          stock: Number(v.stock) || 0,
-          images: Array.isArray(v.images) ? v.images : [],
-          sku: `${generateSlug(trimmedName).toUpperCase().slice(0, 4)}-${v.color?.slice(0, 3).toUpperCase()}-${v.size}-${Date.now().toString().slice(-4)}`,
-          isListed: true,
-        });
+        if (isExisting) {
+          const updated = await Variant.findByIdAndUpdate(
+            v._id,
+            {
+              color: v.color || "Standard",
+              size: v.size || "M",
+              price: Number(v.price) || 0,
+              stock: Number(v.stock) || 0,
+              images: uploadedImages,
+              sku: `${generateSlug(trimmedName).toUpperCase().slice(0, 4)}-${v.color?.slice(0, 3).toUpperCase()}-${v.size}-${Date.now().toString().slice(-4)}`,
+              isListed: true,
+            },
+            { new: true },
+          );
 
-        keptVariantIds.push(newVariant._id);
-      }
-    }
+          keptVariantIds.push(v._id);
+          return updated;
+        } else {
+          const created = await Variant.create({
+            product: product._id,
+            color: v.color || "Standard",
+            size: v.size || "M",
+            price: Number(v.price) || 0,
+            stock: Number(v.stock) || 0,
+            images: uploadedImages,
+            sku: `${generateSlug(trimmedName).toUpperCase().slice(0, 4)}-${v.color?.slice(0, 3).toUpperCase()}-${v.size}-${Date.now().toString().slice(-4)}`,
+            isListed: true,
+          });
+
+          keptVariantIds.push(created._id);
+          return created;
+        }
+      }),
+    );
+
+    // Identify images present across updated variants
+    const activeImages = updatedVariants.flatMap((v) => v.images || []);
+
+    // Find and delete removed images from Cloudinary
+    const removedImages = currentImages.filter((img) => !activeImages.includes(img));
+    await Promise.all(removedImages.map((img) => deleteFromCloudinary(img)));
 
     await Variant.deleteMany({
       product: product._id,
       _id: { $nin: keptVariantIds },
     });
-
-    const updatedVariants = await Variant.find({ product: product._id });
 
     return res.status(200).json({
       success: true,
@@ -310,7 +390,7 @@ const updateProductWithVariants = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   toggleProductListing,
   createProductWithVariants,
   getAllProducts,

@@ -29,9 +29,12 @@ export const ProductCard = ({ product }) => {
     product.images?.[0] ||
     "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800";
 
+  const isAdmin = user?.role === "admin";
+
   const handleSaveClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isAdmin) return;
     if (!user) {
       navigate("/login");
       return;
@@ -62,29 +65,31 @@ export const ProductCard = ({ product }) => {
           )}
         </div>
 
-        {/* Wishlist Button */}
-        <button
-          type="button"
-          className={`card-save-btn ${isSaved ? "is-saved" : ""}`}
-          onClick={handleSaveClick}
-          aria-label={
-            isSaved ? "Remove from saved items" : "Save garment for later"
-          }
-          title={isSaved ? "Remove from saved items" : "Save for later"}
-        >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill={isSaved ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* Wishlist Button - Customers Only */}
+        {!isAdmin && (
+          <button
+            type="button"
+            className={`card-save-btn ${isSaved ? "is-saved" : ""}`}
+            onClick={handleSaveClick}
+            aria-label={
+              isSaved ? "Remove from saved items" : "Save garment for later"
+            }
+            title={isSaved ? "Remove from saved items" : "Save for later"}
           >
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-          </svg>
-        </button>
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill={isSaved ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="product-card-info">

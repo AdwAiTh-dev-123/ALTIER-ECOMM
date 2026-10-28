@@ -21,7 +21,7 @@ export const WishlistProvider = ({ children }) => {
    * Fetch authenticated user's wishlist from MongoDB
    */
   const fetchWishlist = useCallback(async () => {
-    if (!userId) {
+    if (!userId || user?.role === "admin") {
       setWishlist([]);
       return;
     }
@@ -70,6 +70,14 @@ export const WishlistProvider = ({ children }) => {
       setFeedback({
         type: 'error',
         message: 'Please sign in to save garments to your wishlist.',
+      });
+      return false;
+    }
+
+    if (user?.role === "admin") {
+      setFeedback({
+        type: "error",
+        message: "Administrators cannot save garments to wishlist.",
       });
       return false;
     }

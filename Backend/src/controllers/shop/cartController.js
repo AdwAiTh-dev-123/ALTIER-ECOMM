@@ -1,6 +1,7 @@
-const Cart = require("../../models/Cart");
-const Product = require("../../models/Products");
-const Variant = require("../../models/Variants");
+import Cart from "../../models/Cart.js";
+import Product from "../../models/Products.js";
+import Variant from "../../models/Variants.js";
+import Category from "../../models/Category.js";
 
 const getCart = async (req, res) => {
   try {
@@ -36,8 +37,39 @@ const getCart = async (req, res) => {
 
 const addToCart = async (req, res) => {
   try {
+    if (req.user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Administrators cannot add items to cart",
+      });
+    }
+
     const { productId, variantId, quantity = 1 } = req.body;
     const qty = Math.max(1, Number(quantity) || 1);
+
+    const product = await Product.findOne({
+      _id: productId,
+      isListed: true,
+      isDeleted: { $ne: true },
+    }).populate("category");
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "This product is no longer available",
+      });
+    }
+
+    if (
+      !product.category ||
+      !product.category.isListed ||
+      product.category.isDeleted
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "The category for this product is currently unavailable",
+      });
+    }
 
     const variant = await Variant.findOne({
       _id: variantId,
@@ -113,12 +145,39 @@ const addToCart = async (req, res) => {
 
 const updateCartQuantity = async (req, res) => {
   try {
+    if (req.user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Administrators cannot modify cart",
+      });
+    }
+
     const { variantId, quantity } = req.body;
     const targetQty = Number(quantity);
 
-    const variant = await Variant.findById(variantId);
+    const variant = await Variant.findById(variantId).populate({
+      path: "product",
+      select: "isListed isDeleted category",
+      populate: { path: "category", select: "isListed isDeleted" },
+    });
 
-    if (!variant || variant.stock < targetQty) {
+    if (
+      !variant ||
+      !variant.isListed ||
+      variant.isDeleted ||
+      !variant.product ||
+      !variant.product.isListed ||
+      variant.product.isDeleted ||
+      !variant.product.category ||
+      !variant.product.category.isListed ||
+      variant.product.category.isDeleted
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "This item or its category is no longer available",
+      });
+    }
+    if (variant.stock < targetQty) {
       return res.status(400).json({
         success: false,
         message: "Requested stock not available",
@@ -210,11 +269,10 @@ const clearCart = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   getCart,
   removeFromCart,
   updateCartQuantity,
   addToCart,
   clearCart,
 };
-

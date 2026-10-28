@@ -1,7 +1,7 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-const authMiddleware = async (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
   try {
     let token;
 
@@ -33,8 +33,10 @@ const authMiddleware = async (req, res, next) => {
     }
 
     if (user.isBlocked) {
+      res.clearCookie("token", { httpOnly: true });
       return res.status(403).json({
         success: false,
+        isBlocked: true,
         message: "Account access has been restricted by administrator",
       });
     }
@@ -48,5 +50,3 @@ const authMiddleware = async (req, res, next) => {
     });
   }
 };
-
-module.exports = { authMiddleware };

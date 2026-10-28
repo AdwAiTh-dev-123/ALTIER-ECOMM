@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   getAdminProducts,
+  getAdminCategories,
   toggleProductStatus,
   deleteProduct as deleteAdminProduct,
 } from "../../api/adminApi";
@@ -19,12 +20,33 @@ const AdminProductsPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successToast, setSuccessToast] = useState("");
 
+  // Filter & Sorting States
+  const [categories, setCategories] = useState([]);
+  const [category, setCategory] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [stock, setStock] = useState("all");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     totalPages: 1,
     totalItems: 0,
     limit: 10,
   });
+
+  // Fetch categories for category filter dropdown
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await getAdminCategories({ limit: 100 });
+        setCategories(res.data.data || []);
+      } catch (err) {
+        console.error("Failed to load categories for filter:", err);
+      }
+    }
+    loadCategories();
+  }, []);
 
   // Delete modal state
   const [deleteModal, setDeleteModal] = useState({
@@ -41,16 +63,22 @@ const AdminProductsPage = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Load products from backend
+  // Load products from backend with filters
   const loadProducts = useCallback(async () => {
     setLoading(true);
     setErrorMessage("");
     try {
-      const res = await getAdminProducts({
+      const params = {
         search: debouncedSearch,
+        category,
+        status,
+        stock,
+        sortBy,
+        sortOrder,
         page: currentPage,
         limit: 10,
-      });
+      };
+      const res = await getAdminProducts(params);
       setProducts(res.data.data || []);
       if (res.data.pagination) {
         setPagination(res.data.pagination);
@@ -60,11 +88,30 @@ const AdminProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, currentPage]);
+  }, [debouncedSearch, category, status, stock, sortBy, sortOrder, currentPage]);
 
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setCategory("all");
+    setStatus("all");
+    setStock("all");
+    setSortBy("createdAt");
+    setSortOrder("desc");
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters =
+    search.trim() !== "" ||
+    category !== "all" ||
+    status !== "all" ||
+    stock !== "all" ||
+    sortBy !== "createdAt" ||
+    sortOrder !== "desc";
 
   // Toggle Listed/Unlisted status
   const handleToggleListing = async (productId) => {
@@ -155,8 +202,9 @@ const AdminProductsPage = () => {
         <div className="admin-alert-banner alert-danger">{errorMessage}</div>
       )}
 
-      {/* Search Bar */}
+      {/* Search & Filter Controls Bar */}
       <div className="admin-controls-bar">
+        {/* Search Input */}
         <div className="admin-search-wrap">
           <svg
             className="admin-search-icon"
@@ -181,6 +229,116 @@ const AdminProductsPage = () => {
               onClick={() => setSearch("")}
             >
               ✕
+            </button>
+          )}
+        </div>
+
+        {/* Right Controls Group: Category, Stock, Sort, Status */}
+        <div className="admin-controls-right">
+          {/* Category Filter */}
+          <div className="admin-sort-wrap">
+            <label htmlFor="prod-filter-cat" className="admin-sort-label">
+              Category:
+            </label>
+            <select
+              id="prod-filter-cat"
+              className="admin-select"
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="all">All Categories</option>
+              {categories.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Stock Filter */}
+          <div className="admin-sort-wrap">
+            <label htmlFor="prod-filter-stock" className="admin-sort-label">
+              Stock:
+            </label>
+            <select
+              id="prod-filter-stock"
+              className="admin-select"
+              value={stock}
+              onChange={(e) => {
+                setStock(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="all">All Stock</option>
+              <option value="inStock">In Stock</option>
+              <option value="outOfStock">Out of Stock</option>
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div className="admin-sort-wrap">
+            <label htmlFor="prod-sort" className="admin-sort-label">
+              Sort By:
+            </label>
+            <select
+              id="prod-sort"
+              className="admin-select"
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [newField, newOrder] = e.target.value.split("-");
+                setSortBy(newField);
+                setSortOrder(newOrder);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="createdAt-desc">Newest First</option>
+              <option value="createdAt-asc">Oldest First</option>
+              <option value="name-asc">Name (A – Z)</option>
+              <option value="name-desc">Name (Z – A)</option>
+            </select>
+          </div>
+
+          {/* Status Tabs (All, Listed, Unlisted) */}
+          <div className="admin-filter-tabs">
+            {[
+              { id: "all", label: "All" },
+              { id: "listed", label: "Listed" },
+              { id: "unlisted", label: "Unlisted" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`admin-filter-tab ${status === tab.id ? "active" : ""}`}
+                onClick={() => {
+                  setStatus(tab.id);
+                  setCurrentPage(1);
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Reset Filters */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              style={{
+                fontSize: "0.78rem",
+                padding: "0.42rem 0.75rem",
+                color: "var(--text-muted, #78716c)",
+                border: "1px dashed var(--border-subtle, #e7e5e4)",
+                background: "transparent",
+                borderRadius: "4px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Clear Filters
             </button>
           )}
         </div>
@@ -270,12 +428,12 @@ const AdminProductsPage = () => {
                             margin: 0,
                           }}
                         >
-                          {search
-                            ? "Try adjusting your search query."
+                          {hasActiveFilters
+                            ? "Try adjusting your search query or filters."
                             : "Get started by adding your first product with color and size variants."}
                         </p>
                       </div>
-                      {!search && (
+                      {!hasActiveFilters && (
                         <button
                           type="button"
                           onClick={() => setIsModalOpen(true)}

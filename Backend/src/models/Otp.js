@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const OtpSchema = new mongoose.Schema(
   {
@@ -16,10 +16,10 @@ const OtpSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now,
-      expires: 300,
+      expires: 60,
     },
   },
   { timestamps: false },
 );
 
-module.exports = mongoose.model("Otp", OtpSchema);
+export default mongoose.model("Otp", OtpSchema);

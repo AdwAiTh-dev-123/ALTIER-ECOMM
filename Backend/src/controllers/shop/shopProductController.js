@@ -1,10 +1,10 @@
-const Product = require("../../models/Products");
-const Variant = require("../../models/Variants");
-const Category = require("../../models/Category");
-const {
+import Product from "../../models/Products.js";
+import Variant from "../../models/Variants.js";
+import Category from "../../models/Category.js";
+import {
   formatPaginatedResponse,
   getPagination,
-} = require("../../utils/paginationHelper");
+} from "../../utils/paginationHelper.js";
 
 const getStorefrontCategories = async (req, res) => {
   try {
@@ -99,8 +99,6 @@ const getStorefrontProducts = async (req, res) => {
         // Exclude products with no matching variants
         if (prodVariants.length === 0) return null;
         const totalStock = prodVariants.reduce((sum, v) => sum + v.stock, 0);
-        // Exclude unavailable (out of stock across all variants) products
-        if (totalStock <= 0) return null;
         const prices = prodVariants.map((v) => v.price);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
@@ -257,7 +255,7 @@ const getStorefrontProductById = async (req, res) => {
     });
   }
 };
-module.exports = {
+export {
   getStorefrontCategories,
   getStorefrontProducts,
   getStorefrontProductById,

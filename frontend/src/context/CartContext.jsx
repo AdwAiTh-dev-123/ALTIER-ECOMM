@@ -1,14 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { useAuth } from "./AuthContext";
 import {
   getCartApi,
   addToCartApi,
   updateCartQuantityApi,
   removeFromCartApi,
   clearCartApi,
-} from '../api/shopApi';
-
-
+} from "../api/shopApi";
 
 const CartContext = createContext();
 
@@ -28,24 +32,39 @@ export const CartProvider = ({ children }) => {
     return items
       .filter((item) => item && (item.variant || item.product))
       .map((item) => {
-        const variant = typeof item.variant === 'object' && item.variant !== null ? item.variant : {};
-        const product = typeof item.product === 'object' && item.product !== null ? item.product : {};
-        const variantId = String(variant._id || item.variant || '');
-        const productId = String(product._id || item.product || '');
+        const variant =
+          typeof item.variant === "object" && item.variant !== null
+            ? item.variant
+            : {};
+        const product =
+          typeof item.product === "object" && item.product !== null
+            ? item.product
+            : {};
+        const variantId = String(variant._id || item.variant || "");
+        const productId = String(product._id || item.product || "");
+        const isListed = Boolean(
+          product &&
+          product.isListed !== false &&
+          !product.isDeleted &&
+          variant &&
+          variant.isListed !== false &&
+          !variant.isDeleted,
+        );
 
         return {
           cartItemId: variantId || String(item._id),
           productId,
-          title: product.name || product.title || 'Garment',
-          slug: product.slug || '',
-          image: variant.images?.[0] || product.images?.[0] || '',
+          title: product.name || product.title || "Garment",
+          slug: product.slug || "",
+          image: variant.images?.[0] || product.images?.[0] || "",
           variantId,
-          color: variant.color || '',
-          size: variant.size || '',
-          sku: variant.sku || '',
+          color: variant.color || "",
+          size: variant.size || "",
+          sku: variant.sku || "",
           price: Number(item.price ?? variant.price ?? 0),
           stock: Number(variant.stock ?? 0),
           quantity: Number(item.quantity ?? 1),
+          isListed,
         };
       });
   }, []);
@@ -54,7 +73,7 @@ export const CartProvider = ({ children }) => {
    * Fetch authenticated user's cart from MongoDB
    */
   const fetchCart = useCallback(async () => {
-    if (!userId) {
+    if (!userId || user?.role === "admin") {
       setCartItems([]);
       return;
     }
@@ -64,7 +83,7 @@ export const CartProvider = ({ children }) => {
       const items = res.data?.data?.items || [];
       setCartItems(formatCartItems(items));
     } catch (err) {
-      console.error('Failed to load user cart from database:', err);
+      console.error("Failed to load user cart from database:", err);
       setCartItems([]);
     } finally {
       setLoading(false);
@@ -88,27 +107,46 @@ export const CartProvider = ({ children }) => {
    */
   const addToCart = async (product, selectedVariant, quantity = 1) => {
     if (!userId) {
-      setCartToast({ type: 'error', message: 'Please sign in to add garments to your bag.' });
+      setCartToast({
+        type: "error",
+        message: "Please sign in to add garments to your bag.",
+      });
+      return false;
+    }
+
+    if (user?.role === "admin") {
+      setCartToast({
+        type: "error",
+        message: "Administrators cannot add garments to bag.",
+      });
       return false;
     }
 
     if (!selectedVariant || !selectedVariant._id) {
-      setCartToast({ type: 'error', message: 'Please select a garment variant.' });
+      setCartToast({
+        type: "error",
+        message: "Please select a garment variant.",
+      });
       return false;
     }
 
     try {
-      const res = await addToCartApi(product._id, selectedVariant._id, quantity);
+      const res = await addToCartApi(
+        product._id,
+        selectedVariant._id,
+        quantity,
+      );
       const updatedItems = res.data?.data?.items || [];
       setCartItems(formatCartItems(updatedItems));
       setCartToast({
-        type: 'success',
+        type: "success",
         message: `Added ${product.name || product.title} (${selectedVariant.color}, ${selectedVariant.size}) to your bag.`,
       });
       return true;
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to add item to bag.';
-      setCartToast({ type: 'error', message });
+      const message =
+        err.response?.data?.message || "Failed to add item to bag.";
+      setCartToast({ type: "error", message });
       return false;
     }
   };
@@ -129,8 +167,9 @@ export const CartProvider = ({ children }) => {
       const updatedItems = res.data?.data?.items || [];
       setCartItems(formatCartItems(updatedItems));
     } catch (err) {
-      const message = err.response?.data?.message || 'Could not update quantity in bag.';
-      setCartToast({ type: 'error', message });
+      const message =
+        err.response?.data?.message || "Could not update quantity in bag.";
+      setCartToast({ type: "error", message });
     }
   };
 
@@ -145,12 +184,13 @@ export const CartProvider = ({ children }) => {
       const updatedItems = res.data?.data?.items || [];
       setCartItems(formatCartItems(updatedItems));
       setCartToast({
-        type: 'info',
-        message: 'Item removed from your bag.',
+        type: "info",
+        message: "Item removed from your bag.",
       });
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to remove item from bag.';
-      setCartToast({ type: 'error', message });
+      const message =
+        err.response?.data?.message || "Failed to remove item from bag.";
+      setCartToast({ type: "error", message });
     }
   };
 
@@ -162,12 +202,11 @@ export const CartProvider = ({ children }) => {
     try {
       await clearCartApi();
       setCartItems([]);
-      setCartToast({ type: 'info', message: 'Your bag has been cleared.' });
+      setCartToast({ type: "info", message: "Your bag has been cleared." });
     } catch (err) {
-      console.error('Failed to clear cart:', err);
+      console.error("Failed to clear cart:", err);
     }
   };
-
 
   // Calculations
   const getSubtotal = () => {
@@ -189,7 +228,13 @@ export const CartProvider = ({ children }) => {
   };
 
   const hasInvalidItems = () => {
-    return cartItems.some((item) => item.quantity > item.stock || item.stock <= 0);
+    return cartItems.some(
+      (item) => !item.isListed || item.quantity > item.stock || item.stock <= 0,
+    );
+  };
+
+  const hasUnlistedItems = () => {
+    return cartItems.some((item) => !item.isListed);
   };
 
   return (
@@ -205,6 +250,7 @@ export const CartProvider = ({ children }) => {
         getShippingFee,
         getTotalAmount,
         hasInvalidItems,
+        hasUnlistedItems,
         cartToast,
         loading,
         fetchCart,
@@ -218,8 +264,7 @@ export const CartProvider = ({ children }) => {
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
+    throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 };
-

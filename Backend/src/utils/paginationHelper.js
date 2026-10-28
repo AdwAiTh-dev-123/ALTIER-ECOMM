@@ -1,4 +1,4 @@
-const getPagination = (query, defaultLimit = 10) => {
+export const getPagination = (query, defaultLimit = 10) => {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const limit = Math.min(
     100,
@@ -9,7 +9,7 @@ const getPagination = (query, defaultLimit = 10) => {
   return { page, limit, skip };
 };
 
-const formatPaginatedResponse = ({
+export const formatPaginatedResponse = ({
   page,
   limit,
   totalItems,
@@ -33,5 +33,3 @@ const formatPaginatedResponse = ({
     ...extraFields,
   };
 };
-
-module.exports = { formatPaginatedResponse, getPagination };

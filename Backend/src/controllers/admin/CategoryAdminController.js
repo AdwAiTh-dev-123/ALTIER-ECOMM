@@ -1,5 +1,5 @@
-const Category = require("../../models/Category");
-const { getPagination, formatPaginatedResponse } = require("../../utils/paginationHelper");
+import Category from "../../models/Category.js";
+import { getPagination, formatPaginatedResponse } from "../../utils/paginationHelper.js";
 
 const createCategory = async (req, res) => {
   try {
@@ -265,7 +265,7 @@ const updateCategory = async (req, res) => {
 }
 
 
-module.exports = {
+export {
   createCategory,
   getAllCategories,
   toggleCategoryListing,

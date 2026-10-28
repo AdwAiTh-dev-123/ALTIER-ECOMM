@@ -1,6 +1,6 @@
-const crypto = require("crypto");
-const bcrypt = require("bcrypt");
-const User = require("../../models/User");
+import crypto from "crypto";
+import bcrypt from "bcrypt";
+import User from "../../models/User.js";
 
 const resetPassword = async (req, res) => {
   try {
@@ -48,4 +48,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = resetPassword;
+export default resetPassword;

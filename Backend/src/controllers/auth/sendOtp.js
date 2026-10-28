@@ -1,7 +1,7 @@
-const crypto = require("crypto");
-const User = require("../../models/User");
-const Otp = require("../../models/Otp");
-const sendEmail = require("../../utils/sendEmail");
+import crypto from "crypto";
+import User from "../../models/User.js";
+import Otp from "../../models/Otp.js";
+import sendEmail from "../../utils/sendEmail.js";
 
 const sendOtp = async (req, res) => {
   try {
@@ -38,7 +38,7 @@ const sendOtp = async (req, res) => {
     await sendEmail({
       to: trimmedEmail,
       subject: "ATELIER - Verification Code",
-      text: `Your verification code is: ${rawOtp}. This code expires in 5 minutes.`,
+      text: `Your verification code is: ${rawOtp}. This code expires in 1 minutes.`,
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #E7E5E4; border-radius: 8px;">
           <h2 style="letter-spacing: 2px; color: #1C1917; margin-bottom: 8px;">ATELIER</h2>
@@ -46,7 +46,7 @@ const sendOtp = async (req, res) => {
           <div style="margin: 24px 0; padding: 16px; background-color: #FBFBFA; border: 1px dashed #D6D3D1; text-align: center; border-radius: 6px;">
             <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #1C1917;">${rawOtp}</span>
           </div>
-          <p style="font-size: 13px; color: #A8A29E; margin: 0;">This code will expire in <strong>5 minutes</strong>. If you did not initiate this request, you can disregard this email.</p>
+          <p style="font-size: 13px; color: #A8A29E; margin: 0;">This code will expire in <strong>1 minutes</strong>. If you did not initiate this request, you can disregard this email.</p>
         </div>
       `,
     });
@@ -63,4 +63,4 @@ const sendOtp = async (req, res) => {
   }
 };
 
-module.exports = sendOtp;
+export default sendOtp;

@@ -6,4 +6,4 @@ const logOut = async (req, res) => {
   });
 };
 
-module.exports = logOut;
+export default logOut;

@@ -1,24 +1,25 @@
-const express = require("express");
-const router = express.Router();
-const { authMiddleware } = require("../middlewares/authMiddleware");
-const {
+import express from "express";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import {
   getStorefrontCategories,
   getStorefrontProductById,
   getStorefrontProducts,
-} = require("../controllers/shop/shopProductController");
-const {
+} from "../controllers/shop/shopProductController.js";
+import {
   addToCart,
   getCart,
   removeFromCart,
   updateCartQuantity,
   clearCart,
-} = require("../controllers/shop/cartController");
-const {
+} from "../controllers/shop/cartController.js";
+import {
   getWishlist,
   toggleWishlist,
   moveToBag,
   clearWishlist,
-} = require("../controllers/shop/wishlistController");
+} from "../controllers/shop/wishlistController.js";
+
+const router = express.Router();
 
 router.get("/categories", getStorefrontCategories);
 router.get("/products", getStorefrontProducts);
@@ -35,5 +36,5 @@ router.post("/wishlist/toggle", authMiddleware, toggleWishlist);
 router.delete("/wishlist", authMiddleware, clearWishlist);
 router.post("/wishlist/move-to-bag", authMiddleware, moveToBag);
 
-module.exports = router;
+export default router;
 

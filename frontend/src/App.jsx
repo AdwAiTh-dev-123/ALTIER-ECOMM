@@ -1,5 +1,12 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { useAuth } from "./context/AuthContext";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -33,9 +40,29 @@ const StorefrontLayout = ({ children }) => (
   </div>
 );
 
+// Listens for route changes and verifies that logged-in users are not blocked
+const RouteNavigationWatcher = () => {
+  const location = useLocation();
+  const { user, checkSession } = useAuth();
+  const prevPathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    // Only verify session when the user actually navigates to a different page
+    if (prevPathRef.current !== location.pathname) {
+      prevPathRef.current = location.pathname;
+      if (user) {
+        checkSession();
+      }
+    }
+  }, [location.pathname, user, checkSession]);
+
+  return null;
+};
+
 function App() {
   return (
     <BrowserRouter>
+      <RouteNavigationWatcher />
       <Routes>
         {/* Auth routes for guest users only */}
         <Route

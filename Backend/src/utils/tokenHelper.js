@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 const generateToken = (user) => {
   const payload = { id: user._id, role: user.role };
@@ -8,4 +8,4 @@ const generateToken = (user) => {
   return token;
 };
 
-module.exports = generateToken
+export default generateToken;

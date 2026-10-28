@@ -102,6 +102,7 @@ export const ProductDetailsPage = () => {
             navigate('/login');
             return;
         }
+        if (user.role === 'admin') return;
         if (!selectedVariant || selectedVariant.stock <= 0) return;
 
         const success = addToCart(product, selectedVariant, quantity);
@@ -116,6 +117,7 @@ export const ProductDetailsPage = () => {
             navigate('/login');
             return;
         }
+        if (user.role === 'admin') return;
         toggleWishlist({
             ...product,
             price: Number(selectedVariant?.price || product.price || 0),
@@ -253,50 +255,67 @@ export const ProductDetailsPage = () => {
                     </div>
 
                     {/* Quantity and Actions */}
-                    <div className="product-actions-bar">
-                        {/* Quantity Adjuster */}
-                        <div className="quantity-adjuster">
-                            <button
-                                type="button"
-                                disabled={quantity <= 1 || isOutOfStock}
-                                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                            >
-                                −
-                            </button>
-                            <span>{quantity}</span>
-                            <button
-                                type="button"
-                                disabled={quantity >= currentStock || isOutOfStock}
-                                onClick={() => setQuantity((q) => q + 1)}
-                            >
-                                +
-                            </button>
-
+                    {user?.role === 'admin' ? (
+                        <div style={{
+                            padding: '1rem 1.25rem',
+                            backgroundColor: '#f5f4f0',
+                            border: '1px solid #e7e5e4',
+                            borderRadius: '8px',
+                            color: '#78716c',
+                            fontSize: '0.875rem',
+                            lineHeight: 1.5,
+                            marginTop: '1rem',
+                        }}>
+                            <strong style={{ color: '#1c1917', display: 'block', marginBottom: '0.25rem' }}>
+                                Administrator View
+                            </strong>
+                            Shopping actions (shopping bag & wishlist) are reserved for customer accounts.
                         </div>
+                    ) : (
+                        <div className="product-actions-bar">
+                            {/* Quantity Adjuster */}
+                            <div className="quantity-adjuster">
+                                <button
+                                    type="button"
+                                    disabled={quantity <= 1 || isOutOfStock}
+                                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                                >
+                                    −
+                                </button>
+                                <span>{quantity}</span>
+                                <button
+                                    type="button"
+                                    disabled={quantity >= currentStock || isOutOfStock}
+                                    onClick={() => setQuantity((q) => q + 1)}
+                                >
+                                    +
+                                </button>
+                            </div>
 
-                        {/* Add to Bag Button */}
-                        <button
-                            type="button"
-                            className={`btn btn-primary add-to-bag-btn ${isOutOfStock ? 'disabled' : ''}`}
-                            disabled={isOutOfStock}
-                            onClick={handleAddToCart}
-                        >
-                            {isOutOfStock ? 'Sold Out' : 'Add to Bag'}
-                        </button>
+                            {/* Add to Bag Button */}
+                            <button
+                                type="button"
+                                className={`btn btn-primary add-to-bag-btn ${isOutOfStock ? 'disabled' : ''}`}
+                                disabled={isOutOfStock}
+                                onClick={handleAddToCart}
+                            >
+                                {isOutOfStock ? 'Sold Out' : 'Add to Bag'}
+                            </button>
 
-                        {/* Wishlist Button */}
-                        <button
-                            type="button"
-                            className={`details-wishlist-btn ${isSaved ? 'is-saved' : ''}`}
-                            onClick={handleWishlistClick}
-                            title={isSaved ? 'Remove from saved' : 'Save to wishlist'}
-                            aria-label="Wishlist toggle"
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                            </svg>
-                        </button>
-                    </div>
+                            {/* Wishlist Button */}
+                            <button
+                                type="button"
+                                className={`details-wishlist-btn ${isSaved ? 'is-saved' : ''}`}
+                                onClick={handleWishlistClick}
+                                title={isSaved ? 'Remove from saved' : 'Save to wishlist'}
+                                aria-label="Wishlist toggle"
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
 
                     {/* Toast Notification */}
                     {addedToast && (

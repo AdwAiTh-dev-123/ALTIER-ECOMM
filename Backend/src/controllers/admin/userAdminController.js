@@ -1,8 +1,8 @@
-const User = require("../../models/User");
-const {
+import User from "../../models/User.js";
+import {
   formatPaginatedResponse,
   getPagination,
-} = require("../../utils/paginationHelper");
+} from "../../utils/paginationHelper.js";
 
 const getAllUsers = async (req, res) => {
   try {
@@ -109,4 +109,4 @@ const toggleisBlocked = async (req, res) => {
   }
 };
 
-module.exports = { toggleisBlocked, getAllUsers };
+export { toggleisBlocked, getAllUsers };
