@@ -18,6 +18,13 @@ import {
   moveToBag,
   clearWishlist,
 } from "../controllers/shop/wishlistController.js";
+import {
+  addAddress,
+  deleteAddress,
+  getUserAddresses,
+  setDefaultAddress,
+  updateAddress,
+} from "../controllers/shop/addressController.js";
 
 const router = express.Router();
 
@@ -36,5 +43,10 @@ router.post("/wishlist/toggle", authMiddleware, toggleWishlist);
 router.delete("/wishlist", authMiddleware, clearWishlist);
 router.post("/wishlist/move-to-bag", authMiddleware, moveToBag);
 
-export default router;
+router.get("/addresses", authMiddleware, getUserAddresses);
+router.post("/addresses", authMiddleware, addAddress);
+router.put("/addresses/:id", authMiddleware, updateAddress);
+router.delete("/addresses/:id", authMiddleware, deleteAddress);
+router.patch("/addresses/:id/default", authMiddleware, setDefaultAddress);
 
+export default router;

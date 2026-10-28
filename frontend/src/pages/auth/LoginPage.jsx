@@ -126,10 +126,15 @@ const LoginPage = () => {
           <GoogleLogin
             onSuccess={async (credentialResponse) => {
               try {
-                await loginWithGoogle({
+                const response = await loginWithGoogle({
                   idToken: credentialResponse.credential,
                 });
-                navigate("/", { replace: true }); // 🚀 Logged in! Take them to the store!
+                const user = response?.user;
+                if (user?.role === "admin") {
+                  navigate("/admin", { replace: true });
+                } else {
+                  navigate("/", { replace: true });
+                }
               } catch (err) {
                 const errorMsg =
                   err.response?.data?.message ||

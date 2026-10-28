@@ -27,18 +27,27 @@ import AdminProductsPage from "./pages/admin/AdminProductsPage";
 import ProductDetailsPage from "./pages/storefront/ProductDetailsPage";
 import CartPage from "./pages/storefront/CartPage";
 import WishlistPage from "./pages/storefront/WishlistPage";
+import ProfilePage from "./pages/storefront/ProfilePage";
 
 import "./App.css";
 import "./styles/storefront.css";
 
-// Shared Public Storefront Layout
-const StorefrontLayout = ({ children }) => (
-  <div className="app-root">
-    <Navbar />
-    <main className="main-content">{children}</main>
-    <Footer />
-  </div>
-);
+// Shared Public Storefront Layout - strictly for customer/guest storefront
+const StorefrontLayout = ({ children }) => {
+  const { user } = useAuth();
+
+  if (user?.role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return (
+    <div className="app-root">
+      <Navbar />
+      <main className="main-content">{children}</main>
+      <Footer />
+    </div>
+  );
+};
 
 // Listens for route changes and verifies that logged-in users are not blocked
 const RouteNavigationWatcher = () => {
@@ -150,10 +159,7 @@ function App() {
           element={
             <ProtectedRoute>
               <StorefrontLayout>
-                <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
-                  <h2>User Profile</h2>
-                  <p>Account details and past orders</p>
-                </div>
+                <ProfilePage />
               </StorefrontLayout>
             </ProtectedRoute>
           }

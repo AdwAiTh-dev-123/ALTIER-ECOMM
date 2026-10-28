@@ -106,19 +106,6 @@ const AdminSidebar = () => {
       </div>
 
       <div className="admin-sidebar-footer">
-        <Link to="/" className="admin-nav-item-exit">
-          <svg
-            className="admin-nav-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-          <span>Back to Storefront</span>
-        </Link>
-
         <div className="admin-user-profile-card">
           <div className="admin-avatar">
             {(user?.name || "A").charAt(0).toUpperCase()}

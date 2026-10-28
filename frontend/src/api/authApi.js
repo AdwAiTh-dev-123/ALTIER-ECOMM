@@ -31,3 +31,20 @@ export function forgotPassword({ email }) {
 export function resetPassword({ token, password }) {
   return api.post("/auth/reset-password", { token, password });
 }
+
+export function changePasswordApi({ currentPassword, newPassword, confirmPassword }) {
+  return api.put("/auth/change-password", {
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  });
+}
+
+export function updateAvatarApi(formData) {
+  return api.patch("/auth/avatar", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+}
+

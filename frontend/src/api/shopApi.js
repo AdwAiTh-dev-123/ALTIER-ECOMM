@@ -50,3 +50,24 @@ export function moveToBagApi(productId, variantId) {
   return api.post("/wishlist/move-to-bag", { productId, variantId });
 }
 
+// Address API (Database-backed)
+export function getAddressesApi() {
+  return api.get("/addresses");
+}
+
+export function addAddressApi(addressData) {
+  return api.post("/addresses", addressData);
+}
+
+export function updateAddressApi(id, addressData) {
+  return api.put(`/addresses/${id}`, addressData);
+}
+
+export function deleteAddressApi(id) {
+  return api.delete(`/addresses/${id}`);
+}
+
+export function setDefaultAddressApi(id) {
+  return api.patch(`/addresses/${id}/default`);
+}
+
