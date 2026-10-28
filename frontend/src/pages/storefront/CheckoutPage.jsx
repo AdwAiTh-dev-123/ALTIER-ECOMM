@@ -1,0 +1,553 @@
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../../context/CartContext";
+import {
+  getAddressesApi,
+  addAddressApi,
+  updateAddressApi,
+  placeCodOrderApi,
+  createRazorpayOrderApi,
+  verifyRazorpayPaymentApi,
+  recordPaymentFailureApi,
+} from "../../api/shopApi";
+import AddressModal from "../../components/common/AddressModal";
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (document.getElementById("razorpay-checkout-script")) {
+      return resolve(true);
+    }
+    const script = document.createElement("script");
+    script.id = "razorpay-checkout-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
+export const CheckoutPage = () => {
+  const navigate = useNavigate();
+  const { cartItems, getSubtotal, getShippingFee, getTotalAmount, fetchCart } =
+    useCart();
+
+  // Address state
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+
+  // Payment state
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const isOrderPlacedRef = useRef(false);
+
+  // Fetch addresses and auto-select default
+  const loadAddresses = async () => {
+    try {
+      setIsLoadingAddresses(true);
+      const res = await getAddressesApi();
+      if (res.data.success) {
+        const list = res.data.addresses || [];
+        setAddresses(list);
+
+        // Pre-select default address, or the first address available
+        const defaultAddr = list.find((a) => a.isDefault);
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr._id);
+        } else if (list.length > 0) {
+          setSelectedAddressId(list[0]._id);
+        }
+      }
+    } catch (err) {
+      setErrorMessage("Unable to load shipping addresses. Please refresh.");
+    } finally {
+      setIsLoadingAddresses(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
+  useEffect(() => {
+    if (!isOrderPlacedRef.current && cartItems.length === 0) {
+      navigate("/cart", { replace: true });
+    }
+  }, [cartItems, navigate]);
+
+  const subtotal = getSubtotal();
+  const shippingFee = getShippingFee();
+  const totalAmount = getTotalAmount();
+
+  // Save new address from modal and select it immediately
+  const handleSaveAddress = async (formData) => {
+    if (editingAddress) {
+      const res = await updateAddressApi(editingAddress._id, formData);
+      if (res.data.success) {
+        await loadAddresses();
+      }
+    } else {
+      const res = await addAddressApi(formData);
+      if (res.data.success && res.data.address) {
+        await loadAddresses();
+        setSelectedAddressId(res.data.address._id);
+      }
+    }
+  };
+
+  // Place Order Handler
+  const handlePlaceOrder = async () => {
+    setErrorMessage("");
+
+    if (!selectedAddressId) {
+      setErrorMessage(
+        "Please select or add a delivery address before placing your order.",
+      );
+      return;
+    }
+
+    if (paymentMethod === "COD") {
+      try {
+        setIsSubmitting(true);
+        const res = await placeCodOrderApi({ addressId: selectedAddressId });
+        if (res.data.success && res.data.order) {
+          isOrderPlacedRef.current = true;
+          await fetchCart();
+          navigate(`/orders/success/${res.data.order.orderId}`, {
+            replace: true,
+            state: { order: res.data.order },
+          });
+        }
+
+        if (res.data.success && res.data.order) {
+          // Re-sync cart context so navbar badge updates to 0
+          await fetchCart();
+          navigate(`/orders/success/${res.data.order.orderId}`, {
+            replace: true,
+            state: { order: res.data.order },
+          });
+        }
+      } catch (err) {
+        setErrorMessage(
+          err.response?.data?.message ||
+            "Failed to place order. Please try again.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // ONLINE (RAZORPAY) FLOW
+      try {
+        setIsSubmitting(true);
+
+        const isScriptLoaded = await loadRazorpayScript();
+        if (!isScriptLoaded) {
+          setErrorMessage(
+            "Failed to load payment gateway. Please check your internet connection.",
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        // 1. Ask backend to register the order with Razorpay
+        const res = await createRazorpayOrderApi({
+          addressId: selectedAddressId,
+        });
+        if (!res.data.success) {
+          setErrorMessage(res.data.message || "Failed to initialize payment.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const { keyId, razorpayOrderId, amount, currency, orderId } = res.data;
+        const currentAddress = addresses.find(
+          (a) => a._id === selectedAddressId,
+        );
+
+        // 2. Configure Razorpay modal
+        const options = {
+          key: keyId,
+          amount,
+          currency,
+          name: "ALTIER",
+          description: `Order ${orderId}`,
+          order_id: razorpayOrderId,
+          prefill: {
+            name: currentAddress?.fullName || "",
+            contact: currentAddress?.phone || "",
+          },
+          theme: {
+            color: "#111111",
+          },
+          handler: async function (response) {
+            try {
+              // 3. Verify HMAC signature on backend
+              const verifyRes = await verifyRazorpayPaymentApi({
+                orderId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+
+              if (verifyRes.data.success) {
+                isOrderPlacedRef.current = true;
+                await fetchCart();
+                navigate(`/orders/success/${orderId}`, {
+                  replace: true,
+                  state: { order: verifyRes.data.order },
+                });
+              } else {
+                navigate(`/orders/failure/${orderId}`, {
+                  replace: true,
+                  state: { reason: verifyRes.data.message },
+                });
+              }
+            } catch (vErr) {
+              navigate(`/orders/failure/${orderId}`, {
+                replace: true,
+                state: {
+                  reason:
+                    vErr.response?.data?.message ||
+                    "Signature verification failed",
+                },
+              });
+            }
+          },
+          modal: {
+            ondismiss: async function () {
+              try {
+                await recordPaymentFailureApi({
+                  orderId,
+                  reason: "Customer closed the checkout window.",
+                });
+              } catch (e) {
+                console.error("Failed to record dismissal", e);
+              }
+              navigate(`/orders/failure/${orderId}`, {
+                state: {
+                  reason: "Payment window was dismissed before completion.",
+                },
+              });
+            },
+          },
+        };
+
+        const razorpayInstance = new window.Razorpay(options);
+
+        razorpayInstance.on("payment.failed", async function (response) {
+          try {
+            await recordPaymentFailureApi({
+              orderId,
+              reason:
+                response.error?.description || "Card or bank declined payment",
+            });
+          } catch (e) {
+            console.error("Failed to record failure", e);
+          }
+          navigate(`/orders/failure/${orderId}`, {
+            state: {
+              reason:
+                response.error?.description || "Payment failed at gateway.",
+            },
+          });
+        });
+
+        razorpayInstance.open();
+      } catch (err) {
+        setErrorMessage(
+          err.response?.data?.message ||
+            "Unable to start online payment. Please try again.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  return (
+    <div className="checkout-page-root">
+      {/* Header */}
+      <div className="checkout-page-header">
+        <span className="editorial-eyebrow">ORDER FINALIZATION</span>
+        <h1 className="editorial-title">Checkout</h1>
+      </div>
+
+      {errorMessage && (
+        <div
+          className="cart-inline-error-banner"
+          style={{ marginBottom: "1.5rem" }}
+        >
+          ⚠️ {errorMessage}
+        </div>
+      )}
+
+      <div className="checkout-grid-layout">
+        {/* Left Column: Addresses & Payment Selection */}
+        <div className="checkout-main-column">
+          {/* Section 1: Delivery Address */}
+          <section className="checkout-section-card">
+            <div className="checkout-section-header">
+              <div>
+                <span className="section-step-num">1</span>
+                <h2 className="checkout-section-title">Delivery Address</h2>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  setEditingAddress(null);
+                  setIsModalOpen(true);
+                }}
+              >
+                + Add New Address
+              </button>
+            </div>
+
+            {isLoadingAddresses ? (
+              <div className="profile-loading-state">
+                <div className="cart-spinner-small"></div>
+                <p>Loading addresses...</p>
+              </div>
+            ) : addresses.length === 0 ? (
+              <div
+                className="addresses-empty-card"
+                style={{ padding: "2.5rem 1.5rem" }}
+              >
+                <p style={{ margin: "0 0 1rem" }}>
+                  You don't have any saved shipping addresses yet.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setEditingAddress(null);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  Add Shipping Address
+                </button>
+              </div>
+            ) : (
+              <div className="checkout-address-options">
+                {addresses.map((addr) => {
+                  const isSelected = selectedAddressId === addr._id;
+                  return (
+                    <div
+                      key={addr._id}
+                      className={`checkout-address-card ${isSelected ? "selected" : ""}`}
+                      onClick={() => setSelectedAddressId(addr._id)}
+                    >
+                      <div className="checkout-radio-wrapper">
+                        <input
+                          type="radio"
+                          name="selectedAddress"
+                          checked={isSelected}
+                          onChange={() => setSelectedAddressId(addr._id)}
+                          id={`addr-${addr._id}`}
+                        />
+                      </div>
+
+                      <div className="checkout-address-content">
+                        <div className="checkout-addr-header">
+                          <label
+                            htmlFor={`addr-${addr._id}`}
+                            className="checkout-recipient-name"
+                          >
+                            {addr.fullName}
+                          </label>
+                          <span className="address-type-tag">
+                            {addr.addressType}
+                          </span>
+                          {addr.isDefault && (
+                            <span className="address-default-badge">
+                              Default
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="checkout-addr-text">
+                          {addr.streetAddress}
+                          {addr.apartment ? `, ${addr.apartment}` : ""}
+                        </p>
+                        <p className="checkout-addr-text">
+                          {addr.city}, {addr.state} -{" "}
+                          <strong>{addr.postalCode}</strong>
+                        </p>
+                        <p className="checkout-addr-phone">
+                          Phone: +91 {addr.phone}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="checkout-addr-edit-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingAddress(addr);
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* Section 2: Payment Options */}
+          <section
+            className="checkout-section-card"
+            style={{ marginTop: "2rem" }}
+          >
+            <div className="checkout-section-header">
+              <div>
+                <span className="section-step-num">2</span>
+                <h2 className="checkout-section-title">Payment Method</h2>
+              </div>
+            </div>
+
+            <div className="payment-options-group">
+              {/* Option: Cash on Delivery */}
+              <label
+                className={`payment-option-card ${paymentMethod === "COD" ? "selected" : ""}`}
+              >
+                <div className="checkout-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={paymentMethod === "COD"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                </div>
+                <div className="payment-option-details">
+                  <span className="payment-title">Cash on Delivery (COD)</span>
+                  <p className="payment-desc">
+                    Pay with cash or UPI directly to the courier when your order
+                    is delivered.
+                  </p>
+                </div>
+              </label>
+
+              {/* Option: Razorpay Online Payment */}
+              <label
+                className={`payment-option-card ${paymentMethod === "RAZORPAY" ? "selected" : ""}`}
+              >
+                <div className="checkout-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="RAZORPAY"
+                    checked={paymentMethod === "RAZORPAY"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                </div>
+                <div className="payment-option-details">
+                  <span className="payment-title">Razorpay Online Payment</span>
+                  <p className="payment-desc">
+                    Instant & secure payment via Credit/Debit Cards, UPI, or
+                    NetBanking.
+                  </p>
+                </div>
+              </label>
+            </div>
+          </section>
+        </div>
+
+        {/* Right Column: Order Summary Card */}
+        <aside className="checkout-summary-column">
+          <div className="cart-summary-card">
+            <h2 className="summary-title">Order Summary</h2>
+
+            {/* Ordered Items Preview */}
+            <div className="checkout-items-preview">
+              {cartItems.map((item) => (
+                <div key={item.cartItemId} className="checkout-item-row">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="checkout-item-thumb"
+                  />
+                  <div className="checkout-item-info">
+                    <h4 className="checkout-item-title">{item.title}</h4>
+                    <span className="checkout-item-variant">
+                      {item.color} / {item.size} × {item.quantity}
+                    </span>
+                  </div>
+                  <span className="checkout-item-price">
+                    ₹{(item.price * item.quantity).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="summary-rows-group" style={{ marginTop: "1.5rem" }}>
+              <div className="summary-row">
+                <span>Subtotal</span>
+                <span>₹{subtotal.toLocaleString()}</span>
+              </div>
+
+              <div className="summary-row">
+                <span>Standard Delivery</span>
+                <span>
+                  {shippingFee === 0 ? (
+                    <strong style={{ color: "var(--success)" }}>FREE</strong>
+                  ) : (
+                    `₹${shippingFee}`
+                  )}
+                </span>
+              </div>
+
+              <div className="summary-row summary-total-row">
+                <span>Payable Total</span>
+                <span>₹{totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-primary btn-block checkout-submit-btn"
+              onClick={handlePlaceOrder}
+              disabled={isSubmitting || addresses.length === 0}
+            >
+              {isSubmitting
+                ? "Placing Order..."
+                : paymentMethod === "COD"
+                  ? "Confirm & Place Order (COD)"
+                  : `Pay ₹${totalAmount.toLocaleString()}`}
+            </button>
+
+            <div style={{ marginTop: "1rem", textAlign: "center" }}>
+              <Link
+                to="/cart"
+                className="continue-shopping-link"
+                style={{ fontSize: "0.85rem" }}
+              >
+                &larr; Return to Bag
+              </Link>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Reusable Address Modal */}
+      <AddressModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingAddress(null);
+        }}
+        onSave={handleSaveAddress}
+        editAddress={editingAddress}
+      />
+    </div>
+  );
+};
+
+export default CheckoutPage;

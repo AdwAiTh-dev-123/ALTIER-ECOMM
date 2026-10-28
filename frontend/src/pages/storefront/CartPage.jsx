@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 
@@ -20,8 +20,8 @@ export const CartPage = () => {
   } = useCart();
 
   const { toggleWishlist } = useWishlist();
+  const navigate = useNavigate();
 
-  // Auto-sync cart state whenever user switches back to this tab or every 5s while on page
   useEffect(() => {
     fetchCart();
 
@@ -295,17 +295,16 @@ export const CartPage = () => {
               </div>
             </div>
 
-            {/* Checkout Button: Disabled if invalid items, unlisted items, stock issues or empty */}
             <button
               type="button"
               className={`btn btn-primary btn-block checkout-submit-btn ${invalid || hasUnlisted ? "disabled" : ""}`}
               disabled={invalid || hasUnlisted || cartItems.length === 0}
-              onClick={() => alert("Proceeding to checkout step")}
+              onClick={() => navigate("/checkout")}
             >
               {hasUnlisted
                 ? "Remove Unavailable Items"
                 : invalid
-                  ? "Resolve Stock Issues"
+                  ? "Remove Stock Item"
                   : "Proceed to Checkout"}
             </button>
           </aside>

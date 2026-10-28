@@ -28,6 +28,9 @@ import ProductDetailsPage from "./pages/storefront/ProductDetailsPage";
 import CartPage from "./pages/storefront/CartPage";
 import WishlistPage from "./pages/storefront/WishlistPage";
 import ProfilePage from "./pages/storefront/ProfilePage";
+import CheckoutPage from "./pages/storefront/CheckoutPage";
+import OrderSuccessPage from "./pages/storefront/OrderSuccessPage";
+import { OrderFailurePage } from "./pages/storefront/OrderFailurePage";
 
 import "./App.css";
 import "./styles/storefront.css";
@@ -154,6 +157,38 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <StorefrontLayout>
+                <CheckoutPage />
+              </StorefrontLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/success/:orderId"
+          element={
+            <ProtectedRoute>
+              <StorefrontLayout>
+                <OrderSuccessPage />
+              </StorefrontLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/orders/failure/:orderId"
+          element={
+            <ProtectedRoute>
+              <StorefrontLayout>
+                <OrderFailurePage />
+              </StorefrontLayout>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/profile"
           element={

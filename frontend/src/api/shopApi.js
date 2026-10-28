@@ -12,7 +12,6 @@ export function getStorefrontProductById(id) {
   return api.get(`/products/${id}`);
 }
 
-// Cart API (Database-backed)
 export function getCartApi() {
   return api.get("/cart");
 }
@@ -33,7 +32,6 @@ export function clearCartApi() {
   return api.delete("/cart");
 }
 
-// Wishlist API (Database-backed)
 export function getWishlistApi() {
   return api.get("/wishlist");
 }
@@ -50,7 +48,6 @@ export function moveToBagApi(productId, variantId) {
   return api.post("/wishlist/move-to-bag", { productId, variantId });
 }
 
-// Address API (Database-backed)
 export function getAddressesApi() {
   return api.get("/addresses");
 }
@@ -71,3 +68,22 @@ export function setDefaultAddressApi(id) {
   return api.patch(`/addresses/${id}/default`);
 }
 
+export function placeCodOrderApi({ addressId }) {
+  return api.post("/orders/cod", { addressId });
+}
+
+export function getOrderByIdApi(orderId) {
+  return api.get(`/orders/${orderId}`);
+}
+
+export function createRazorpayOrderApi({ addressId, retryOrderId }) {
+  return api.post("/orders/razorpay/create", { addressId, retryOrderId });
+}
+
+export function verifyRazorpayPaymentApi(paymentPayload) {
+  return api.post("/orders/razorpay/verify", paymentPayload);
+}
+
+export function recordPaymentFailureApi({ orderId, reason }) {
+  return api.post("/orders/razorpay/fail", { orderId, reason });
+}

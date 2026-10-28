@@ -25,6 +25,13 @@ import {
   setDefaultAddress,
   updateAddress,
 } from "../controllers/shop/addressController.js";
+import {
+  createCodOrder,
+  getOrderById,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  handleRazorpayFailure,
+} from "../controllers/shop/orderController.js";
 
 const router = express.Router();
 
@@ -48,5 +55,12 @@ router.post("/addresses", authMiddleware, addAddress);
 router.put("/addresses/:id", authMiddleware, updateAddress);
 router.delete("/addresses/:id", authMiddleware, deleteAddress);
 router.patch("/addresses/:id/default", authMiddleware, setDefaultAddress);
+
+router.post("/orders/cod", authMiddleware, createCodOrder);
+router.get("/orders/:id", authMiddleware, getOrderById);
+
+router.post("/orders/razorpay/create", authMiddleware, createRazorpayOrder);
+router.post("/orders/razorpay/verify", authMiddleware, verifyRazorpayPayment);
+router.post("/orders/razorpay/fail", authMiddleware, handleRazorpayFailure);
 
 export default router;
