@@ -46,3 +46,16 @@ export function toggleProductStatus(productId) {
 export function deleteProduct(productId) {
   return api.delete(`/admin/products/${productId}`);
 }
+
+export function getAdminOrders(params = {}) {
+  return api.get("/admin/orders", { params });
+}
+export function getAdminOrderById(orderId) {
+  return api.get(`/admin/orders/${orderId}`);
+}
+export function updateAdminOrderStatus(orderId, data) {
+  return api.patch(`/admin/orders/${orderId}/status`, data);
+}
+export function reviewAdminReturnRequest(orderId, data) {
+  return api.patch(`/admin/orders/${orderId}/return-review`, data);
+}

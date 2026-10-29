@@ -1,24 +1,43 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
+import { getStorefrontProductById } from '../../api/shopApi';
 
 export const WishlistPage = () => {
-  const { wishlist, removeFromWishlist, clearWishlist, feedback } = useWishlist();
+  const { wishlist, removeFromWishlist, clearWishlist, feedback, fetchWishlist } = useWishlist();
   const { addToCart } = useCart();
 
-  const handleMoveToCart = (product) => {
-    // 1. Identify first in-stock variant
-    const variants = Array.isArray(product.variants) ? product.variants : [];
-    const variant = variants.find((v) => v.stock > 0) || variants[0];
+  useEffect(() => {
+    if (fetchWishlist) {
+      fetchWishlist();
+    }
+  }, [fetchWishlist]);
 
-    if (!variant || (variant.stock !== undefined && variant.stock <= 0)) {
+  const handleMoveToCart = async (product) => {
+    // 1. Identify in-stock variant from memory
+    let variants = Array.isArray(product.variants) ? product.variants : [];
+
+    // Fallback: If variants are not in memory, fetch fresh from product API
+    if (variants.length === 0 && product._id) {
+      try {
+        const res = await getStorefrontProductById(product._id);
+        const fetchedProd = res.data?.data || res.data?.product || {};
+        variants = Array.isArray(fetchedProd.variants) ? fetchedProd.variants : [];
+      } catch (err) {
+        console.error('Failed to load product variants:', err);
+      }
+    }
+
+    const variant = variants.find((v) => Number(v.stock) > 0) || variants[0];
+
+    if (!variant || (variant.stock !== undefined && Number(variant.stock) <= 0)) {
       alert('This garment is currently out of stock.');
       return;
     }
 
     // 2. Add to cart
-    const success = addToCart(product, variant, 1);
+    const success = await addToCart(product, variant, 1);
 
     // 3. Automatically remove from wishlist once added to cart
     if (success) {

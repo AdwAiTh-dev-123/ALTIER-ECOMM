@@ -135,7 +135,7 @@ export const AddressModal = ({
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
-              placeholder="e.g. Adwaith Sharma"
+              placeholder="Enter your name"
               required
             />
           </div>
@@ -227,8 +227,8 @@ export const AddressModal = ({
               value={formData.addressType}
               onChange={handleChange}
             >
-              <option value="Home">Home (All-day delivery)</option>
-              <option value="Work">Work (10 AM - 6 PM)</option>
+              <option value="Home">Home</option>
+              <option value="Work">Work</option>
               <option value="Other">Other</option>
             </select>
           </div>

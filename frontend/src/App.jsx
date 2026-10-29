@@ -31,6 +31,9 @@ import ProfilePage from "./pages/storefront/ProfilePage";
 import CheckoutPage from "./pages/storefront/CheckoutPage";
 import OrderSuccessPage from "./pages/storefront/OrderSuccessPage";
 import { OrderFailurePage } from "./pages/storefront/OrderFailurePage";
+import { OrdersPage } from "./pages/storefront/OrdersPage";
+import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
+import { OrderDetailsPage } from "./pages/storefront/OrderDetailsPage";
 
 import "./App.css";
 import "./styles/storefront.css";
@@ -190,6 +193,28 @@ function App() {
         />
 
         <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <StorefrontLayout>
+                <OrdersPage />
+              </StorefrontLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/orders/:orderId"
+          element={
+            <ProtectedRoute>
+              <StorefrontLayout>
+                <OrderDetailsPage />
+              </StorefrontLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/profile"
           element={
             <ProtectedRoute>
@@ -214,6 +239,7 @@ function App() {
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="categories/add" element={<AdminAddCategoryPage />} />
           <Route path="products" element={<AdminProductsPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
         </Route>
 
         {/* Fallback route */}

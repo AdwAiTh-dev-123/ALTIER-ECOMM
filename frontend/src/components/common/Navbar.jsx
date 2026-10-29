@@ -73,6 +73,14 @@ export const Navbar = () => {
                   </span>
                 )}
               </Link>
+              <Link
+                to="/orders"
+                className={`nav-link ${location.pathname === "/orders" ? "active" : ""}`}
+                style={{ fontSize: "0.85rem", textDecoration: "none" }}
+                title="View your orders"
+              >
+                Orders
+              </Link>
             </>
           )}
 
@@ -114,6 +122,7 @@ export const Navbar = () => {
                   <span className="nav-role-tag">Admin</span>
                 )}
               </Link>
+
               <button
                 type="button"
                 className="btn-nav-logout"

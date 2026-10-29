@@ -70,6 +70,11 @@ export const createCodOrder = async (req, res) => {
         });
       }
 
+      // Skip sold out items (stock <= 0) so user can proceed with remaining in-stock items
+      if (variant.stock <= 0) {
+        continue;
+      }
+
       if (variant.stock < item.quantity) {
         return res.status(400).json({
           success: false,
@@ -90,6 +95,13 @@ export const createCodOrder = async (req, res) => {
         price: variant.price,
         quantity: item.quantity,
         itemTotal,
+      });
+    }
+
+    if (orderItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "All items in your bag are currently out of stock.",
       });
     }
     const shippingFee = subtotal >= 1500 ? 0 : 99;
@@ -156,8 +168,16 @@ export const createCodOrder = async (req, res) => {
       ],
     });
 
-    // 5. Empty customer's cart
-    cart.items = [];
+    // 5. Remove purchased items from customer's cart
+    const purchasedVariantIds = orderItems.map((item) =>
+      item.variant.toString(),
+    );
+    cart.items = cart.items.filter(
+      (ci) =>
+        !purchasedVariantIds.includes(
+          (ci.variant?._id || ci.variant).toString(),
+        ),
+    );
     await cart.save();
 
     return res.status(201).json({
@@ -296,6 +316,11 @@ export const createRazorpayOrder = async (req, res) => {
           });
         }
 
+        // Skip sold out items (stock <= 0)
+        if (variant.stock <= 0) {
+          continue;
+        }
+
         if (variant.stock < item.quantity) {
           return res.status(400).json({
             success: false,
@@ -314,6 +339,13 @@ export const createRazorpayOrder = async (req, res) => {
           price: variant.price,
           quantity: item.quantity,
           itemTotal,
+        });
+      }
+
+      if (orderItems.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "All items in your bag are currently out of stock.",
         });
       }
     }
@@ -496,10 +528,11 @@ export const verifyRazorpayPayment = async (req, res) => {
       updatedBy: "System",
     });
     await order.save();
-    // 5. Empty user's cart
+    // 5. Remove purchased items from user's cart
+    const purchasedVariantIds = order.items.map((oi) => oi.variant);
     await Cart.findOneAndUpdate(
       { user: req.user._id },
-      { $set: { items: [] } },
+      { $pull: { items: { variant: { $in: purchasedVariantIds } } } },
     );
     return res.status(200).json({
       success: true,
@@ -541,6 +574,192 @@ export const handleRazorpayFailure = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to record payment failure",
+      error: err.message,
+    });
+  }
+};
+
+// ==========================================
+// 6. Get User Orders (Newest First + Search/Filter)
+// ==========================================
+export const getUserOrders = async (req, res) => {
+  try {
+    const { search, status, page = 1, limit = 10 } = req.query;
+    const query = { user: req.user._id };
+
+    // Status filter
+    if (status && status !== "ALL") {
+      if (status === "ACTIVE") {
+        query.orderStatus = {
+          $in: ["Pending", "Confirmed", "Shipped", "Out for Delivery"],
+        };
+      } else {
+        query.orderStatus = status;
+      }
+    }
+
+    // Search by orderId or item title
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      query.$or = [{ orderId: searchRegex }, { "items.title": searchRegex }];
+    }
+
+    const totalOrders = await Order.countDocuments(query);
+    const orders = await Order.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    return res.status(200).json({
+      success: true,
+      orders,
+      pagination: {
+        totalOrders,
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalOrders / limit),
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve your orders",
+      error: err.message,
+    });
+  }
+};
+
+// ==========================================
+// 7. Cancel Order (Restores Stock Atomically)
+// ==========================================
+export const cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const order = await Order.findOne({ orderId: id, user: req.user._id });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order record not found",
+      });
+    }
+
+    // Cancellation is strictly permitted only in Pending or Confirmed state
+    if (!["Pending", "Confirmed"].includes(order.orderStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be cancelled because it is already "${order.orderStatus}".`,
+      });
+    }
+
+    // 1. Atomically restore variant stock
+    for (const item of order.items) {
+      await Variant.findByIdAndUpdate(item.variant, {
+        $inc: { stock: item.quantity },
+      });
+    }
+
+    // 2. Update order status and record audit trail
+    order.orderStatus = "Cancelled";
+    order.cancellation = {
+      reason: reason || "Cancelled by customer",
+      cancelledAt: new Date(),
+    };
+
+    if (order.paymentStatus === "Paid") {
+      order.paymentStatus = "Refunded";
+    }
+
+    order.statusHistory.push({
+      status: "Cancelled",
+      timestamp: new Date(),
+      comment: reason
+        ? `Customer cancellation: ${reason}`
+        : "Cancelled by customer",
+      updatedBy: "Customer",
+    });
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Your order has been cancelled successfully.",
+      order,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to cancel order",
+      error: err.message,
+    });
+  }
+};
+
+// ==========================================
+// 8. Request Return (Delivered Orders Only)
+// ==========================================
+export const requestReturn = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid reason for the return request.",
+      });
+    }
+
+    const order = await Order.findOne({ orderId: id, user: req.user._id });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order record not found",
+      });
+    }
+
+    // Return request is strictly permitted only when order has been Delivered
+    if (order.orderStatus !== "Delivered") {
+      return res.status(400).json({
+        success: false,
+        message: "Return requests can only be submitted for delivered orders.",
+      });
+    }
+
+    if (order.returnRequest?.status && order.returnRequest.status !== "None") {
+      return res.status(400).json({
+        success: false,
+        message: "A return request has already been submitted for this order.",
+      });
+    }
+
+    order.orderStatus = "Return Requested";
+    order.returnRequest = {
+      reason: reason.trim(),
+      status: "Pending",
+      requestedAt: new Date(),
+    };
+
+    order.statusHistory.push({
+      status: "Return Requested",
+      timestamp: new Date(),
+      comment: `Return requested by customer. Reason: ${reason.trim()}`,
+      updatedBy: "Customer",
+    });
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Return request submitted. Our team will review it shortly.",
+      order,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to submit return request",
       error: err.message,
     });
   }

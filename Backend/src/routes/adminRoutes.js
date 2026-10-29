@@ -21,6 +21,12 @@ import {
   updateProductWithVariants,
   deleteProduct,
 } from "../controllers/admin/productAdminController.js";
+import {
+  getAllAdminOrders,
+  getAdminOrderById,
+  updateOrderStatus,
+  reviewReturnRequest,
+} from "../controllers/admin/orderAdminController.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -70,5 +76,11 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
     });
   }
 });
+
+//order management
+router.get("/orders", getAllAdminOrders);
+router.get("/orders/:id", getAdminOrderById);
+router.patch("/orders/:id/status", updateOrderStatus);
+router.patch("/orders/:id/return-review", reviewReturnRequest);
 
 export default router;

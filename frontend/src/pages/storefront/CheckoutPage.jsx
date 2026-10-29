@@ -73,11 +73,18 @@ export const CheckoutPage = () => {
     loadAddresses();
   }, []);
 
+  const availableCartItems = cartItems.filter(
+    (item) => item.isListed && item.stock > 0,
+  );
+
   useEffect(() => {
-    if (!isOrderPlacedRef.current && cartItems.length === 0) {
+    if (
+      !isOrderPlacedRef.current &&
+      (cartItems.length === 0 || availableCartItems.length === 0)
+    ) {
       navigate("/cart", { replace: true });
     }
-  }, [cartItems, navigate]);
+  }, [cartItems, availableCartItems.length, navigate]);
 
   const subtotal = getSubtotal();
   const shippingFee = getShippingFee();
@@ -467,7 +474,7 @@ export const CheckoutPage = () => {
 
             {/* Ordered Items Preview */}
             <div className="checkout-items-preview">
-              {cartItems.map((item) => (
+              {availableCartItems.map((item) => (
                 <div key={item.cartItemId} className="checkout-item-row">
                   <img
                     src={item.image}

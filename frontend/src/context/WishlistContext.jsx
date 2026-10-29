@@ -107,14 +107,8 @@ export const WishlistProvider = ({ children }) => {
       const res = await toggleWishlistApi(prodId);
       const serverSaved = res.data?.isWishlisted;
 
-      // Re-fetch or sync state with database response
-      if (serverSaved !== undefined) {
-        if (serverSaved && !isCurrentlySaved) {
-          // Confirmed added
-        } else if (!serverSaved && isCurrentlySaved) {
-          // Confirmed removed
-        }
-      }
+      // Re-fetch enriched wishlist from database to populate variants, stock, and pricing
+      await fetchWishlist();
       return serverSaved ?? !isCurrentlySaved;
     } catch (err) {
       console.error('Failed to update wishlist in database:', err);

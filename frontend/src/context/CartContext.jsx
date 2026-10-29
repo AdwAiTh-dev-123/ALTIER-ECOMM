@@ -208,13 +208,17 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Calculations
+  // Calculations (based on available in-stock items)
   const getSubtotal = () => {
-    return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    return cartItems
+      .filter((item) => item.isListed && item.stock > 0)
+      .reduce((acc, item) => acc + item.price * item.quantity, 0);
   };
 
   const getTotalCount = () => {
-    return cartItems.reduce((acc, item) => acc + item.quantity, 0);
+    return cartItems
+      .filter((item) => item.isListed && item.stock > 0)
+      .reduce((acc, item) => acc + item.quantity, 0);
   };
 
   const getShippingFee = () => {
@@ -229,7 +233,7 @@ export const CartProvider = ({ children }) => {
 
   const hasInvalidItems = () => {
     return cartItems.some(
-      (item) => !item.isListed || item.quantity > item.stock || item.stock <= 0,
+      (item) => !item.isListed || (item.stock > 0 && item.quantity > item.stock),
     );
   };
 

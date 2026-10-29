@@ -202,7 +202,7 @@ export const OrderFailurePage = () => {
             className="btn btn-primary"
             style={{ padding: "0.85rem 2rem" }}
           >
-            {isRetrying ? "Starting Gateway..." : "Retry Payment Now"}
+            {isRetrying ? "Pls wait..." : "Retry Payment Now"}
           </button>
           <Link
             to="/cart"
@@ -267,10 +267,7 @@ export const OrderFailurePage = () => {
                 fontSize: "0.85rem",
                 color: "#666",
               }}
-            >
-              💡 Your shipping address is already saved. Retrying will not
-              duplicate your order.
-            </div>
+            ></div>
           </div>
         </div>
       )}

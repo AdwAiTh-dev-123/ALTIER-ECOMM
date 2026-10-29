@@ -87,3 +87,17 @@ export function verifyRazorpayPaymentApi(paymentPayload) {
 export function recordPaymentFailureApi({ orderId, reason }) {
   return api.post("/orders/razorpay/fail", { orderId, reason });
 }
+
+export function getUserOrdersApi(params = {}) {
+  return api.get("/orders", { params });
+}
+
+export function cancelOrderApi(orderId, { reason }) {
+  return api.patch(`/orders/${orderId}/cancel`, { reason });
+}
+
+export function requestReturnApi(orderId, { reason }) {
+  return api.post(`/orders/${orderId}/return`, { reason });
+}
+
+

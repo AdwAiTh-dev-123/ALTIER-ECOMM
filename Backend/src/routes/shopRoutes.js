@@ -31,6 +31,9 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
   handleRazorpayFailure,
+  getUserOrders,
+  cancelOrder,
+  requestReturn,
 } from "../controllers/shop/orderController.js";
 
 const router = express.Router();
@@ -56,8 +59,11 @@ router.put("/addresses/:id", authMiddleware, updateAddress);
 router.delete("/addresses/:id", authMiddleware, deleteAddress);
 router.patch("/addresses/:id/default", authMiddleware, setDefaultAddress);
 
+router.get("/orders", authMiddleware, getUserOrders);
 router.post("/orders/cod", authMiddleware, createCodOrder);
 router.get("/orders/:id", authMiddleware, getOrderById);
+router.patch("/orders/:id/cancel", authMiddleware, cancelOrder);
+router.post("/orders/:id/return", authMiddleware, requestReturn);
 
 router.post("/orders/razorpay/create", authMiddleware, createRazorpayOrder);
 router.post("/orders/razorpay/verify", authMiddleware, verifyRazorpayPayment);
