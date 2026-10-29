@@ -547,7 +547,7 @@ export const verifyRazorpayPayment = async (req, res) => {
     });
   }
 };
-// 5. Record Payment Failure
+
 export const handleRazorpayFailure = async (req, res) => {
   try {
     const { orderId, reason } = req.body;
@@ -579,9 +579,6 @@ export const handleRazorpayFailure = async (req, res) => {
   }
 };
 
-// ==========================================
-// 6. Get User Orders (Newest First + Search/Filter)
-// ==========================================
 export const getUserOrders = async (req, res) => {
   try {
     const { search, status, page = 1, limit = 10 } = req.query;
@@ -593,6 +590,9 @@ export const getUserOrders = async (req, res) => {
         query.orderStatus = {
           $in: ["Pending", "Confirmed", "Shipped", "Out for Delivery"],
         };
+        query.paymentStatus = { $ne: "Failed" };
+      } else if (status === "FAILED" || status === "Failed") {
+        query.paymentStatus = "Failed";
       } else {
         query.orderStatus = status;
       }
@@ -628,9 +628,6 @@ export const getUserOrders = async (req, res) => {
   }
 };
 
-// ==========================================
-// 7. Cancel Order (Restores Stock Atomically)
-// ==========================================
 export const cancelOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -650,6 +647,14 @@ export const cancelOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Order cannot be cancelled because it is already "${order.orderStatus}".`,
+      });
+    }
+
+    if (order.paymentMethod === "RAZORPAY" && order.paymentStatus !== "Paid") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Orders with incomplete or failed online payments cannot be cancelled",
       });
     }
 

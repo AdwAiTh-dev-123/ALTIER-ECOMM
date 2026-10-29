@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getUserOrdersApi } from "../../api/shopApi";
 
 export const OrdersPage = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -81,6 +82,7 @@ export const OrdersPage = () => {
           {[
             { id: "ALL", label: "All Orders" },
             { id: "ACTIVE", label: "Active" },
+            { id: "FAILED", label: "Failed" },
             { id: "Delivered", label: "Delivered" },
             { id: "Cancelled", label: "Cancelled" },
           ].map((tab) => (
@@ -244,14 +246,16 @@ export const OrdersPage = () => {
                     </div>
                   </div>
 
-                  {/* Status Badge */}
+                  {/* Status Badge & Actions */}
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "1rem",
+                      gap: "0.75rem",
+                      flexWrap: "wrap",
                     }}
                   >
+                    {/* Status Badge */}
                     <span
                       style={{
                         padding: "0.3rem 0.85rem",
@@ -261,21 +265,59 @@ export const OrdersPage = () => {
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
                         background:
-                          order.orderStatus === "Delivered"
-                            ? "#ecfdf5"
-                            : order.orderStatus === "Cancelled"
-                              ? "#fef2f2"
-                              : "#eff6ff",
+                          order.paymentStatus === "Failed"
+                            ? "#fef2f2"
+                            : order.orderStatus === "Delivered"
+                              ? "#ecfdf5"
+                              : order.orderStatus === "Cancelled"
+                                ? "#fef2f2"
+                                : "#eff6ff",
                         color:
-                          order.orderStatus === "Delivered"
-                            ? "#065f46"
-                            : order.orderStatus === "Cancelled"
-                              ? "#991b1b"
-                              : "#1e40af",
+                          order.paymentStatus === "Failed"
+                            ? "#991b1b"
+                            : order.orderStatus === "Delivered"
+                              ? "#065f46"
+                              : order.orderStatus === "Cancelled"
+                                ? "#991b1b"
+                                : "#1e40af",
+                        border:
+                          order.paymentStatus === "Failed"
+                            ? "1px solid #fecaca"
+                            : "none",
                       }}
                     >
-                      ● {order.orderStatus}
+                      ●{" "}
+                      {order.paymentStatus === "Failed"
+                        ? "Payment Failed"
+                        : order.orderStatus}
                     </span>
+
+                    {/* Retry Payment Button (Shows only on failed orders) */}
+                    {order.paymentStatus === "Failed" &&
+                      order.orderStatus !== "Cancelled" && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(`/orders/failure/${order.orderId}`, {
+                              replace: true,
+                              state: {
+                                reason:
+                                  "Payment pending or failed. You can complete it now.",
+                              },
+                            })
+                          }
+                          className="btn btn-primary"
+                          style={{
+                            padding: "0.4rem 0.9rem",
+                            fontSize: "0.8rem",
+                            background: "#dc2626",
+                            borderColor: "#dc2626",
+                          }}
+                        >
+                          Retry Payment ↻
+                        </button>
+                      )}
+
                     <Link
                       to={`/orders/${order.orderId}`}
                       className="btn btn-secondary"

@@ -235,6 +235,7 @@ export const CheckoutPage = () => {
                 console.error("Failed to record dismissal", e);
               }
               navigate(`/orders/failure/${orderId}`, {
+                replace: true,
                 state: {
                   reason: "Payment window was dismissed before completion.",
                 },
@@ -256,6 +257,7 @@ export const CheckoutPage = () => {
             console.error("Failed to record failure", e);
           }
           navigate(`/orders/failure/${orderId}`, {
+            replace: true,
             state: {
               reason:
                 response.error?.description || "Payment failed at gateway.",

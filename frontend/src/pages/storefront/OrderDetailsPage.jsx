@@ -135,33 +135,77 @@ export const OrderDetailsPage = () => {
           Back to Orders &rarr;
         </Link>
       </div>
-    );
+    );  
   }
 
   const currentStep = getStepIndex(order.orderStatus);
   const isCancelled = order.orderStatus === "Cancelled";
+  const isPaymentFailed = order.paymentStatus === "Failed";
+  const isOnlinePayment = order.paymentMethod === "RAZORPAY";
+  const isPaymentSuccessful = order.paymentStatus === "Paid";
+
   const hasReturnRequest =
     order.returnRequest &&
     order.returnRequest.status &&
     order.returnRequest.status !== "None";
 
-  const canCancel = ["Pending", "Confirmed"].includes(order.orderStatus);
+  const canCancel =
+    ["Pending", "Confirmed"].includes(order.orderStatus) &&
+    (!isOnlinePayment || isPaymentSuccessful);
   const canReturn = order.orderStatus === "Delivered" && !hasReturnRequest;
+
+  const orderSteps = isPaymentFailed
+    ? [
+        { key: "Failed", label: "Failed" },
+        { key: "Confirmed", label: "Confirmed" },
+        { key: "Shipped", label: "Shipped" },
+        { key: "Out for Delivery", label: "Out for Delivery" },
+        { key: "Delivered", label: "Delivered" },
+      ]
+    : ORDER_STEPS;
 
   return (
     <div className="order-success-page" style={{ maxWidth: "1020px" }}>
       {/* Printable Invoice Header (Appears ONLY in Print / PDF export) */}
       <div className="invoice-print-header">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+          }}
+        >
           <div>
-            <h1 style={{ fontFamily: "serif", fontSize: "1.8rem", letterSpacing: "0.08em", margin: "0 0 4px" }}>ALTIER</h1>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "#666" }}>Tax Invoice / Order Receipt</p>
+            <h1
+              style={{
+                fontFamily: "serif",
+                fontSize: "1.8rem",
+                letterSpacing: "0.08em",
+                margin: "0 0 4px",
+              }}
+            >
+              ALTIER
+            </h1>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: "#666" }}>
+              Tax Invoice / Order Receipt
+            </p>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "0.82rem", color: "#777" }}>Order Reference</div>
-            <strong style={{ fontFamily: "monospace", fontSize: "1.05rem" }}>{order.orderId}</strong>
-            <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "3px" }}>
-              Date: {new Date(order.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+            <div style={{ fontSize: "0.82rem", color: "#777" }}>
+              Order Reference
+            </div>
+            <strong style={{ fontFamily: "monospace", fontSize: "1.05rem" }}>
+              {order.orderId}
+            </strong>
+            <div
+              style={{ fontSize: "0.8rem", color: "#666", marginTop: "3px" }}
+            >
+              Date:{" "}
+              {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
             </div>
           </div>
         </div>
@@ -240,6 +284,64 @@ export const OrderDetailsPage = () => {
         </p>
       </div>
 
+      {order.paymentStatus === "Failed" &&
+        order.orderStatus !== "Cancelled" && (
+          <div
+            style={{
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              padding: "1.25rem 1.5rem",
+              borderRadius: "6px",
+              marginBottom: "2rem",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "1rem",
+            }}
+          >
+            <div>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+              >
+                <span style={{ fontSize: "1.2rem", color: "#dc2626" }}>⚠️</span>
+                <strong style={{ color: "#991b1b" }}>Payment Incomplete</strong>
+              </div>
+              <p
+                style={{
+                  margin: "0.25rem 0 0",
+                  color: "#b91c1c",
+                  fontSize: "0.85rem",
+                }}
+              >
+                Your payment could not be processed. Please retry payment to
+                confirm your order.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                navigate(`/orders/failure/${order.orderId}`, {
+                  replace: true,
+                  state: {
+                    reason:
+                      "Payment pending or failed. You can complete it now.",
+                  },
+                })
+              }
+              className="btn btn-primary"
+              style={{
+                padding: "0.6rem 1.4rem",
+                fontSize: "0.85rem",
+                background: "#dc2626",
+                borderColor: "#dc2626",
+              }}
+            >
+              Retry Payment Now ↻
+            </button>
+          </div>
+        )}
+
       {/* Fulfillment Status Banner / Tracker */}
       {isCancelled ? (
         <div
@@ -268,18 +370,46 @@ export const OrderDetailsPage = () => {
           </p>
         </div>
       ) : (
-        <div className="order-stepper-box no-print" style={{ marginBottom: "2rem" }}>
+        <div
+          className="order-stepper-box no-print"
+          style={{ marginBottom: "2rem" }}
+        >
           <div className="stepper-title">Fulfillment Progress</div>
           <div className="stepper-track">
-            {ORDER_STEPS.map((step, idx) => {
-              const isDone = currentStep >= idx;
+            {orderSteps.map((step, idx) => {
+              const isFailedStep = isPaymentFailed && idx === 0;
+              const isDone = !isPaymentFailed && currentStep >= idx;
+
               return (
                 <div
                   key={step.key}
                   className={`stepper-step ${isDone ? "step-done" : ""}`}
                 >
-                  <div className="step-circle">{isDone ? "✓" : idx + 1}</div>
-                  <span className="step-label">{step.label}</span>
+                  <div
+                    className="step-circle"
+                    style={
+                      isFailedStep
+                        ? {
+                            backgroundColor: "#dc2626",
+                            color: "#ffffff",
+                            borderColor: "#dc2626",
+                          }
+                        : undefined
+                    }
+                  >
+                    {" "}
+                    {isFailedStep ? "✕" : isDone ? "✓" : idx + 1}
+                  </div>
+                  <span
+                    className="step-label"
+                    style={
+                      isFailedStep
+                        ? { color: "#dc2626", fontWeight: 700 }
+                        : undefined
+                    }
+                  >
+                    {step.label}
+                  </span>
                 </div>
               );
             })}
