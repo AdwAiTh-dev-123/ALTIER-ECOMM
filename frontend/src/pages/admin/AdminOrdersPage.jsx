@@ -185,45 +185,20 @@ export const AdminOrdersPage = () => {
       </div>
 
       {successToast && (
-        <div
-          style={{
-            background: "#ecfdf5",
-            color: "#065f46",
-            padding: "0.85rem 1.25rem",
-            borderRadius: "6px",
-            marginBottom: "1rem",
-            border: "1px solid #a7f3d0",
-          }}
-        >
+        <div className="admin-orders-toast-success">
           ✓ {successToast}
         </div>
       )}
 
       {errorMessage && (
-        <div
-          style={{
-            background: "#fef2f2",
-            color: "#991b1b",
-            padding: "0.85rem 1.25rem",
-            borderRadius: "6px",
-            marginBottom: "1rem",
-            border: "1px solid #fecaca",
-          }}
-        >
+        <div className="admin-orders-toast-error">
           ⚠️ {errorMessage}
         </div>
       )}
 
       {/* Search & Filters */}
-      <div className="admin-controls-card" style={{ marginBottom: "1.5rem" }}>
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
+      <div className="admin-controls-card admin-order-modal-field">
+        <div className="admin-orders-controls-row">
           <input
             type="text"
             placeholder="Search by Order ID, Customer, Phone..."
@@ -232,13 +207,7 @@ export const AdminOrdersPage = () => {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            style={{
-              padding: "0.6rem 1rem",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              minWidth: "280px",
-              fontSize: "0.85rem",
-            }}
+            className="admin-orders-search-input"
           />
 
           <select
@@ -247,13 +216,7 @@ export const AdminOrdersPage = () => {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            style={{
-              padding: "0.6rem 1rem",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              fontSize: "0.85rem",
-              background: "#fff",
-            }}
+            className="admin-orders-select"
           >
             <option value="all">All Statuses</option>
             <option value="Pending">Pending</option>
@@ -271,11 +234,11 @@ export const AdminOrdersPage = () => {
       {/* Orders Table */}
       <div className="admin-table-container">
         {isLoading && orders.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "3rem" }}>
+          <div className="admin-orders-empty-state">
             <p>Loading orders...</p>
           </div>
         ) : orders.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "3rem" }}>
+          <div className="admin-orders-empty-state">
             <p>No customer orders found.</p>
           </div>
         ) : (
@@ -295,17 +258,15 @@ export const AdminOrdersPage = () => {
               {orders.map((order) => {
                 const allowedTransitions =
                   STATUS_TRANSITIONS[order.orderStatus] || [];
-                const badgeStyle = getStatusBadgeStyle(order.orderStatus);
+                const badgeClass = `admin-orders-badge badge-${order.orderStatus.toLowerCase().replace(/\s+/g, "-")}`;
 
                 return (
                   <tr key={order._id}>
                     <td>
-                      <strong
-                        style={{ fontFamily: "monospace", display: "block" }}
-                      >
+                      <strong className="admin-orders-code">
                         {order.orderId}
                       </strong>
-                      <span style={{ fontSize: "0.75rem", color: "#777" }}>
+                      <span className="admin-orders-date">
                         {new Date(order.createdAt).toLocaleDateString("en-IN", {
                           month: "short",
                           day: "numeric",
@@ -315,55 +276,44 @@ export const AdminOrdersPage = () => {
                     </td>
 
                     <td>
-                      <div style={{ fontWeight: 600 }}>
+                      <div className="admin-orders-customer-name">
                         {order.shippingAddress?.fullName || order.user?.name}
                       </div>
-                      <div style={{ fontSize: "0.75rem", color: "#666" }}>
+                      <div className="admin-orders-customer-phone">
                         {order.shippingAddress?.phone}
                       </div>
                     </td>
 
                     <td>
-                      <span style={{ fontSize: "0.85rem" }}>
+                      <span className="admin-orders-item-count">
                         {order.items.length}{" "}
                         {order.items.length === 1 ? "item" : "items"}
                       </span>
                     </td>
 
                     <td>
-                      <strong style={{ fontSize: "0.9rem" }}>
+                      <strong className="admin-orders-total">
                         ₹{order.pricing.totalAmount.toLocaleString()}
                       </strong>
                     </td>
 
                     <td>
-                      <div style={{ fontSize: "0.8rem", fontWeight: 600 }}>
+                      <div className="admin-orders-payment-method">
                         {order.paymentMethod}
                       </div>
                       <span
-                        style={{
-                          fontSize: "0.72rem",
-                          color:
-                            order.paymentStatus === "Paid"
-                              ? "#059669"
-                              : "#d97706",
-                        }}
+                        className={
+                          order.paymentStatus === "Paid"
+                            ? "admin-orders-payment-paid"
+                            : "admin-orders-payment-pending"
+                        }
                       >
                         ● {order.paymentStatus}
                       </span>
                     </td>
 
                     <td>
-                      <span
-                        style={{
-                          ...badgeStyle,
-                          padding: "0.25rem 0.65rem",
-                          borderRadius: "12px",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
-                          display: "inline-block",
-                        }}
-                      >
+                      <span className={badgeClass}>
                         ● {order.orderStatus}
                       </span>
                     </td>
@@ -462,20 +412,14 @@ export const AdminOrdersPage = () => {
               </button>
             </div>
 
-            <p
-              style={{
-                fontSize: "0.85rem",
-                color: "#666",
-                marginBottom: "1.25rem",
-              }}
-            >
+            <p className="admin-order-modal-subtext">
               Order Reference:{" "}
-              <strong style={{ fontFamily: "monospace" }}>
+              <strong className="admin-orders-code">
                 {statusModal.order?.orderId}
               </strong>
             </p>
 
-            <div style={{ marginBottom: "1.25rem" }}>
+            <div className="admin-order-modal-field">
               <label className="admin-order-form-label">Next Status:</label>
               <select
                 className="admin-order-select"
@@ -495,23 +439,13 @@ export const AdminOrdersPage = () => {
             </div>
 
             {statusModal.nextStatus === "Cancelled" && (
-              <div
-                style={{
-                  background: "#fef2f2",
-                  color: "#991b1b",
-                  padding: "0.75rem 1rem",
-                  borderRadius: "6px",
-                  fontSize: "0.82rem",
-                  marginBottom: "1.25rem",
-                  border: "1px solid #fecaca",
-                }}
-              >
+              <div className="admin-order-modal-warning">
                 ⚠️ Cancelling this order will automatically restore the variant
                 stock in inventory.
               </div>
             )}
 
-            <div style={{ marginBottom: "1.5rem" }}>
+            <div className="admin-order-modal-field">
               <label className="admin-order-form-label">
                 Admin Comment (Optional):
               </label>

@@ -1,0 +1,175 @@
+/* frontend/src/styles/storefront/OrdersPage.css */
+
+.orders-page-root {
+  max-width: 1050px;
+  margin: 3rem auto 6rem;
+  padding: 0 1.5rem;
+}
+
+.orders-page-header {
+  margin-bottom: 2.5rem;
+}
+
+.orders-page-subtitle {
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.orders-filter-card {
+  margin-bottom: 1.5rem;
+}
+
+.orders-filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.orders-status-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.orders-status-btn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: 1px solid #e5e5e5;
+  background: #ffffff;
+  color: #525252;
+  transition: all 0.15s ease;
+}
+
+.orders-status-btn.active {
+  background: #171717;
+  color: #ffffff;
+  border-color: #171717;
+}
+
+.orders-search-box {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.orders-search-input {
+  padding: 0.55rem 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 0.85rem;
+  min-width: 240px;
+}
+
+.orders-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.orders-empty-box {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.orders-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.orders-empty-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.orders-empty-desc {
+  color: #777;
+  margin-bottom: 1.5rem;
+}
+
+.order-history-card {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.order-history-header {
+  padding: 1.25rem 1.5rem;
+  background: #fafaf9;
+  border-bottom: 1px solid #f0ede8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.order-history-meta-group {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.order-history-meta-label {
+  color: #777;
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.order-history-meta-value {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #171717;
+}
+
+.order-history-code {
+  font-family: monospace;
+}
+
+.order-history-items-body {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.order-history-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.order-history-item-info {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.order-history-item-img {
+  width: 54px;
+  height: 68px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+}
+
+.order-history-item-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #171717;
+}
+
+.order-history-item-spec {
+  font-size: 0.8rem;
+  color: #777;
+}

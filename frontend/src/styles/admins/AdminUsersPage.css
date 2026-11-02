@@ -56,3 +56,18 @@
   background-color: var(--bg-muted, #f5f4f0);
   color: var(--text-secondary, #44403c);
 }
+
+.text-right {
+  text-align: right;
+}
+
+.admin-tbody {
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+.admin-tbody-loading {
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+

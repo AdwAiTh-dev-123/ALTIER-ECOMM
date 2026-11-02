@@ -214,15 +214,10 @@ const AdminUsersPage = () => {
                 <th>Role</th>
                 <th>Joined Date</th>
                 <th>Account Status</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
-            <tbody
-              style={{
-                opacity: tableLoading ? 0.6 : 1,
-                transition: "opacity 0.15s ease",
-              }}
-            >
+            <tbody className={tableLoading ? "admin-tbody-loading" : "admin-tbody"}>
               {initialLoading ? (
                 <tr>
                   <td colSpan="6" className="admin-loading-cell">
@@ -289,7 +284,7 @@ const AdminUsersPage = () => {
                           {item.isBlocked ? "Blocked" : "Active"}
                         </span>
                       </td>
-                      <td style={{ textAlign: "right" }}>
+                      <td className="text-right">
                         {isCurrentAdmin ? (
                           <span className="admin-action-disabled-note">
                             Self

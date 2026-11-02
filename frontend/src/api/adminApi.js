@@ -43,7 +43,7 @@ export function toggleProductStatus(productId) {
   return api.patch(`/admin/products/${productId}`);
 }
 
-export function deleteProduct(productId) {
+export function deleteAdminProduct(productId) {
   return api.delete(`/admin/products/${productId}`);
 }
 

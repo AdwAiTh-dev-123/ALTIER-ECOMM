@@ -1,0 +1,44 @@
+/* frontend/src/styles/storefront/OrderFailurePage.css */
+
+.order-failure-card {
+  border-color: #fca5a5 !important;
+}
+
+.failure-icon-badge {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.failure-eyebrow {
+  color: #dc2626 !important;
+}
+
+.failure-subheading {
+  color: #b91c1c !important;
+}
+
+.failure-actions-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.failure-btn-action {
+  padding: 0.85rem 2rem;
+}
+
+.failure-receipt-totals {
+  margin-top: 0 !important;
+}
+
+.failure-warning-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.85rem;
+  color: #991b1b;
+  line-height: 1.5;
+}

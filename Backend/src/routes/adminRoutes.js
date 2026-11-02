@@ -5,7 +5,7 @@ import multer from "multer";
 import { uploadBufferToCloudinary } from "../config/cloudinary.js";
 import {
   getAllUsers,
-  toggleisBlocked,
+  toggleUserBlock,
 } from "../controllers/admin/userAdminController.js";
 import {
   createCategory,
@@ -13,7 +13,7 @@ import {
   toggleCategoryListing,
   deleteCategory,
   updateCategory,
-} from "../controllers/admin/CategoryAdminController.js";
+} from "../controllers/admin/categoryAdminController.js";
 import {
   createProductWithVariants,
   getAllProducts,
@@ -27,10 +27,34 @@ import {
   updateOrderStatus,
   reviewReturnRequest,
 } from "../controllers/admin/orderAdminController.js";
+import {
+  validateCategoryInput,
+  validateCategoryIdParam,
+  validateProductWithVariants,
+  validateOrderStatusUpdate,
+  validateReturnReview,
+} from "../validators/admin/index.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/jpg",
+    ];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      const error = new Error(
+        "Unsupported file format. Please upload JPG, PNG, or WebP images.",
+      );
+      error.statusCode = 400;
+      cb(error, false);
+    }
+  },
 });
 
 const router = express.Router();
@@ -38,17 +62,30 @@ const router = express.Router();
 router.use(authMiddleware, adminMiddleware);
 
 router.get("/users", getAllUsers);
-router.patch("/users/:id", toggleisBlocked);
+router.patch("/users/:id", toggleUserBlock);
 
 router.get("/category", getAllCategories);
-router.post("/category", createCategory);
-router.put("/category/:id", updateCategory);
-router.patch("/category/:id", toggleCategoryListing);
-router.delete("/category/:id", deleteCategory);
+router.post("/category", validateCategoryInput, createCategory);
+router.put(
+  "/category/:id",
+  validateCategoryIdParam,
+  validateCategoryInput,
+  updateCategory,
+);
+router.patch("/category/:id", validateCategoryIdParam, toggleCategoryListing);
+router.delete("/category/:id", validateCategoryIdParam, deleteCategory);
 
 router.get("/products", getAllProducts);
-router.post("/products", createProductWithVariants);
-router.put("/products/:id", updateProductWithVariants);
+router.post(
+  "/products",
+  validateProductWithVariants,
+  createProductWithVariants,
+);
+router.put(
+  "/products/:id",
+  validateProductWithVariants,
+  updateProductWithVariants,
+);
 router.patch("/products/:id", toggleProductListing);
 router.delete("/products/:id", deleteProduct);
 
@@ -80,7 +117,15 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 //order management
 router.get("/orders", getAllAdminOrders);
 router.get("/orders/:id", getAdminOrderById);
-router.patch("/orders/:id/status", updateOrderStatus);
-router.patch("/orders/:id/return-review", reviewReturnRequest);
+router.patch(
+  "/orders/:id/status",
+  validateOrderStatusUpdate,
+  updateOrderStatus,
+);
+router.patch(
+  "/orders/:id/return-review",
+  validateReturnReview,
+  reviewReturnRequest,
+);
 
 export default router;

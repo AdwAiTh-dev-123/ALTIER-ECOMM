@@ -3,7 +3,7 @@ import {
   getAdminProducts,
   getAdminCategories,
   toggleProductStatus,
-  deleteProduct as deleteAdminProduct,
+  deleteAdminProduct,
 } from "../../api/adminApi";
 import AddProductModal from "../../components/admin/AdminProductModal";
 import Pagination from "../../components/common/Pagination";
@@ -354,6 +354,7 @@ const AdminProductsPage = () => {
                 <th>Product</th>
                 <th>Category</th>
                 <th>Variants Count</th>
+                <th>Total Stock</th>
                 <th>Sizes & Colors</th>
                 <th>Status</th>
                 <th style={{ textAlign: "right", width: "230px" }}>Actions</th>
@@ -363,7 +364,7 @@ const AdminProductsPage = () => {
               {loading ? (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="7"
                     style={{
                       textAlign: "center",
                       padding: "3rem",
@@ -375,7 +376,7 @@ const AdminProductsPage = () => {
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ padding: "3.5rem 1rem", textAlign: "center" }}>
+                  <td colSpan="7" style={{ padding: "3.5rem 1rem", textAlign: "center" }}>
                     <div
                       style={{
                         display: "flex",
@@ -457,11 +458,16 @@ const AdminProductsPage = () => {
                   const uniqueSizes = [...new Set(variants.map((v) => v.size))];
                   const isActionLoading = actionLoadingId === product._id;
 
+                  const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+
                   return (
                     <tr
                       key={product._id}
                       className={!product.isListed ? "row-blocked" : ""}
                     >
+
+
+
                       {/* Thumbnail & Title */}
                       <td>
                         <div
@@ -517,6 +523,21 @@ const AdminProductsPage = () => {
                         {variants.length !== 1 ? "s" : ""}
                       </td>
 
+                      {/* ✅ Insert Total Stock Column */}
+                      <td>
+                        <span
+                          className={`admin-status-badge ${totalStock === 0
+                              ? "status-blocked"
+                              : "status-active"
+                            }`}
+                        >
+                          <span className="status-dot"></span>
+                          {totalStock === 0
+                            ? "Out of Stock"
+                            : `${totalStock} in stock`}
+                        </span>
+                      </td>
+
                       {/* Colors & Sizes summary */}
                       <td>
                         <div style={{ fontSize: "0.82rem" }}>
@@ -530,11 +551,10 @@ const AdminProductsPage = () => {
                       {/* Status */}
                       <td>
                         <span
-                          className={`admin-status-badge ${
-                            product.isListed
-                              ? "status-active"
-                              : "status-blocked"
-                          }`}
+                          className={`admin-status-badge ${product.isListed
+                            ? "status-active"
+                            : "status-blocked"
+                            }`}
                         >
                           <span className="status-dot"></span>
                           {product.isListed ? "Listed" : "Unlisted"}
@@ -562,9 +582,8 @@ const AdminProductsPage = () => {
                             type="button"
                             disabled={isActionLoading}
                             onClick={() => handleToggleListing(product._id)}
-                            className={`admin-action-btn btn-toggle ${
-                              product.isListed ? "btn-block" : "btn-unblock"
-                            }`}
+                            className={`admin-action-btn btn-toggle ${product.isListed ? "btn-block" : "btn-unblock"
+                              }`}
                           >
                             {isActionLoading
                               ? "Updating..."

@@ -1,0 +1,41 @@
+import crypto from "crypto";
+import User from "../../models/User.js";
+import Otp from "../../models/Otp.js";
+import sendEmail from "../../utils/sendEmail.js";
+
+export const sendRegistrationOtp = async (email) => {
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    const err = new Error(
+      "An account with this email already exists. Sign in instead",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const rawOtp = crypto.randomInt(100000, 999999).toString();
+  const hashOtp = crypto.createHash("sha256").update(rawOtp).digest("hex");
+
+  await Otp.deleteMany({ email });
+  await Otp.create({ email, otp: hashOtp });
+
+  await sendEmail({
+    to: email,
+    subject: "ATELIER - Verification Code",
+    text: `Your verification code is: ${rawOtp}. This code expires in 5 minutes.`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #E7E5E4; border-radius: 8px;">
+        <h2 style="letter-spacing: 2px; color: #1C1917; margin-bottom: 8px;">ATELIER</h2>
+        <p style="color: #78716C; font-size: 14px;">Use the verification code below to complete your registration:</p>
+        <div style="margin: 24px 0; padding: 16px; background-color: #FBFBFA; border: 1px dashed #D6D3D1; text-align: center; border-radius: 6px;">
+          <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #1C1917;">${rawOtp}</span>
+        </div>
+        <p style="font-size: 13px; color: #A8A29E; margin: 0;">This code will expire in 1 minute.</p>
+      </div>
+    `,
+  });
+
+  return { email };
+};
+
+export default sendRegistrationOtp;

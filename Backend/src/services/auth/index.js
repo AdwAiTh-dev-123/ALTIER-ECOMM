@@ -1,0 +1,8 @@
+export { sendRegistrationOtp } from "./sendRegistrationOtp.js";
+export { registerUser } from "./registerUser.js";
+export { loginUser } from "./loginUser.js";
+export { sendPasswordResetLink } from "./sendPasswordResetLink.js";
+export { resetPasswordWithToken } from "./resetPasswordWithToken.js";
+export { changeUserPassword } from "./changeUserPassword.js";
+export { authenticateWithGoogle } from "./authenticateWithGoogle.js";
+export { updateUserAvatarService } from "./updateUserAvatarService.js";

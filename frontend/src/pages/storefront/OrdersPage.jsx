@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getUserOrdersApi } from "../../api/shopApi";
+import "../../styles/storefront/OrdersPage.css";
 
 export const OrdersPage = () => {
   const navigate = useNavigate();
@@ -56,29 +57,20 @@ export const OrdersPage = () => {
   };
 
   return (
-    <div className="order-success-page" style={{ maxWidth: "1050px" }}>
+    <div className="orders-page-root">
       {/* Header */}
-      <div style={{ marginBottom: "2.5rem" }}>
+      <div className="orders-page-header">
         <span className="editorial-eyebrow">YOUR ACCOUNT</span>
         <h1 className="editorial-title">Order History</h1>
-        <p style={{ color: "#666", marginTop: "0.25rem" }}>
+        <p className="orders-page-subtitle">
           Track recent orders, view purchase receipts, and request returns.
         </p>
       </div>
 
       {/* Filter and Search Bar */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "1rem",
-          flexWrap: "wrap",
-          marginBottom: "2rem",
-        }}
-      >
+      <div className="orders-filter-row orders-filter-card">
         {/* Status Filter Tabs */}
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <div className="orders-status-pills">
           {[
             { id: "ALL", label: "All Orders" },
             { id: "ACTIVE", label: "Active" },
@@ -90,18 +82,7 @@ export const OrdersPage = () => {
               key={tab.id}
               type="button"
               onClick={() => setStatusFilter(tab.id)}
-              style={{
-                padding: "0.55rem 1.2rem",
-                borderRadius: "20px",
-                fontSize: "0.85rem",
-                fontWeight: statusFilter === tab.id ? 600 : 400,
-                cursor: "pointer",
-                border: "1px solid",
-                borderColor: statusFilter === tab.id ? "#111" : "#e5e5e5",
-                background: statusFilter === tab.id ? "#111" : "#fff",
-                color: statusFilter === tab.id ? "#fff" : "#444",
-                transition: "all 0.2s ease",
-              }}
+              className={`orders-status-btn ${statusFilter === tab.id ? "active" : ""}`}
             >
               {tab.label}
             </button>
@@ -111,25 +92,18 @@ export const OrdersPage = () => {
         {/* Search Input */}
         <form
           onSubmit={handleSearchSubmit}
-          style={{ display: "flex", gap: "0.5rem" }}
+          className="orders-search-box"
         >
           <input
             type="text"
             placeholder="Search by Order ID or Item..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              padding: "0.55rem 1rem",
-              border: "1px solid #d5d5d5",
-              borderRadius: "4px",
-              fontSize: "0.85rem",
-              minWidth: "240px",
-            }}
+            className="orders-search-input"
           />
           <button
             type="submit"
             className="btn btn-secondary"
-            style={{ padding: "0.55rem 1rem" }}
           >
             Search
           </button>
@@ -147,26 +121,17 @@ export const OrdersPage = () => {
 
       {/* Loading state */}
       {isLoading ? (
-        <div className="profile-loading-state" style={{ padding: "4rem 0" }}>
+        <div className="profile-loading-state">
           <div className="cart-spinner-small"></div>
           <p>Loading your orders...</p>
         </div>
       ) : orders.length === 0 ? (
-        <div
-          className="order-receipt-card"
-          style={{ textAlign: "center", padding: "4rem 2rem" }}
-        >
-          <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>📦</div>
-          <h3
-            style={{
-              fontSize: "1.3rem",
-              fontWeight: 600,
-              marginBottom: "0.5rem",
-            }}
-          >
+        <div className="order-receipt-card orders-empty-box">
+          <div className="orders-empty-icon">📦</div>
+          <h3 className="orders-empty-title">
             No orders found
           </h3>
-          <p style={{ color: "#777", marginBottom: "1.5rem" }}>
+          <p className="orders-empty-desc">
             {searchTerm || statusFilter !== "ALL"
               ? "No orders match your filter criteria."
               : "You haven't placed any orders yet."}
@@ -174,16 +139,13 @@ export const OrdersPage = () => {
           <Link
             to="/collections"
             className="btn btn-primary"
-            style={{ padding: "0.75rem 2rem" }}
           >
             Explore Collections &rarr;
           </Link>
         </div>
       ) : (
         /* Orders List */
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
-        >
+        <div className="orders-list-stack">
           {orders.map((order) => {
             const formattedDate = new Date(order.createdAt).toLocaleDateString(
               "en-IN",

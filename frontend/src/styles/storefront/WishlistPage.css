@@ -1,0 +1,96 @@
+/* frontend/src/styles/storefront/WishlistPage.css */
+
+.wishlist-page-root {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-bottom: 64px;
+}
+
+.wishlist-grid-container {
+  width: 100%;
+}
+
+.wishlist-card {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-subtle, #e5e5e5);
+  border-radius: var(--radius-sm, 4px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wishlist-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.empty-wishlist-view {
+  text-align: center;
+  padding: 80px 24px;
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-subtle, #e5e5e5);
+  border-radius: var(--radius-md, 8px);
+  max-width: 520px;
+  margin: 32px auto;
+}
+
+.empty-wishlist-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+/* Modal Clear Wishlist Confirmation */
+.wishlist-confirm-modal {
+  max-width: 440px;
+  text-align: center;
+  padding: 2.25rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.wishlist-confirm-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.wishlist-confirm-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #171717;
+}
+
+.wishlist-confirm-desc {
+  color: #666666;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.75rem;
+}
+
+.wishlist-confirm-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.wishlist-confirm-btn {
+  flex: 1;
+  padding: 0.85rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.wishlist-confirm-btn-danger {
+  background-color: #dc2626;
+  border: 1px solid #dc2626;
+  color: #ffffff;
+  transition: background 0.15s ease;
+}
+
+.wishlist-confirm-btn-danger:hover {
+  background-color: #b91c1c;
+}

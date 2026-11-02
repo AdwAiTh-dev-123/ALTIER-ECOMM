@@ -7,6 +7,7 @@ import {
   recordPaymentFailureApi,
 } from "../../api/shopApi";
 import { useCart } from "../../context/CartContext";
+import "../../styles/storefront/OrderFailurePage.css";
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -167,47 +168,35 @@ export const OrderFailurePage = () => {
   return (
     <div className="order-success-page">
       {/* Failure Header */}
-      <div className="order-success-card" style={{ borderColor: "#fca5a5" }}>
-        <div
-          className="success-icon-badge"
-          style={{ background: "#dc2626", color: "#ffffff" }}
-        >
+      <div className="order-success-card order-failure-card">
+        <div className="success-icon-badge failure-icon-badge">
           ✕
         </div>
-        <span className="editorial-eyebrow" style={{ color: "#dc2626" }}>
+        <span className="editorial-eyebrow failure-eyebrow">
           PAYMENT INCOMPLETE
         </span>
         <h1 className="success-heading">Payment Failed or Cancelled</h1>
-        <p className="success-subheading" style={{ color: "#b91c1c" }}>
+        <p className="success-subheading failure-subheading">
           {errorMessage}
         </p>
 
         {order && (
-          <div className="order-id-pill" style={{ marginBottom: "1.5rem" }}>
+          <div className="order-id-pill">
             Order Reference: <strong>{order.orderId}</strong>
           </div>
         )}
 
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="failure-actions-row">
           <button
             onClick={handleRetryPayment}
             disabled={isRetrying}
-            className="btn btn-primary"
-            style={{ padding: "0.85rem 2rem" }}
+            className="btn btn-primary failure-btn-action"
           >
             {isRetrying ? "Pls wait..." : "Retry Payment Now"}
           </button>
           <Link
             to="/cart"
-            className="btn btn-secondary"
-            style={{ padding: "0.85rem 2rem" }}
+            className="btn btn-secondary failure-btn-action"
           >
             Return to Cart
           </Link>
@@ -243,7 +232,7 @@ export const OrderFailurePage = () => {
 
           <div className="order-meta-card">
             <h3 className="card-heading">Order Total</h3>
-            <div className="receipt-totals-box" style={{ marginTop: 0 }}>
+            <div className="receipt-totals-box failure-receipt-totals">
               <div className="receipt-row">
                 <span>Subtotal</span>
                 <span>₹{order.pricing.subtotal.toLocaleString()}</span>

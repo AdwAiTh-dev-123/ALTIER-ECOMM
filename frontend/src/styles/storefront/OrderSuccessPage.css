@@ -1,0 +1,23 @@
+/* frontend/src/styles/storefront/OrderSuccessPage.css */
+
+.order-success-page {
+  max-width: 960px;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+}
+
+.order-success-loading {
+  padding: 6rem 0;
+}
+
+.order-success-notfound {
+  padding: 6rem 1.5rem;
+}
+
+.meta-phone-text {
+  margin-top: 0.5rem;
+}
+
+.meta-payment-block {
+  margin-top: 1.5rem;
+}

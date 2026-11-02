@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { getStorefrontProductById } from '../../api/shopApi';
+import "../../styles/storefront/WishlistPage.css";
 
 export const WishlistPage = () => {
   const { wishlist, removeFromWishlist, clearWishlist, feedback, fetchWishlist } = useWishlist();
@@ -13,6 +14,8 @@ export const WishlistPage = () => {
       fetchWishlist();
     }
   }, [fetchWishlist]);
+
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const handleMoveToCart = async (product) => {
     // 1. Identify in-stock variant from memory
@@ -64,7 +67,7 @@ export const WishlistPage = () => {
           <button
             type="button"
             className="btn-clear-cart"
-            onClick={clearWishlist}
+            onClick={() => setShowClearConfirm(true)}
             title="Remove all saved garments"
           >
             Clear Entire Wishlist
@@ -101,8 +104,8 @@ export const WishlistPage = () => {
                 item.price && Number(item.price) > 0
                   ? Number(item.price)
                   : variantPrices.length > 0
-                  ? Math.min(...variantPrices)
-                  : item.basePrice || 0;
+                    ? Math.min(...variantPrices)
+                    : item.basePrice || 0;
 
               const totalStock =
                 item.totalStock ??
@@ -148,9 +151,8 @@ export const WishlistPage = () => {
                     {/* Move to Bag Button */}
                     <button
                       type="button"
-                      className={`btn btn-primary btn-block wishlist-move-btn ${
-                        isOutOfStock ? 'disabled' : ''
-                      }`}
+                      className={`btn btn-primary btn-block wishlist-move-btn ${isOutOfStock ? 'disabled' : ''
+                        }`}
                       disabled={isOutOfStock}
                       onClick={() => handleMoveToCart(item)}
                     >
@@ -163,6 +165,46 @@ export const WishlistPage = () => {
           </div>
         </div>
       )}
+      {/* Clear Wishlist Confirmation Modal */}
+      {showClearConfirm && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowClearConfirm(false)}
+        >
+          <div
+            className="wishlist-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wishlist-confirm-icon">🔖</div>
+            <h3 className="wishlist-confirm-title">
+              Clear Entire Wishlist?
+            </h3>
+            <p className="wishlist-confirm-desc">
+              Are you sure you want to remove all saved silhouettes from your wishlist?
+            </p>
+            <div className="wishlist-confirm-actions">
+              <button
+                type="button"
+                className="btn btn-secondary wishlist-confirm-btn"
+                onClick={() => setShowClearConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="wishlist-confirm-btn wishlist-confirm-btn-danger"
+                onClick={() => {
+                  clearWishlist();
+                  setShowClearConfirm(false);
+                }}
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

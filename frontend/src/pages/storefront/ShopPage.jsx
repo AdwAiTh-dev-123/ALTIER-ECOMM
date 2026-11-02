@@ -245,24 +245,48 @@ export const ShopPage = () => {
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <input
                 type="number"
+                min="0"
                 placeholder="Min"
                 className="input-field"
                 style={{ width: '75px', padding: '6px 8px' }}
                 value={minPrice}
+                onKeyDown={(e) => {
+                  if (e.key === '-' || e.key === 'e') e.preventDefault();
+                }}
                 onChange={(e) => {
-                  setMinPrice(e.target.value);
+                  const val = e.target.value;
+                  if (val === '') {
+                    setMinPrice('');
+                  } else {
+                    const num = Number(val);
+                    if (num >= 0) {
+                      setMinPrice(val);
+                    }
+                  }
                   setCurrentPage(1);
                 }}
               />
               <span style={{ color: 'var(--text-muted)' }}>–</span>
               <input
                 type="number"
+                min="0"
                 placeholder="Max"
                 className="input-field"
                 style={{ width: '75px', padding: '6px 8px' }}
                 value={maxPrice}
+                onKeyDown={(e) => {
+                  if (e.key === '-' || e.key === 'e') e.preventDefault();
+                }}
                 onChange={(e) => {
-                  setMaxPrice(e.target.value);
+                  const val = e.target.value;
+                  if (val === '') {
+                    setMaxPrice('');
+                  } else {
+                    const num = Number(val);
+                    if (num >= 0) {
+                      setMaxPrice(val);
+                    }
+                  }
                   setCurrentPage(1);
                 }}
               />

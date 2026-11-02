@@ -1,3 +1,4 @@
+// frontend/src/pages/storefront/ProfilePage.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -10,6 +11,7 @@ import {
 } from "../../api/shopApi";
 import { changePasswordApi, updateAvatarApi } from "../../api/authApi";
 import AddressModal from "../../components/common/AddressModal";
+import "../../styles/storefront/ProfilePage.css";
 
 export const ProfilePage = () => {
   const { user, checkSession } = useAuth();
@@ -36,6 +38,8 @@ export const ProfilePage = () => {
   });
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [passwordStatus, setPasswordStatus] = useState({
     loading: false,
     error: "",
@@ -51,6 +55,17 @@ export const ProfilePage = () => {
       setToast(null);
     }, 3500);
   };
+
+  // Live password criteria validation aligned with Brocamp Guideline 4 & Backend
+  const passwordChecks = {
+    length: passwordData.newPassword.length >= 8,
+    upper: /[A-Z]/.test(passwordData.newPassword),
+    lower: /[a-z]/.test(passwordData.newPassword),
+    number: /[0-9]/.test(passwordData.newPassword),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(passwordData.newPassword),
+  };
+
+  const isPasswordSecure = Object.values(passwordChecks).every(Boolean);
 
   // 1. Fetch Addresses
   const fetchAddresses = useCallback(async () => {
@@ -99,30 +114,26 @@ export const ProfilePage = () => {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      showToast("Image size must be smaller than 5MB.", "error");
-      return;
-    }
-
     const formData = new FormData();
     formData.append("avatar", file);
 
     try {
       setIsUploadingAvatar(true);
       const res = await updateAvatarApi(formData);
-      if (res.data.success) {
+      showToast("Profile photo updated successfully!");
+      if (checkSession) {
         await checkSession();
-        showToast("Profile photo updated successfully!");
       }
     } catch (err) {
       showToast(
-        err.response?.data?.message || "Failed to upload profile photo",
+        err.response?.data?.message || "Failed to upload profile picture",
         "error"
       );
     } finally {
       setIsUploadingAvatar(false);
-      // Reset input value to allow re-uploading the same file if needed
-      e.target.value = "";
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -140,11 +151,13 @@ export const ProfilePage = () => {
   const handleSaveAddress = async (formData) => {
     if (editingAddress) {
       await updateAddressApi(editingAddress._id, formData);
-      showToast("Address updated successfully!");
+      showToast("Address updated successfully");
     } else {
       await addAddressApi(formData);
-      showToast("Address saved successfully!");
+      showToast("Address added successfully");
     }
+    setIsModalOpen(false);
+    setEditingAddress(null);
     await fetchAddresses();
   };
 
@@ -184,10 +197,12 @@ export const ProfilePage = () => {
     e.preventDefault();
     setPasswordStatus({ loading: true, error: "", success: "" });
 
-    if (passwordData.newPassword.length < 6) {
+    // Validate strength against Brocamp Guideline 4
+    if (!isPasswordSecure) {
       setPasswordStatus({
         loading: false,
-        error: "New password must be at least 6 characters long",
+        error:
+          "New password must be at least 8 characters long and contain uppercase, lowercase, numbers, and special characters.",
         success: "",
       });
       return;
@@ -196,7 +211,7 @@ export const ProfilePage = () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordStatus({
         loading: false,
-        error: "New passwords do not match",
+        error: "New password and confirmation password do not match",
         success: "",
       });
       return;
@@ -235,7 +250,7 @@ export const ProfilePage = () => {
     <div className="profile-page-root">
       {/* Toast Notification */}
       {toast && (
-        <div className={`cart-floating-toast ${toast.type}`}>
+        <div className={`profile-floating-toast ${toast.type}`}>
           {toast.message}
         </div>
       )}
@@ -246,7 +261,7 @@ export const ProfilePage = () => {
         ref={fileInputRef}
         onChange={handleAvatarChange}
         accept="image/*"
-        style={{ display: "none" }}
+        className="profile-hidden-input"
       />
 
       {/* Profile Header Card */}
@@ -350,17 +365,11 @@ export const ProfilePage = () => {
           {/* TAB 1: Saved Addresses */}
           {activeTab === "addresses" && (
             <section className="profile-addresses-section">
-              <div className="addresses-section-header">
-                <div>
-                  <span className="editorial-eyebrow">SHIPPING BOOK</span>
-                  <h2 className="section-title">Saved Delivery Addresses</h2>
-                  <p className="section-subtitle">
-                    Manage your saved addresses for fast and seamless checkout.
-                  </p>
-                </div>
+              <div className="section-header-row">
+                <h2>Saved Delivery Addresses</h2>
                 <button
                   type="button"
-                  className="btn btn-primary btn-sm add-address-btn"
+                  className="btn btn-primary"
                   onClick={handleOpenAddModal}
                 >
                   + Add New Address
@@ -369,83 +378,67 @@ export const ProfilePage = () => {
 
               {isLoadingAddresses ? (
                 <div className="profile-loading-state">
-                  <div className="cart-spinner-small"></div>
-                  <p>Loading your addresses...</p>
+                  <div className="profile-spinner"></div>
+                  <p>Loading your saved addresses...</p>
                 </div>
               ) : addresses.length === 0 ? (
-                <div className="addresses-empty-card">
-                  <div className="empty-card-icon">📍</div>
-                  <h3>No addresses saved yet</h3>
-                  <p>
-                    Add a delivery address so you can checkout quickly when purchasing.
-                  </p>
+                <div className="empty-addresses-card">
+                  <p>You have not added any delivery addresses yet.</p>
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-secondary"
                     onClick={handleOpenAddModal}
                   >
                     Add Your First Address
                   </button>
                 </div>
               ) : (
-                <div className="addresses-grid">
+                <div className="address-grid">
                   {addresses.map((addr) => (
                     <div
                       key={addr._id}
                       className={`address-card ${addr.isDefault ? "is-default" : ""}`}
                     >
-                      <div className="address-card-top">
-                        <span className="address-type-tag">{addr.addressType}</span>
+                      <div className="address-card-header">
+                        <h3 className="address-name">{addr.name}</h3>
                         {addr.isDefault && (
-                          <span className="address-default-badge">
-                            ✓ Default Shipping
-                          </span>
+                          <span className="default-badge">Default</span>
                         )}
                       </div>
 
-                      <div className="address-card-body">
-                        <h3 className="recipient-name">{addr.fullName}</h3>
-                        <p className="address-text-line">{addr.streetAddress}</p>
-                        {addr.apartment && (
-                          <p className="address-text-line">{addr.apartment}</p>
-                        )}
-                        <p className="address-text-line">
-                          {addr.city}, {addr.state} - <strong>{addr.postalCode}</strong>
-                        </p>
-                        <p className="address-text-line">{addr.country || "India"}</p>
-                        <p className="address-phone-line">
-                          <span className="phone-icon">📞</span> +91 {addr.phone}
-                        </p>
-                      </div>
-
-                      <div className="address-card-footer">
-                        <div className="left-actions">
-                          <button
-                            type="button"
-                            className="card-action-btn edit-action"
-                            onClick={() => handleOpenEditModal(addr)}
-                          >
-                            Edit
-                          </button>
-                          <span className="action-divider">|</span>
-                          <button
-                            type="button"
-                            className="card-action-btn delete-action"
-                            onClick={() => handleDeleteAddress(addr._id)}
-                          >
-                            Delete
-                          </button>
+                      <div className="address-body">
+                        <div>{addr.street}</div>
+                        <div>
+                          {addr.city}, {addr.state} - {addr.zipCode}
                         </div>
+                        <div>{addr.country}</div>
+                        <div className="address-phone">Phone: {addr.phone}</div>
+                      </div>
 
+                      <div className="address-card-actions">
                         {!addr.isDefault && (
                           <button
                             type="button"
-                            className="set-default-btn"
+                            className="card-action-btn"
                             onClick={() => handleSetDefault(addr._id)}
                           >
-                            Set as Default
+                            Set Default
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => handleOpenEditModal(addr)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="card-action-btn delete-action"
+                          onClick={() => handleDeleteAddress(addr._id)}
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -454,7 +447,7 @@ export const ProfilePage = () => {
             </section>
           )}
 
-          {/* TAB 2: Change Password */}
+          {/* TAB 2: Security & Password */}
           {activeTab === "security" && (
             <section className="profile-security-card">
               <div className="security-card-header">
@@ -462,56 +455,65 @@ export const ProfilePage = () => {
                 <h2>Change Password</h2>
                 <p>
                   Ensure your account is protected by using a strong password with at
-                  least 6 characters.
+                  least 8 characters.
                 </p>
               </div>
 
+              {user?.googleId && (
+                <div className="google-auth-notice">
+                  ℹ️ You are signed in via Google. If you create a password below, you will also be able to sign in using your email and password.
+                </div>
+              )}
+
               {passwordStatus.error && (
-                <div className="cart-inline-error-banner" style={{ marginBottom: "1.25rem" }}>
+                <div className="profile-status-banner error">
                   {passwordStatus.error}
                 </div>
               )}
 
               {passwordStatus.success && (
-                <div className="cart-floating-toast success" style={{ position: "static", marginBottom: "1.25rem" }}>
+                <div className="profile-status-banner success">
                   ✓ {passwordStatus.success}
                 </div>
               )}
 
               <form onSubmit={handlePasswordChange} className="password-change-form">
-                {/* Current Password */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="currentPassword">
-                    Current Password
-                  </label>
-                  <div className="password-input-wrapper">
-                    <input
-                      id="currentPassword"
-                      type={showCurrentPassword ? "text" : "password"}
-                      className="profile-form-input"
-                      value={passwordData.currentPassword}
-                      onChange={(e) =>
-                        setPasswordData((prev) => ({
-                          ...prev,
-                          currentPassword: e.target.value,
-                        }))
-                      }
-                      placeholder="Enter your current password"
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle-btn"
-                      onClick={() => setShowCurrentPassword((prev) => !prev)}
-                      tabIndex="-1"
-                    >
-                      {showCurrentPassword ? "Hide" : "Show"}
-                    </button>
+                {/* Current Password (Optional if user only logged in with Google) */}
+                {!user?.googleId && (
+                  <div className="profile-form-group">
+                    <label className="profile-form-label" htmlFor="currentPassword">
+                      Current Password *
+                    </label>
+                    <div className="password-input-wrapper">
+                      <input
+                        id="currentPassword"
+                        type={showCurrentPassword ? "text" : "password"}
+                        className="profile-form-input"
+                        value={passwordData.currentPassword}
+                        onChange={(e) =>
+                          setPasswordData((prev) => ({
+                            ...prev,
+                            currentPassword: e.target.value,
+                          }))
+                        }
+                        placeholder="Enter your current password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle-btn"
+                        onClick={() => setShowCurrentPassword((prev) => !prev)}
+                        tabIndex="-1"
+                      >
+                        {showCurrentPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* New Password */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="newPassword">
+                <div className="profile-form-group">
+                  <label className="profile-form-label" htmlFor="newPassword">
                     New Password *
                   </label>
                   <div className="password-input-wrapper">
@@ -526,9 +528,8 @@ export const ProfilePage = () => {
                           newPassword: e.target.value,
                         }))
                       }
-                      placeholder="At least 6 characters"
+                      placeholder="At least 8 characters"
                       required
-                      minLength={6}
                     />
                     <button
                       type="button"
@@ -539,17 +540,44 @@ export const ProfilePage = () => {
                       {showNewPassword ? "Hide" : "Show"}
                     </button>
                   </div>
+
+                  {/* Live Criteria Checklist */}
+                  <div className="profile-password-criteria">
+                    <div className="criteria-title">Password Requirements:</div>
+                    <ul className="criteria-list">
+                      <li className={`criteria-item ${passwordChecks.length ? "valid" : ""}`}>
+                        <span className="check-icon">{passwordChecks.length ? "✓" : "○"}</span>
+                        <span>At least 8 characters</span>
+                      </li>
+                      <li className={`criteria-item ${passwordChecks.upper ? "valid" : ""}`}>
+                        <span className="check-icon">{passwordChecks.upper ? "✓" : "○"}</span>
+                        <span>One uppercase letter (A-Z)</span>
+                      </li>
+                      <li className={`criteria-item ${passwordChecks.lower ? "valid" : ""}`}>
+                        <span className="check-icon">{passwordChecks.lower ? "✓" : "○"}</span>
+                        <span>One lowercase letter (a-z)</span>
+                      </li>
+                      <li className={`criteria-item ${passwordChecks.number ? "valid" : ""}`}>
+                        <span className="check-icon">{passwordChecks.number ? "✓" : "○"}</span>
+                        <span>One numeric digit (0-9)</span>
+                      </li>
+                      <li className={`criteria-item ${passwordChecks.special ? "valid" : ""}`}>
+                        <span className="check-icon">{passwordChecks.special ? "✓" : "○"}</span>
+                        <span>One special character (!@#$%^&*)</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
 
                 {/* Confirm Password */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="confirmPassword">
+                <div className="profile-form-group">
+                  <label className="profile-form-label" htmlFor="confirmPassword">
                     Confirm New Password *
                   </label>
                   <div className="password-input-wrapper">
                     <input
                       id="confirmPassword"
-                      type={showNewPassword ? "text" : "password"}
+                      type={showConfirmPassword ? "text" : "password"}
                       className="profile-form-input"
                       value={passwordData.confirmPassword}
                       onChange={(e) =>
@@ -561,14 +589,22 @@ export const ProfilePage = () => {
                       placeholder="Re-enter new password"
                       required
                     />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      tabIndex="-1"
+                    >
+                      {showConfirmPassword ? "Hide" : "Show"}
+                    </button>
                   </div>
                 </div>
 
                 <div className="security-form-actions">
                   <button
                     type="submit"
-                    className="btn btn-primary btn-update-password"
-                    disabled={passwordStatus.loading}
+                    className="btn-update-password"
+                    disabled={passwordStatus.loading || !isPasswordSecure}
                   >
                     {passwordStatus.loading ? "Updating Password..." : "Update Password"}
                   </button>

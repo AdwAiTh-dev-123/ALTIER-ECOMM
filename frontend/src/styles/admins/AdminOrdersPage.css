@@ -230,3 +230,177 @@
   border-radius: 8px;
   border: 1px solid #ece8e1;
 }
+
+/* Alerts & Toasts */
+.admin-orders-toast-success {
+  background: #ecfdf5;
+  color: #065f46;
+  padding: 0.85rem 1.25rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid #a7f3d0;
+}
+
+.admin-orders-toast-error {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.85rem 1.25rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid #fecaca;
+}
+
+/* Controls */
+.admin-orders-controls-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-orders-search-input {
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  min-width: 280px;
+  font-size: 0.85rem;
+}
+
+.admin-orders-select {
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+/* Table elements */
+.admin-orders-code {
+  font-family: monospace;
+  display: block;
+}
+
+.admin-orders-date {
+  font-size: 0.75rem;
+  color: #777;
+}
+
+.admin-orders-customer-name {
+  font-weight: 600;
+}
+
+.admin-orders-customer-phone {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.admin-orders-item-count {
+  font-size: 0.85rem;
+}
+
+.admin-orders-total {
+  font-size: 0.9rem;
+}
+
+.admin-orders-payment-method {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-orders-payment-paid {
+  font-size: 0.72rem;
+  color: #059669;
+}
+
+.admin-orders-payment-pending {
+  font-size: 0.72rem;
+  color: #d97706;
+}
+
+.admin-orders-empty-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.admin-orders-badge {
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.admin-orders-badge.badge-pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.admin-orders-badge.badge-confirmed {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.admin-orders-badge.badge-shipped {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
+.admin-orders-badge.badge-out-for-delivery {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #e9d5ff;
+}
+
+.admin-orders-badge.badge-delivered {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.admin-orders-badge.badge-return-requested {
+  background: #fed7aa;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+}
+
+.admin-orders-badge.badge-returned {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-orders-badge.badge-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.admin-order-modal-subtext {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 1.25rem;
+}
+
+.admin-order-modal-field {
+  margin-bottom: 1.25rem;
+}
+
+.admin-order-modal-warning {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #fecaca;
+}
+
+.admin-order-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+

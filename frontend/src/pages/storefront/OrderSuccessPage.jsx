@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import { getOrderByIdApi } from "../../api/shopApi";
+import "../../styles/storefront/OrderSuccessPage.css";
 
 export const OrderSuccessPage = () => {
   const { orderId } = useParams();
@@ -31,7 +32,7 @@ export const OrderSuccessPage = () => {
 
   if (isLoading) {
     return (
-      <div className="profile-loading-state" style={{ padding: "6rem 0" }}>
+      <div className="profile-loading-state order-success-loading">
         <div className="cart-spinner-small"></div>
         <p>Retrieving your order details...</p>
       </div>
@@ -40,7 +41,7 @@ export const OrderSuccessPage = () => {
 
   if (error || !order) {
     return (
-      <div className="empty-cart-view" style={{ padding: "6rem 1.5rem" }}>
+      <div className="empty-cart-view order-success-notfound">
         <h2>Order Not Found</h2>
         <p>{error || "We could not locate this order record."}</p>
         <Link to="/collections" className="btn btn-primary">
@@ -124,12 +125,12 @@ export const OrderSuccessPage = () => {
               {order.shippingAddress.city}, {order.shippingAddress.state} -{" "}
               {order.shippingAddress.postalCode}
             </p>
-            <p className="meta-text" style={{ marginTop: "0.5rem" }}>
+            <p className="meta-text meta-phone-text">
               Phone: +91 {order.shippingAddress.phone}
             </p>
           </div>
 
-          <div className="meta-block" style={{ marginTop: "1.5rem" }}>
+          <div className="meta-block meta-payment-block">
             <h3 className="card-heading">Payment Information</h3>
             <p className="meta-text">
               Method:{" "}

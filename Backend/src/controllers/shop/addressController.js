@@ -1,6 +1,12 @@
-import Address from "../../models/Address.js";
+import {
+  getAddressesForUser,
+  createAddress,
+  updateAddressById,
+  deleteAddressById,
+  setAsDefaultAddress,
+} from "../../services/shop/index.js";
 
-export const getUserAddresses = async (req, res) => {
+export const getUserAddresses = async (req, res, next) => {
   try {
     if (req.user?.role === "admin") {
       return res.status(200).json({
@@ -10,25 +16,14 @@ export const getUserAddresses = async (req, res) => {
       });
     }
 
-    const addresses = await Address.find({ user: req.user._id }).sort({
-      isDefault: -1,
-      createdAt: -1,
-    });
-
-    return res.status(200).json({
-      success: true,
-      addresses,
-    });
+    const addresses = await getAddressesForUser(req.user._id);
+    return res.status(200).json({ success: true, addresses });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to get user addresses",
-      error: err.message,
-    });
+    next(err);
   }
 };
 
-export const addAddress = async (req, res) => {
+export const addAddress = async (req, res, next) => {
   try {
     if (req.user?.role === "admin") {
       return res.status(403).json({
@@ -36,72 +31,23 @@ export const addAddress = async (req, res) => {
         message: "Admin accounts cannot create delivery addresses",
       });
     }
-    const {
-      fullName,
-      phone,
-      streetAddress,
-      apartment,
-      city,
-      state,
-      postalCode,
-      country,
-      addressType,
-      isDefault,
-    } = req.body;
 
-    if (
-      !fullName ||
-      !phone ||
-      !streetAddress ||
-      !city ||
-      !state ||
-      !postalCode
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Please fill in all required fields",
-      });
-    }
-
-    const count = await Address.countDocuments({ user: req.user._id });
-    const shouldBeDefault = count === 0 || Boolean(isDefault);
-
-    if (shouldBeDefault) {
-      await Address.updateMany(
-        { user: req.user._id },
-        { $set: { isDefault: false } },
-      );
-    }
-
-    const newAddress = await Address.create({
-      user: req.user._id,
-      fullName,
-      phone,
-      streetAddress,
-      apartment: apartment || "",
-      city,
-      state,
-      postalCode,
-      country: country || "India",
-      addressType: addressType || "Home",
-      isDefault: shouldBeDefault,
+    const address = await createAddress({
+      userId: req.user._id,
+      addressData: req.body,
     });
 
     return res.status(201).json({
       success: true,
       message: "Address saved successfully",
-      address: newAddress,
+      address,
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to add address",
-      error: err.message,
-    });
+    next(err);
   }
 };
 
-export const updateAddress = async (req, res) => {
+export const updateAddress = async (req, res, next) => {
   try {
     if (req.user?.role === "admin") {
       return res.status(403).json({
@@ -109,33 +55,12 @@ export const updateAddress = async (req, res) => {
         message: "Admin accounts cannot manage delivery addresses",
       });
     }
-    const { id } = req.params;
-    const { isDefault } = req.body;
 
-    const existing = await Address.findOne({
-      _id: id,
-      user: req.user._id,
+    const updated = await updateAddressById({
+      userId: req.user._id,
+      addressId: req.params.id,
+      updateData: req.body,
     });
-
-    if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Address not found",
-      });
-    }
-
-    if (isDefault) {
-      await Address.updateMany(
-        { user: req.user._id, _id: { $ne: id } },
-        { $set: { isDefault: false } },
-      );
-    }
-
-    const updated = await Address.findByIdAndUpdate(
-      id,
-      { $set: req.body },
-      { new: true, runValidators: true },
-    );
 
     return res.status(200).json({
       success: true,
@@ -143,77 +68,39 @@ export const updateAddress = async (req, res) => {
       address: updated,
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to update address",
-      error: err.message,
-    });
+    next(err);
   }
 };
 
-export const deleteAddress = async (req, res) => {
+export const deleteAddress = async (req, res, next) => {
   try {
-    if (req.user?.role === "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Admin accounts cannot manage delivery addresses",
-      });
-    }
-    const { id } = req.params;
-    const deleted = await Address.findOneAndDelete({
-      _id: id,
-      user: req.user._id,
+    await deleteAddressById({
+      userId: req.user._id,
+      addressId: req.params.id,
     });
-    if (!deleted) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Address not found" });
-    }
-    if (deleted.isDefault) {
-      const fallback = await Address.findOne({ user: req.user._id }).sort({
-        createdAt: -1,
-      });
-      if (fallback) {
-        fallback.isDefault = true;
-        await fallback.save();
-      }
-    }
+
     return res.status(200).json({
       success: true,
       message: "Address deleted successfully",
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
-export const setDefaultAddress = async (req, res) => {
+export const setDefaultAddress = async (req, res, next) => {
   try {
-    if (req.user?.role === "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Admin accounts cannot manage delivery addresses",
-      });
-    }
-    const { id } = req.params;
-    const address = await Address.findOne({ _id: id, user: req.user._id });
-    if (!address) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Address not found" });
-    }
-    await Address.updateMany(
-      { user: req.user._id },
-      { $set: { isDefault: false } },
-    );
-    address.isDefault = true;
-    await address.save();
+    const address = await setAsDefaultAddress({
+      userId: req.user._id,
+      addressId: req.params.id,
+    });
+
     return res.status(200).json({
       success: true,
-      message: "Default address updated",
+      message: "Default address updated successfully",
       address,
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };

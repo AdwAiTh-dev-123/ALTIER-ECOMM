@@ -1,38 +1,24 @@
-import { uploadBufferToCloudinary } from "../../config/cloudinary.js";
-import User from "../../models/User.js";
+import { updateUserAvatarService } from "../../services/auth/index.js";
 
-export const updateAvatar = async (req, res) => {
+export const updateAvatar = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "No image file provided",
-      });
+      return res.status(400).json({ success: false, message: "No image file provided" });
     }
 
-    const secureUrl = await uploadBufferToCloudinary(
-      req.file.buffer,
-      "altier/avatars",
-    );
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: { avatar: secureUrl } },
-      { new: true },
-    );
+    const { secureUrl, user } = await updateUserAvatarService({
+      userId: req.user._id,
+      fileBuffer: req.file.buffer,
+    });
 
     return res.status(200).json({
       success: true,
       message: "Profile photo updated successfully",
       avatar: secureUrl,
-      user: updatedUser,
+      user,
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update profile photo",
-      error: err.message,
-    });
+    next(err);
   }
 };
 

@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
+import "../../styles/storefront/CartPage.css";
 
 export const CartPage = () => {
   const {
@@ -21,6 +22,7 @@ export const CartPage = () => {
 
   const { toggleWishlist } = useWishlist();
   const navigate = useNavigate();
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   useEffect(() => {
     fetchCart();
@@ -107,7 +109,7 @@ export const CartPage = () => {
           <button
             type="button"
             className="btn-clear-cart"
-            onClick={clearCart}
+            onClick={() => setShowClearConfirm(true)}
             title="Remove all items from your bag"
           >
             <span className="btn-clear-icon">🗑️</span>
@@ -292,9 +294,9 @@ export const CartPage = () => {
                         style={
                           isOut
                             ? {
-                                textDecoration: "line-through",
-                                color: "var(--text-muted)",
-                              }
+                              textDecoration: "line-through",
+                              color: "var(--text-muted)",
+                            }
                             : {}
                         }
                       >
@@ -399,6 +401,47 @@ export const CartPage = () => {
           </aside>
         </div>
       )}
+
+      {/* Clear Bag Confirmation Modal */}
+      {showClearConfirm && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowClearConfirm(false)}
+        >
+          <div
+            className="cart-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cart-confirm-icon">🗑️</div>
+            <h3 className="cart-confirm-title">
+              Clear Shopping Bag?
+            </h3>
+            <p className="cart-confirm-desc">
+              Are you sure you want to remove all {totalCount} item{totalCount !== 1 ? "s" : ""} from your bag? This action cannot be reversed.
+            </p>
+            <div className="cart-confirm-actions">
+              <button
+                type="button"
+                className="btn btn-secondary cart-confirm-btn"
+                onClick={() => setShowClearConfirm(false)}
+              >
+                Keep Items
+              </button>
+              <button
+                type="button"
+                className="cart-confirm-btn cart-confirm-btn-danger"
+                onClick={() => {
+                  clearCart();
+                  setShowClearConfirm(false);
+                }}
+              >
+                Clear Bag
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

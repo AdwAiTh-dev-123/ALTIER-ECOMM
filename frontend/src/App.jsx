@@ -34,6 +34,7 @@ import { OrderFailurePage } from "./pages/storefront/OrderFailurePage";
 import { OrdersPage } from "./pages/storefront/OrdersPage";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
 import { OrderDetailsPage } from "./pages/storefront/OrderDetailsPage";
+import NotFoundPage from "./pages/common/NotFoundPage";
 
 import "./App.css";
 import "./styles/storefront.css";
@@ -106,6 +107,14 @@ function App() {
         />
         <Route
           path="/reset-password"
+          element={
+            <GuestRoute>
+              <ResetPasswordPage />
+            </GuestRoute>
+          }
+        />
+        <Route
+          path="/reset-password/:token"
           element={
             <GuestRoute>
               <ResetPasswordPage />
@@ -243,7 +252,14 @@ function App() {
         </Route>
 
         {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="*"
+          element={
+            <StorefrontLayout>
+              <NotFoundPage />
+            </StorefrontLayout>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
