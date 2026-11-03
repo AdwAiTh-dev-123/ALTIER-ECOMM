@@ -114,3 +114,18 @@ export function verifyWalletTopupApi(payload) {
 export function placeWalletOrderApi({ addressId }) {
   return api.post("/orders/wallet", { addressId });
 }
+
+export function cancelOrderItemApi(orderId, itemId, { reason }) {
+  return api.patch(`/orders/${orderId}/items/${itemId}/cancel`, { reason });
+}
+
+export function requestOrderItemReturnApi(
+  orderId,
+  itemId,
+  { reason, comment },
+) {
+  return api.post(`/orders/${orderId}/items/${itemId}/return`, {
+    reason,
+    comment,
+  });
+}

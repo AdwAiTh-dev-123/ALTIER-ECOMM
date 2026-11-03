@@ -696,7 +696,8 @@ export const AdminOrdersPage = () => {
                     ⚠️ Return Requested by Customer
                   </span>
                   <p className="admin-return-alert-reason">
-                    <strong>Reason:</strong> "{detailsModal.order.returnRequest?.reason}"
+                    <strong>Reason:</strong> "
+                    {detailsModal.order.returnRequest?.reason}"
                   </p>
                 </div>
                 <button
@@ -747,46 +748,164 @@ export const AdminOrdersPage = () => {
               Purchased Items
             </h4>
             <div className="admin-order-items-scroll">
-              {detailsModal.order.items.map((item) => (
-                <div key={item._id} className="admin-order-item-row">
+              {detailsModal.order.items.map((item) => {
+                const isCancelled = item.status === "Cancelled";
+                const isReturned = item.status === "Returned";
+                const isReturnRequested =
+                  item.status === "Return Requested" ||
+                  item.returnRequest?.status === "Pending";
+
+                return (
                   <div
+                    key={item._id}
+                    className="admin-order-item-row"
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.85rem",
+                      opacity: isCancelled ? 0.6 : 1,
+                      backgroundColor: isCancelled ? "#fafafa" : "transparent",
+                      borderLeft: isCancelled ? "3px solid #dc2626" : "none",
+                      paddingLeft: isCancelled ? "0.5rem" : "0",
                     }}
                   >
-                    <img
-                      src={item.image}
-                      alt={item.title}
+                    <div
                       style={{
-                        width: "48px",
-                        height: "60px",
-                        objectFit: "cover",
-                        borderRadius: "6px",
-                        border: "1px solid #e7e5e4",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.85rem",
                       }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
-                        {item.title}
-                      </div>
-                      <div
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.title}
                         style={{
-                          fontSize: "0.8rem",
-                          color: "#78716c",
-                          marginTop: "2px",
+                          width: "48px",
+                          height: "60px",
+                          objectFit: "cover",
+                          borderRadius: "6px",
+                          border: "1px solid #e7e5e4",
+                          filter: isCancelled ? "grayscale(50%)" : "none",
                         }}
-                      >
-                        {item.color} | Size: {item.size} | Qty: {item.quantity}
+                      />
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: "0.9rem",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.4rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <span
+                            style={{
+                              textDecoration: isCancelled
+                                ? "line-through"
+                                : "none",
+                              color: isCancelled ? "#78716c" : "inherit",
+                            }}
+                          >
+                            {item.title}
+                          </span>
+
+                          {/* Item Status Badges */}
+                          {isCancelled && (
+                            <span
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                padding: "1px 6px",
+                                borderRadius: "4px",
+                                background: "#fee2e2",
+                                color: "#991b1b",
+                              }}
+                            >
+                              Cancelled
+                            </span>
+                          )}
+
+                          {isReturnRequested && (
+                            <span
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                padding: "1px 6px",
+                                borderRadius: "4px",
+                                background: "#fef3c7",
+                                color: "#b45309",
+                              }}
+                            >
+                              Return Requested
+                            </span>
+                          )}
+
+                          {isReturned && (
+                            <span
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                padding: "1px 6px",
+                                borderRadius: "4px",
+                                background: "#f3e8ff",
+                                color: "#6b21a8",
+                              }}
+                            >
+                              Returned
+                            </span>
+                          )}
+                        </div>
+
+                        <div
+                          style={{
+                            fontSize: "0.8rem",
+                            color: "#78716c",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {item.color} | Size: {item.size} | Qty:{" "}
+                          {item.quantity}
+                        </div>
+
+                        {/* Cancellation Reason note */}
+                        {isCancelled && item.cancellation?.reason && (
+                          <div
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "#dc2626",
+                              marginTop: "3px",
+                            }}
+                          >
+                            Reason: {item.cancellation.reason}
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: "0.92rem",
+                        textDecoration: isCancelled ? "line-through" : "none",
+                        color: isCancelled ? "#a8a29e" : "inherit",
+                        textAlign: "right",
+                      }}
+                    >
+                      ₹{item.itemTotal.toLocaleString()}
+                      {isCancelled && (
+                        <div
+                          style={{
+                            fontSize: "0.7rem",
+                            color: "#dc2626",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                          }}
+                        >
+                          Refunded
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>
-                    ₹{item.itemTotal.toLocaleString()}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Status Timeline */}

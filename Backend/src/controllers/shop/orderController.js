@@ -7,6 +7,8 @@ import {
   fetchUserOrdersList,
   cancelUserOrder,
   requestOrderReturn,
+  cancelOrderItem,
+  requestOrderItemReturn,
 } from "../../services/shop/index.js";
 
 export const createCodOrder = async (req, res, next) => {
@@ -44,7 +46,6 @@ export const createRazorpayOrder = async (req, res, next) => {
 
 export const verifyRazorpayPayment = async (req, res, next) => {
   try {
-
     const razorpayOrderId =
       req.body.razorpayOrderId || req.body.razorpay_order_id;
     const razorpayPaymentId =
@@ -139,6 +140,45 @@ export const requestReturn = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Return request submitted successfully",
+      order,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const cancelItemInOrder = async (req, res, next) => {
+  try {
+    const order = await cancelOrderItem({
+      orderId: req.params.orderId,
+      itemId: req.params.itemId,
+      userId: req.user._id,
+      reason: req.body.reason,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Item cancelled successfully",
+      order,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const requestItemReturnInOrder = async (req, res, next) => {
+  try {
+    const order = await requestOrderItemReturn({
+      orderId: req.params.orderId,
+      itemId: req.params.itemId,
+      userId: req.user._id,
+      reason: req.body.reason,
+      comment: req.body.comment,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Return request for item submitted successfully",
       order,
     });
   } catch (err) {

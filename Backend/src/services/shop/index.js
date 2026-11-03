@@ -1,4 +1,3 @@
-// Backend/src/services/shop/index.js
 export { processCodOrder } from "./processCodOrder.js";
 export { initiateRazorpayOrder } from "./initiateRazorpayOrder.js";
 export { verifyAndCompletePayment } from "./verifyAndCompletePayment.js";
@@ -17,14 +16,16 @@ export { createAddress } from "./createAddress.js";
 export { updateAddressById } from "./updateAddressById.js";
 export { deleteAddressById } from "./deleteAddressById.js";
 export { setAsDefaultAddress } from "./setAsDefaultAddress.js";
+export { cancelOrderItem } from "./cancelOrderItem.js";
+export { requestOrderItemReturn } from "./requestOrderItemReturn.js";
 export {
-    fetchUserWishlist,
-    toggleProductWishlist,
-    moveWishlistItemToCart,
-    clearEntireWishlist,
+  fetchUserWishlist,
+  toggleProductWishlist,
+  moveWishlistItemToCart,
+  clearEntireWishlist,
 } from "./wishlistService.js";
 export {
-    fetchStorefrontCategoryList,
-    fetchStorefrontProductsCatalog,
-    fetchStorefrontProductById,
+  fetchStorefrontCategoryList,
+  fetchStorefrontProductsCatalog,
+  fetchStorefrontProductById,
 } from "./shopCatalogService.js";

@@ -4,6 +4,8 @@ import {
   getOrderByIdApi,
   cancelOrderApi,
   requestReturnApi,
+  cancelOrderItemApi,
+  requestOrderItemReturnApi,
 } from "../../api/shopApi";
 
 const ORDER_STEPS = [
@@ -22,6 +24,7 @@ export const OrderDetailsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
+  const [activeItemTarget, setActiveItemTarget] = useState(null);
 
   // Modals
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -77,10 +80,24 @@ export const OrderDetailsPage = () => {
   const handleConfirmCancel = async () => {
     try {
       setIsSubmitting(true);
-      const res = await cancelOrderApi(order.orderId, { reason: cancelReason });
+      let res;
+
+      if (activeItemTarget) {
+        res = await cancelOrderItemApi(order.orderId, activeItemTarget._id, {
+          reason: cancelReason,
+        });
+      } else {
+        res = await cancelOrderApi(order.orderId, { reason: cancelReason });
+      }
+
       if (res.data.success) {
-        setActionSuccess("Your order has been cancelled successfully.");
+        setActionSuccess(
+          activeItemTarget
+            ? `Item "${activeItemTarget.title}" has been cancelled.`
+            : "Your order has been cancelled successfully.",
+        );
         setIsCancelModalOpen(false);
+        setActiveItemTarget(null);
         setCancelReason("");
         await fetchOrderDetails();
       }
@@ -99,14 +116,29 @@ export const OrderDetailsPage = () => {
     }
     try {
       setIsSubmitting(true);
-      const res = await requestReturnApi(order.orderId, {
-        reason: returnReason,
-      });
+
+      let res;
+
+      if (activeItemTarget) {
+        res = await requestOrderItemReturnApi(
+          order.orderId,
+          activeItemTarget._id,
+          { reason: returnReason },
+        );
+      } else {
+        res = await requestReturnApi(order.orderId, {
+          reason: returnReason,
+        });
+      }
+
       if (res.data.success) {
         setActionSuccess(
-          "Return request submitted. Our team will review your request.",
+          activeItemTarget
+            ? `Return request submitted for "${activeItemTarget.title}".`
+            : "Return request submitted for entire order.",
         );
         setIsReturnModalOpen(false);
+        setActiveItemTarget(null);
         setReturnReason("");
         await fetchOrderDetails();
       }
@@ -142,7 +174,13 @@ export const OrderDetailsPage = () => {
   const isCancelled = order.orderStatus === "Cancelled";
   const isPaymentFailed = order.paymentStatus === "Failed";
   const isOnlinePayment = order.paymentMethod === "RAZORPAY";
-  const isPaymentSuccessful = order.paymentStatus === "Paid";
+  const isPaymentSuccessful =
+    order.paymentStatus === "Paid" ||
+    order.paymentStatus === "Partially Refunded";
+
+  const hasActiveItems = order.items.some(
+    (item) => item.status !== "Cancelled",
+  );
 
   const hasReturnRequest =
     order.returnRequest &&
@@ -151,7 +189,9 @@ export const OrderDetailsPage = () => {
 
   const canCancel =
     ["Pending", "Confirmed"].includes(order.orderStatus) &&
-    (!isOnlinePayment || isPaymentSuccessful);
+    (!isOnlinePayment || isPaymentSuccessful) &&
+    hasActiveItems;
+    
   const canReturn = order.orderStatus === "Delivered" && !hasReturnRequest;
 
   const orderSteps = isPaymentFailed
@@ -476,62 +516,182 @@ export const OrderDetailsPage = () => {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
           >
-            {order.items.map((item) => (
-              <div
-                key={item._id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "1rem",
-                  paddingBottom: "1rem",
-                  borderBottom: "1px solid #fafafa",
-                }}
-              >
+            {order.items.map((item) => {
+              const isItemCancelled = item.status === "Cancelled";
+              const isItemReturned = item.status === "Returned";
+              const isItemReturnRequested =
+                item.status === "Return Requested" ||
+                item.returnRequest?.status === "Pending";
+
+              const canCancelItem = canCancel && !isItemCancelled;
+
+              const canReturnItem =
+                order.orderStatus === "Delivered" &&
+                !isItemCancelled &&
+                !isItemReturned &&
+                !isItemReturnRequested;
+
+              return (
                 <div
-                  style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+                  key={item._id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "1rem",
+                    paddingBottom: "1rem",
+                    borderBottom: "1px solid #fafafa",
+                    opacity: isItemCancelled ? 0.65 : 1,
+                  }}
                 >
-                  <img
-                    src={item.image}
-                    alt={item.title}
+                  <div
                     style={{
-                      width: "60px",
-                      height: "75px",
-                      objectFit: "cover",
-                      borderRadius: "4px",
-                      border: "1px solid #eee",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1rem",
                     }}
-                  />
-                  <div>
-                    <h4
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.title}
                       style={{
-                        margin: 0,
-                        fontSize: "0.95rem",
+                        width: "60px",
+                        height: "75px",
+                        objectFit: "cover",
+                        borderRadius: "4px",
+                        border: "1px solid #eee",
+                      }}
+                    />
+                    <div>
+                      <h4
+                        style={{
+                          margin: 0,
+                          fontSize: "0.95rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {item.title}
+                      </h4>
+                      <p
+                        style={{
+                          margin: "0.2rem 0",
+                          color: "#666",
+                          fontSize: "0.82rem",
+                        }}
+                      >
+                        {item.color} | Size: {item.size}
+                      </p>
+                      <span style={{ fontSize: "0.82rem", color: "#888" }}>
+                        Qty: {item.quantity} × ₹{item.price.toLocaleString()}
+                      </span>
+
+                      {/* Item Status Badges */}
+                      {isItemCancelled && (
+                        <span
+                          style={{
+                            display: "inline-block",
+                            marginLeft: "0.5rem",
+                            fontSize: "0.75rem",
+                            color: "#dc2626",
+                            background: "#fee2e2",
+                            padding: "1px 6px",
+                            borderRadius: "3px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Cancelled
+                        </span>
+                      )}
+                      {isItemReturnRequested && (
+                        <span
+                          style={{
+                            display: "inline-block",
+                            marginLeft: "0.5rem",
+                            fontSize: "0.75rem",
+                            color: "#b45309",
+                            background: "#fef3c7",
+                            padding: "1px 6px",
+                            borderRadius: "3px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Return Requested
+                        </span>
+                      )}
+                      {isItemReturned && (
+                        <span
+                          style={{
+                            display: "inline-block",
+                            marginLeft: "0.5rem",
+                            fontSize: "0.75rem",
+                            color: "#6b21a8",
+                            background: "#f3e8ff",
+                            padding: "1px 6px",
+                            borderRadius: "3px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Returned
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Item Price and Action Button */}
+                  <div style={{ textAlign: "right" }}>
+                    <div
+                      style={{
                         fontWeight: 600,
+                        fontSize: "0.95rem",
+                        marginBottom: "0.4rem",
                       }}
                     >
-                      {item.title}
-                    </h4>
-                    <p
-                      style={{
-                        margin: "0.2rem 0",
-                        color: "#666",
-                        fontSize: "0.82rem",
-                      }}
-                    >
-                      {item.color} | Size: {item.size}
-                    </p>
-                    <span style={{ fontSize: "0.82rem", color: "#888" }}>
-                      Qty: {item.quantity} × ₹{item.price.toLocaleString()}
-                    </span>
+                      ₹{item.itemTotal.toLocaleString()}
+                    </div>
+
+                    {/* Per-Item Cancel Button */}
+                    {canCancelItem && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{
+                          padding: "0.25rem 0.6rem",
+                          fontSize: "0.75rem",
+                          color: "#dc2626",
+                          borderColor: "#fca5a5",
+                        }}
+                        onClick={() => {
+                          setActiveItemTarget(item);
+                          setIsCancelModalOpen(true);
+                        }}
+                      >
+                        Cancel Item
+                      </button>
+                    )}
+
+                    {/* Per-Item Return Button */}
+                    {canReturnItem && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{
+                          padding: "0.25rem 0.6rem",
+                          fontSize: "0.75rem",
+                          color: "#b45309",
+                          borderColor: "#fcd34d",
+                        }}
+                        onClick={() => {
+                          setActiveItemTarget(item);
+                          setIsReturnModalOpen(true);
+                        }}
+                      >
+                        Return Item
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>
-                  ₹{item.itemTotal.toLocaleString()}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Action Buttons: Cancel or Return */}
@@ -549,9 +709,12 @@ export const OrderDetailsPage = () => {
                 type="button"
                 className="btn btn-secondary"
                 style={{ color: "#dc2626", borderColor: "#fca5a5" }}
-                onClick={() => setIsCancelModalOpen(true)}
+                onClick={() => {
+                  setActiveItemTarget(null);
+                  setIsCancelModalOpen(true);
+                }}
               >
-                Cancel Order
+                Cancel Entire Order
               </button>
             )}
 
@@ -560,9 +723,12 @@ export const OrderDetailsPage = () => {
                 type="button"
                 className="btn btn-secondary"
                 style={{ color: "#b45309", borderColor: "#fcd34d" }}
-                onClick={() => setIsReturnModalOpen(true)}
+                onClick={() => {
+                  setActiveItemTarget(null);
+                  setIsReturnModalOpen(true);
+                }}
               >
-                Request Return
+                Return Entire Order
               </button>
             )}
           </div>
@@ -689,7 +855,9 @@ export const OrderDetailsPage = () => {
         <div className="admin-order-modal-backdrop">
           <div className="admin-order-modal-card" style={{ maxWidth: "450px" }}>
             <h3 style={{ margin: "0 0 0.5rem", fontSize: "1.2rem" }}>
-              Cancel Order
+              {activeItemTarget
+                ? `Cancel Item: ${activeItemTarget.title}`
+                : "Cancel Order"}
             </h3>
             <p
               style={{
@@ -698,8 +866,9 @@ export const OrderDetailsPage = () => {
                 marginBottom: "1rem",
               }}
             >
-              Are you sure you want to cancel order{" "}
-              <strong>{order.orderId}</strong>?
+              {activeItemTarget
+                ? `Are you sure you want to cancel ${activeItemTarget.title} (${activeItemTarget.size})?`
+                : `Are you sure you want to cancel order ${order.orderId}?`}
             </p>
             <div style={{ marginBottom: "1.25rem" }}>
               <label
@@ -730,7 +899,11 @@ export const OrderDetailsPage = () => {
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => setIsCancelModalOpen(false)}
+                onClick={() => {
+                  setIsCancelModalOpen(false);
+                  setActiveItemTarget(null);
+                  setCancelReason("");
+                }}
               >
                 Keep Order
               </button>
@@ -753,7 +926,9 @@ export const OrderDetailsPage = () => {
         <div className="admin-order-modal-backdrop">
           <div className="admin-order-modal-card" style={{ maxWidth: "450px" }}>
             <h3 style={{ margin: "0 0 0.5rem", fontSize: "1.2rem" }}>
-              Request Return
+              {activeItemTarget
+                ? `Request Return: ${activeItemTarget.title}`
+                : "Request Return"}
             </h3>
             <p
               style={{
@@ -762,8 +937,9 @@ export const OrderDetailsPage = () => {
                 marginBottom: "1rem",
               }}
             >
-              Order <strong>{order.orderId}</strong> was delivered. Please let
-              us know why you wish to return your purchase.
+              {activeItemTarget
+                ? `Please let us know why you wish to return ${activeItemTarget.title} (${activeItemTarget.size}).`
+                : `Order ${order.orderId} was delivered. Please let us know why you wish to return your purchase.`}
             </p>
             <div style={{ marginBottom: "1.25rem" }}>
               <label
@@ -794,7 +970,11 @@ export const OrderDetailsPage = () => {
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => setIsReturnModalOpen(false)}
+                onClick={() => {
+                  setIsReturnModalOpen(false);
+                  setActiveItemTarget(null);
+                  setReturnReason("");
+                }}
               >
                 Back
               </button>

@@ -18,12 +18,40 @@ export const cancelUserOrder = async ({ orderId, userId, reason }) => {
     throw err;
   }
 
-  if (order.orderStatus === "Confirmed") {
-    for (const item of order.items) {
-      await Variant.findByIdAndUpdate(item.variant, {
-        $inc: { stock: item.quantity },
-      });
+  let remainingRefundAmount = 0;
+  const isPaid =
+    order.paymentStatus === "Paid" ||
+    order.paymentStatus === "Partially Refunded";
+
+  for (const item of order.items) {
+    if (item.status !== "Cancelled") {
+      if (order.orderStatus === "Confirmed") {
+        await Variant.findByIdAndUpdate(item.variant, {
+          $inc: { stock: item.quantity },
+        });
+      }
+
+      remainingRefundAmount += item.itemTotal;
+      item.status = "Cancelled";
+      item.cancellation = {
+        reason: reason || "Cancelled as part of whole order cancellation",
+        cancelledAt: new Date(),
+      };
     }
+  }
+
+  if (isPaid && order.pricing.shippingFee > 0) {
+    remainingRefundAmount += order.pricing.shippingFee;
+  }
+
+  if (isPaid && remainingRefundAmount > 0) {
+    await creditWalletRefund({
+      userId: order.user,
+      amount: remainingRefundAmount,
+      orderId: order.orderId,
+      reason: `Refund for cancelled order #${order.orderId}`,
+    });
+    order.paymentStatus = "Refunded";
   }
 
   order.orderStatus = "Cancelled";
@@ -32,21 +60,10 @@ export const cancelUserOrder = async ({ orderId, userId, reason }) => {
     cancelledAt: new Date(),
   };
 
-  if (order.paymentStatus === "Paid") {
-    order.paymentStatus = "Refunded";
-
-    await creditWalletRefund({
-      userId: order.user,
-      amount: order.pricing.totalAmount,
-      orderId: order.orderId,
-      reason: `Refund for cancelled order #${order.orderId}`,
-    });
-  }
-
   order.statusHistory.push({
     status: "Cancelled",
     timestamp: new Date(),
-    comment: reason || "Order cancelled by customer",
+    comment: reason || "Entire order cancelled by customer",
     updatedBy: "Customer",
   });
 

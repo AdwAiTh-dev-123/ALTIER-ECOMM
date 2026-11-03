@@ -34,6 +34,8 @@ import {
   getUserOrders,
   cancelOrder,
   requestReturn,
+  cancelItemInOrder,
+  requestItemReturnInOrder,
 } from "../controllers/shop/orderController.js";
 
 import {
@@ -110,7 +112,17 @@ router.post(
   validateReturnRequest,
   requestReturn,
 );
-
+router.patch(
+  "/orders/:orderId/items/:itemId/cancel",
+  authMiddleware,
+  cancelItemInOrder,
+);
+router.post(
+  "/orders/:orderId/items/:itemId/return",
+  authMiddleware,
+  validateReturnRequest,
+  requestItemReturnInOrder,
+);
 router.post("/orders/razorpay/create", authMiddleware, createRazorpayOrder);
 router.post(
   "/orders/razorpay/verify",
@@ -120,9 +132,10 @@ router.post(
 );
 router.post("/orders/razorpay/fail", authMiddleware, handleRazorpayFailure);
 
-router.get("/wallet",authMiddleware,getWallet);
-router.post("/wallet/topup/create",authMiddleware,createWalletTopupOrder);
+//wallet
+router.get("/wallet", authMiddleware, getWallet);
+router.post("/wallet/topup/create", authMiddleware, createWalletTopupOrder);
 router.post("/wallet/topup/verify", authMiddleware, verifyWalletTopup);
-router.post("/orders/wallet",authMiddleware,createWalletOrder)
+router.post("/orders/wallet", authMiddleware, createWalletOrder);
 
 export default router;
