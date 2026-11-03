@@ -24,6 +24,7 @@ export const AdminOrdersPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [successToast, setSuccessToast] = useState("");
+  const [modalError, setModalError] = useState("");
 
   // Filters & Pagination
   const [search, setSearch] = useState("");
@@ -75,6 +76,11 @@ export const AdminOrdersPage = () => {
     setTimeout(() => setSuccessToast(""), 3500);
   };
 
+  const showError = (msg) => {
+    setErrorMessage(msg);
+    setTimeout(() => setErrorMessage(""), 3500);
+  };
+
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
@@ -103,9 +109,12 @@ export const AdminOrdersPage = () => {
   // Handle Status Change
   const handleConfirmStatusChange = async () => {
     if (!statusModal.order || !statusModal.nextStatus) return;
+    setModalError("");
     try {
       setIsSubmitting(true);
-      const res = await updateAdminOrderStatus(statusModal.order.orderId, {
+      const targetId = statusModal.order._id || statusModal.order.orderId;
+      const res = await updateAdminOrderStatus(targetId, {
+        status: statusModal.nextStatus,
         newStatus: statusModal.nextStatus,
         comment: statusModal.comment,
       });
@@ -121,7 +130,10 @@ export const AdminOrdersPage = () => {
         loadOrders();
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update order status");
+      const errorMsg =
+        err.response?.data?.message || "Failed to update order status";
+      setModalError(errorMsg);
+      showError(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -130,9 +142,12 @@ export const AdminOrdersPage = () => {
   // Handle Return Review
   const handleConfirmReturnReview = async () => {
     if (!returnModal.order) return;
+    setModalError("");
     try {
       setIsSubmitting(true);
-      const res = await reviewAdminReturnRequest(returnModal.order.orderId, {
+      const targetId = returnModal.order._id || returnModal.order.orderId;
+      const res = await reviewAdminReturnRequest(targetId, {
+        decision: returnModal.action === "APPROVE" ? "APPROVE" : "REJECTED",
         action: returnModal.action,
         adminNote: returnModal.adminNote,
       });
@@ -150,7 +165,10 @@ export const AdminOrdersPage = () => {
         loadOrders();
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to process return review");
+      const errorMsg =
+        err.response?.data?.message || "Failed to process return review";
+      setModalError(errorMsg);
+      showError(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -185,15 +203,11 @@ export const AdminOrdersPage = () => {
       </div>
 
       {successToast && (
-        <div className="admin-orders-toast-success">
-          ✓ {successToast}
-        </div>
+        <div className="admin-orders-toast-success">✓ {successToast}</div>
       )}
 
       {errorMessage && (
-        <div className="admin-orders-toast-error">
-          ⚠️ {errorMessage}
-        </div>
+        <div className="admin-orders-toast-error">⚠️ {errorMessage}</div>
       )}
 
       {/* Search & Filters */}
@@ -313,9 +327,7 @@ export const AdminOrdersPage = () => {
                     </td>
 
                     <td>
-                      <span className={badgeClass}>
-                        ● {order.orderStatus}
-                      </span>
+                      <span className={badgeClass}>● {order.orderStatus}</span>
                     </td>
 
                     <td style={{ textAlign: "right" }}>
@@ -337,14 +349,15 @@ export const AdminOrdersPage = () => {
                           <button
                             type="button"
                             className="admin-order-btn-status"
-                            onClick={() =>
+                            onClick={() => {
+                              setModalError("");
                               setStatusModal({
                                 isOpen: true,
                                 order,
                                 nextStatus: allowedTransitions[0],
                                 comment: "",
-                              })
-                            }
+                              });
+                            }}
                             title="Update status"
                           >
                             Update Status ▾
@@ -399,14 +412,15 @@ export const AdminOrdersPage = () => {
               <button
                 type="button"
                 className="admin-order-modal-close"
-                onClick={() =>
+                onClick={() => {
+                  setModalError("");
                   setStatusModal({
                     isOpen: false,
                     order: null,
                     nextStatus: "",
                     comment: "",
-                  })
-                }
+                  });
+                }}
               >
                 ✕
               </button>
@@ -418,6 +432,16 @@ export const AdminOrdersPage = () => {
                 {statusModal.order?.orderId}
               </strong>
             </p>
+
+            {/* In-Modal Error Banner */}
+            {modalError && (
+              <div
+                className="admin-order-modal-warning"
+                style={{ marginBottom: "1rem" }}
+              >
+                ⚠️ {modalError}
+              </div>
+            )}
 
             <div className="admin-order-modal-field">
               <label className="admin-order-form-label">Next Status:</label>
@@ -464,14 +488,15 @@ export const AdminOrdersPage = () => {
               <button
                 type="button"
                 className="admin-btn-secondary"
-                onClick={() =>
+                onClick={() => {
+                  setModalError("");
                   setStatusModal({
                     isOpen: false,
                     order: null,
                     nextStatus: "",
                     comment: "",
-                  })
-                }
+                  });
+                }}
               >
                 Cancel
               </button>

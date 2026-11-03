@@ -30,7 +30,7 @@ export const sendRegistrationOtp = async (email) => {
         <div style="margin: 24px 0; padding: 16px; background-color: #FBFBFA; border: 1px dashed #D6D3D1; text-align: center; border-radius: 6px;">
           <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #1C1917;">${rawOtp}</span>
         </div>
-        <p style="font-size: 13px; color: #A8A29E; margin: 0;">This code will expire in 1 minute.</p>
+        <p style="font-size: 13px; color: #A8A29E; margin: 0;">This code will expire in 5 minute.</p>
       </div>
     `,
   });
