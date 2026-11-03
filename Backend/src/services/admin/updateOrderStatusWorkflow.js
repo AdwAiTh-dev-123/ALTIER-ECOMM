@@ -1,5 +1,6 @@
 import Order from "../../models/Order.js";
 import Variant from "../../models/Variant.js";
+import { creditWalletRefund } from "../shop/walletService.js";
 
 const ALLOWED_TRANSITIONS = {
   Pending: ["Confirmed", "Cancelled"],
@@ -26,7 +27,9 @@ export const updateOrderStatusWorkflow = async ({ id, status, comment }) => {
   const currentStatus = order.orderStatus;
   const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
   if (!allowed.includes(status)) {
-    const err = new Error(`Illegal transition from "${currentStatus}" to "${status}".`);
+    const err = new Error(
+      `Illegal transition from "${currentStatus}" to "${status}".`,
+    );
     err.statusCode = 400;
     throw err;
   }
@@ -43,6 +46,31 @@ export const updateOrderStatusWorkflow = async ({ id, status, comment }) => {
     };
     if (order.paymentStatus === "Paid") {
       order.paymentStatus = "Refunded";
+
+      await creditWalletRefund({
+        userId: order.user,
+        amount: order.pricing.totalAmount,
+        orderId: order.orderId,
+        reason: `Refund for order cancelled by Admin #${order.orderId}`,
+      });
+    }
+  }
+
+  if (status === "Returned" && currentStatus !== "Returned") {
+    for (const item of order.items) {
+      await Variant.findByIdAndUpdate(item.variant, {
+        $inc: { stock: item.quantity },
+      });
+    }
+    if (orderPaymentStatus === "Paid") {
+      order.paymentStatus = "Refunded";
+
+      await creditWalletRefund({
+        userId: order.user,
+        amount: order.pricing.totalAmount,
+        orderId: order.orderId,
+        reason: `Refund for returned order #${order.orderId}`,
+      });
     }
   }
 
@@ -54,7 +82,8 @@ export const updateOrderStatusWorkflow = async ({ id, status, comment }) => {
   order.statusHistory.push({
     status,
     timestamp: new Date(),
-    comment: comment || `Status updated from ${currentStatus} to ${status} by Admin`,
+    comment:
+      comment || `Status updated from ${currentStatus} to ${status} by Admin`,
     updatedBy: "Admin",
   });
 

@@ -1,4 +1,3 @@
-// frontend/src/pages/storefront/ProfilePage.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -12,6 +11,26 @@ import {
 import { changePasswordApi, updateAvatarApi } from "../../api/authApi";
 import AddressModal from "../../components/common/AddressModal";
 import "../../styles/storefront/ProfilePage.css";
+import {
+  getWalletApi,
+  createWalletTopupOrderApi,
+  verifyWalletTopupApi,
+} from "../../api/shopApi";
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (document.getElementById("razorpay-checkout-script")) {
+      return resolve(true);
+    }
+
+    const script = document.createElement("script");
+    script.id = "razorpay-checkout-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onError = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 export const ProfilePage = () => {
   const { user, checkSession } = useAuth();
@@ -19,6 +38,12 @@ export const ProfilePage = () => {
 
   // Tab navigation: "addresses" | "security"
   const [activeTab, setActiveTab] = useState("addresses");
+
+  //Wallet State
+  const [wallet, setWallet] = useState(null);
+  const [isLoadingWallet, setIsLoadingWallet] = useState(false);
+  const [topupAmount, setTopupAmount] = useState("");
+  const [isProcessingTopup, setIsProcessingTopup] = useState(false);
 
   // Address state
   const [addresses, setAddresses] = useState([]);
@@ -83,7 +108,7 @@ export const ProfilePage = () => {
     } catch (err) {
       showToast(
         err.response?.data?.message || "Failed to load addresses",
-        "error"
+        "error",
       );
     } finally {
       setIsLoadingAddresses(false);
@@ -127,7 +152,7 @@ export const ProfilePage = () => {
     } catch (err) {
       showToast(
         err.response?.data?.message || "Failed to upload profile picture",
-        "error"
+        "error",
       );
     } finally {
       setIsUploadingAvatar(false);
@@ -163,7 +188,7 @@ export const ProfilePage = () => {
 
   const handleDeleteAddress = async (id) => {
     const confirmed = window.confirm(
-      "Are you sure you want to remove this address?"
+      "Are you sure you want to remove this address?",
     );
     if (!confirmed) return;
 
@@ -174,7 +199,7 @@ export const ProfilePage = () => {
     } catch (err) {
       showToast(
         err.response?.data?.message || "Failed to delete address",
-        "error"
+        "error",
       );
     }
   };
@@ -187,7 +212,7 @@ export const ProfilePage = () => {
     } catch (err) {
       showToast(
         err.response?.data?.message || "Failed to set default address",
-        "error"
+        "error",
       );
     }
   };
@@ -246,6 +271,102 @@ export const ProfilePage = () => {
     }
   };
 
+  const fetchWallet = useCallback(async () => {
+    if (isAdmin) return;
+    try {
+      setIsLoadingWallet(true);
+      const res = await getWalletApi();
+
+      if (res.data.success) {
+        setWallet(res.data.wallet);
+      }
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || "Failed to load wallet",
+        "error",
+      );
+    } finally {
+      setIsLoadingWallet(false);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (activeTab === "wallet") {
+      fetchWallet();
+    }
+  }, [activeTab, fetchWallet]);
+
+  const handleAddMoney = async (e) => {
+    e.preventDefault();
+    const amountNum = parseFloat(topupAmount);
+    if (!amountNum || amountNum < 1) {
+      showToast("Please enter a valid amount (minimum 1)", "error");
+      return;
+    }
+
+    try {
+      setIsProcessingTopup(true);
+
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        showToast(
+          "Failed to load payment gateway. Please check your connection",
+          "error",
+        );
+        return;
+      }
+
+      const res = await createWalletTopupOrderApi(amountNum);
+      if (!res.data.success) {
+        showToast(res.data.message || "Failed to initiate top-up", "error");
+        return;
+      }
+      const { keyId, razorpayOrderId, amount, currency } = res.data;
+
+      const options = {
+        key: keyId,
+        amount,
+        currency,
+        name: "ALTIER WALLET TOP-UP",
+        description: `Add ₹${amountNum} to Wallet`,
+        order_id: razorpayOrderId,
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+        },
+        theme: { color: "#111111" },
+        handler: async (response) => {
+          try {
+            const verifyRes = await verifyWalletTopupApi({
+              amount: amountNum,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+
+            if (verifyRes.data.success) {
+              setWallet(verifyRes.data.wallet);
+              setTopupAmount("");
+              showToast(`₹${amountNum} added to your wallet!`, "success");
+            }
+          } catch (err) {
+            showToast(
+              err.response?.data?.message || "Payment verification failed",
+              "error",
+            );
+          }
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Something went wrong", "error");
+    } finally {
+      setIsProcessingTopup(false);
+    }
+  };
+
   return (
     <div className="profile-page-root">
       {/* Toast Notification */}
@@ -284,7 +405,16 @@ export const ProfilePage = () => {
             )}
 
             <div className="profile-avatar-hover-overlay">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                 <circle cx="12" cy="13" r="4" />
               </svg>
@@ -306,7 +436,16 @@ export const ProfilePage = () => {
             title="Upload new profile picture"
             aria-label="Upload new profile picture"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
@@ -318,7 +457,9 @@ export const ProfilePage = () => {
           <h1 className="profile-user-name">{user?.name || "Customer"}</h1>
           <p className="profile-user-email">{user?.email}</p>
           <div className="profile-meta-tags">
-            <span className="profile-role-pill">{user?.role || "customer"}</span>
+            <span className="profile-role-pill">
+              {user?.role || "customer"}
+            </span>
             {user?.googleId && (
               <span className="profile-google-pill">Connected via Google</span>
             )}
@@ -332,9 +473,9 @@ export const ProfilePage = () => {
           <div className="admin-notice-icon">🛡️</div>
           <h2>Administrator Account</h2>
           <p>
-            Delivery addresses are only applicable to customer accounts for checkout.
-            As an administrator, you manage orders, stock, categories, and users from
-            the Admin Console.
+            Delivery addresses are only applicable to customer accounts for
+            checkout. As an administrator, you manage orders, stock, categories,
+            and users from the Admin Console.
           </p>
           <Link to="/admin" className="btn btn-primary">
             Open Admin Console &rarr;
@@ -359,6 +500,17 @@ export const ProfilePage = () => {
               onClick={() => setActiveTab("security")}
             >
               <span>Security & Password</span>
+            </button>
+
+            <button
+              type="button"
+              className={`profile-tab-button ${activeTab === "wallet" ? "active" : ""}`}
+              onClick={() => setActiveTab("wallet")}
+            >
+              <span>My Wallet</span>
+              {wallet && (
+                <span className="tab-count-badge">₹{wallet.balance}</span>
+              )}
             </button>
           </div>
 
@@ -454,14 +606,16 @@ export const ProfilePage = () => {
                 <span className="editorial-eyebrow">ACCOUNT PROTECTION</span>
                 <h2>Change Password</h2>
                 <p>
-                  Ensure your account is protected by using a strong password with at
-                  least 8 characters.
+                  Ensure your account is protected by using a strong password
+                  with at least 8 characters.
                 </p>
               </div>
 
               {user?.googleId && (
                 <div className="google-auth-notice">
-                  ℹ️ You are signed in via Google. If you create a password below, you will also be able to sign in using your email and password.
+                  ℹ️ You are signed in via Google. If you create a password
+                  below, you will also be able to sign in using your email and
+                  password.
                 </div>
               )}
 
@@ -477,11 +631,17 @@ export const ProfilePage = () => {
                 </div>
               )}
 
-              <form onSubmit={handlePasswordChange} className="password-change-form">
+              <form
+                onSubmit={handlePasswordChange}
+                className="password-change-form"
+              >
                 {/* Current Password (Optional if user only logged in with Google) */}
                 {!user?.googleId && (
                   <div className="profile-form-group">
-                    <label className="profile-form-label" htmlFor="currentPassword">
+                    <label
+                      className="profile-form-label"
+                      htmlFor="currentPassword"
+                    >
                       Current Password *
                     </label>
                     <div className="password-input-wrapper">
@@ -545,24 +705,44 @@ export const ProfilePage = () => {
                   <div className="profile-password-criteria">
                     <div className="criteria-title">Password Requirements:</div>
                     <ul className="criteria-list">
-                      <li className={`criteria-item ${passwordChecks.length ? "valid" : ""}`}>
-                        <span className="check-icon">{passwordChecks.length ? "✓" : "○"}</span>
+                      <li
+                        className={`criteria-item ${passwordChecks.length ? "valid" : ""}`}
+                      >
+                        <span className="check-icon">
+                          {passwordChecks.length ? "✓" : "○"}
+                        </span>
                         <span>At least 8 characters</span>
                       </li>
-                      <li className={`criteria-item ${passwordChecks.upper ? "valid" : ""}`}>
-                        <span className="check-icon">{passwordChecks.upper ? "✓" : "○"}</span>
+                      <li
+                        className={`criteria-item ${passwordChecks.upper ? "valid" : ""}`}
+                      >
+                        <span className="check-icon">
+                          {passwordChecks.upper ? "✓" : "○"}
+                        </span>
                         <span>One uppercase letter (A-Z)</span>
                       </li>
-                      <li className={`criteria-item ${passwordChecks.lower ? "valid" : ""}`}>
-                        <span className="check-icon">{passwordChecks.lower ? "✓" : "○"}</span>
+                      <li
+                        className={`criteria-item ${passwordChecks.lower ? "valid" : ""}`}
+                      >
+                        <span className="check-icon">
+                          {passwordChecks.lower ? "✓" : "○"}
+                        </span>
                         <span>One lowercase letter (a-z)</span>
                       </li>
-                      <li className={`criteria-item ${passwordChecks.number ? "valid" : ""}`}>
-                        <span className="check-icon">{passwordChecks.number ? "✓" : "○"}</span>
+                      <li
+                        className={`criteria-item ${passwordChecks.number ? "valid" : ""}`}
+                      >
+                        <span className="check-icon">
+                          {passwordChecks.number ? "✓" : "○"}
+                        </span>
                         <span>One numeric digit (0-9)</span>
                       </li>
-                      <li className={`criteria-item ${passwordChecks.special ? "valid" : ""}`}>
-                        <span className="check-icon">{passwordChecks.special ? "✓" : "○"}</span>
+                      <li
+                        className={`criteria-item ${passwordChecks.special ? "valid" : ""}`}
+                      >
+                        <span className="check-icon">
+                          {passwordChecks.special ? "✓" : "○"}
+                        </span>
                         <span>One special character (!@#$%^&*)</span>
                       </li>
                     </ul>
@@ -571,7 +751,10 @@ export const ProfilePage = () => {
 
                 {/* Confirm Password */}
                 <div className="profile-form-group">
-                  <label className="profile-form-label" htmlFor="confirmPassword">
+                  <label
+                    className="profile-form-label"
+                    htmlFor="confirmPassword"
+                  >
                     Confirm New Password *
                   </label>
                   <div className="password-input-wrapper">
@@ -606,10 +789,238 @@ export const ProfilePage = () => {
                     className="btn-update-password"
                     disabled={passwordStatus.loading || !isPasswordSecure}
                   >
-                    {passwordStatus.loading ? "Updating Password..." : "Update Password"}
+                    {passwordStatus.loading
+                      ? "Updating Password..."
+                      : "Update Password"}
                   </button>
                 </div>
               </form>
+            </section>
+          )}
+
+          {/* TAB 3: My Wallet */}
+          {activeTab === "wallet" && (
+            <section className="profile-wallet-section">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "1.5rem",
+                  marginBottom: "2rem",
+                }}
+              >
+                {/* Balance Card */}
+                <div
+                  style={{
+                    padding: "1.5rem",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: "8px",
+                    background: "#fdfdfd",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      textTransform: "uppercase",
+                      color: "#666",
+                      letterSpacing: "1px",
+                    }}
+                  >
+                    Available Balance
+                  </span>
+                  <h1
+                    style={{
+                      fontSize: "2.5rem",
+                      margin: "0.5rem 0",
+                      color: "#111",
+                    }}
+                  >
+                    ₹{wallet?.balance?.toLocaleString("en-IN") || 0}
+                  </h1>
+                  <p style={{ fontSize: "0.85rem", color: "#888" }}>
+                    Use your wallet for instant 1-click checkouts and automatic
+                    return refunds.
+                  </p>
+                </div>
+
+                {/* Add Funds Form */}
+                <div
+                  style={{
+                    padding: "1.5rem",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <h3 style={{ margin: "0 0 1rem 0" }}>Add Money to Wallet</h3>
+                  <form
+                    onSubmit={handleAddMoney}
+                    style={{ display: "flex", gap: "0.75rem" }}
+                  >
+                    <input
+                      type="number"
+                      min="1"
+                      step="any"
+                      placeholder="Enter amount (₹)"
+                      value={topupAmount}
+                      onChange={(e) => setTopupAmount(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: "0.6rem 0.8rem",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={isProcessingTopup}
+                      className="btn btn-primary"
+                    >
+                      {isProcessingTopup ? "Processing..." : "+ Add Money"}
+                    </button>
+                  </form>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.5rem",
+                      marginTop: "0.75rem",
+                    }}
+                  >
+                    {[500, 1000, 2000].map((quickAmt) => (
+                      <button
+                        key={quickAmt}
+                        type="button"
+                        onClick={() => setTopupAmount(quickAmt)}
+                        style={{
+                          padding: "0.3rem 0.6rem",
+                          border: "1px solid #ddd",
+                          background: "#fff",
+                          borderRadius: "4px",
+                          fontSize: "0.8rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        +₹{quickAmt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Transactions History */}
+              <div style={{ marginTop: "2rem" }}>
+                <h3>Transaction History</h3>
+                {isLoadingWallet ? (
+                  <p>Loading transactions...</p>
+                ) : !wallet?.transactions ||
+                  wallet.transactions.length === 0 ? (
+                  <p style={{ color: "#777", marginTop: "1rem" }}>
+                    No transactions found.
+                  </p>
+                ) : (
+                  <div
+                    style={{
+                      border: "1px solid #e5e5e5",
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                      marginTop: "1rem",
+                    }}
+                  >
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        textAlign: "left",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      <thead
+                        style={{
+                          background: "#f8f8f8",
+                          borderBottom: "1px solid #e5e5e5",
+                        }}
+                      >
+                        <tr>
+                          <th style={{ padding: "0.75rem 1rem" }}>Date</th>
+                          <th style={{ padding: "0.75rem 1rem" }}>
+                            Description
+                          </th>
+                          <th style={{ padding: "0.75rem 1rem" }}>Type</th>
+                          <th
+                            style={{
+                              padding: "0.75rem 1rem",
+                              textAlign: "right",
+                            }}
+                          >
+                            Amount
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {wallet.transactions.map((tx) => (
+                          <tr
+                            key={tx._id || tx.transactionId}
+                            style={{ borderBottom: "1px solid #f0f0f0" }}
+                          >
+                            <td
+                              style={{ padding: "0.75rem 1rem", color: "#666" }}
+                            >
+                              {new Date(tx.date).toLocaleDateString()}
+                            </td>
+                            <td style={{ padding: "0.75rem 1rem" }}>
+                              {tx.description}
+                              {tx.orderId && (
+                                <span
+                                  style={{
+                                    color: "#888",
+                                    display: "block",
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  Order ID: {tx.orderId}
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: "0.75rem 1rem" }}>
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "0.2rem 0.5rem",
+                                  borderRadius: "4px",
+                                  fontSize: "0.75rem",
+                                  fontWeight: "600",
+                                  background:
+                                    tx.type === "CREDIT"
+                                      ? "#e6f4ea"
+                                      : "#fce8e6",
+                                  color:
+                                    tx.type === "CREDIT"
+                                      ? "#137333"
+                                      : "#c5221f",
+                                }}
+                              >
+                                {tx.type}
+                              </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "0.75rem 1rem",
+                                textAlign: "right",
+                                fontWeight: "600",
+                                color:
+                                  tx.type === "CREDIT" ? "#137333" : "#111",
+                              }}
+                            >
+                              {tx.type === "CREDIT"
+                                ? `+₹${tx.amount}`
+                                : `-₹${tx.amount}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </section>
           )}
 

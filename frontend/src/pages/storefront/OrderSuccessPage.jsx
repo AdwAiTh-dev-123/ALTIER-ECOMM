@@ -137,7 +137,9 @@ export const OrderSuccessPage = () => {
               <strong>
                 {order.paymentMethod === "COD"
                   ? "Cash on Delivery"
-                  : "Online Payment"}
+                  : order.paymentMethod === "WALLET"
+                    ? "Wallet"
+                    : "Online Payment"}
               </strong>
             </p>
             <p className="meta-text">

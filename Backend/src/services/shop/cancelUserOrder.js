@@ -1,5 +1,6 @@
 import Order from "../../models/Order.js";
 import Variant from "../../models/Variant.js";
+import { creditWalletRefund } from "./walletService.js";
 
 export const cancelUserOrder = async ({ orderId, userId, reason }) => {
   const order = await Order.findOne({ orderId, user: userId });
@@ -26,7 +27,22 @@ export const cancelUserOrder = async ({ orderId, userId, reason }) => {
   }
 
   order.orderStatus = "Cancelled";
-  order.cancelReason = reason || "Cancelled by customer";
+  order.cancellation = {
+    reason: reason || "Cancelled by customer",
+    cancelledAt: new Date(),
+  };
+
+  if (order.paymentStatus === "Paid") {
+    order.paymentStatus = "Refunded";
+
+    await creditWalletRefund({
+      userId: order.user,
+      amount: order.pricing.totalAmount,
+      orderId: order.orderId,
+      reason: `Refund for cancelled order #${order.orderId}`,
+    });
+  }
+
   order.statusHistory.push({
     status: "Cancelled",
     timestamp: new Date(),

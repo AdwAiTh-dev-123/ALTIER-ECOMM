@@ -135,7 +135,7 @@ export const OrderDetailsPage = () => {
           Back to Orders &rarr;
         </Link>
       </div>
-    );  
+    );
   }
 
   const currentStep = getStepIndex(order.orderStatus);
@@ -658,7 +658,9 @@ export const OrderDetailsPage = () => {
                 <strong>
                   {order.paymentMethod === "COD"
                     ? "Cash on Delivery"
-                    : "Online (Razorpay)"}
+                    : order.paymentMethod === "WALLET"
+                      ? "Wallet"
+                      : "Online (Razorpay)"}
                 </strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>

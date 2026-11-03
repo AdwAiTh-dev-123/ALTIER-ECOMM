@@ -11,6 +11,7 @@ import {
   recordPaymentFailureApi,
 } from "../../api/shopApi";
 import AddressModal from "../../components/common/AddressModal";
+import { getWalletApi, placeWalletOrderApi } from "../../api/shopApi";
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -45,6 +46,9 @@ export const CheckoutPage = () => {
 
   const isOrderPlacedRef = useRef(false);
 
+  //wallet state
+  const [walletBalance, setWalletBalance] = useState(0);
+
   // Fetch addresses and auto-select default
   const loadAddresses = async () => {
     try {
@@ -71,6 +75,14 @@ export const CheckoutPage = () => {
 
   useEffect(() => {
     loadAddresses();
+
+    getWalletApi()
+      .then((res) => {
+        if (res.data.success && res.data.wallet) {
+          setWalletBalance(res.data.wallet.balance || 0);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const availableCartItems = cartItems.filter(
@@ -142,6 +154,33 @@ export const CheckoutPage = () => {
         setErrorMessage(
           err.response?.data?.message ||
             "Failed to place order. Please try again.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (paymentMethod === "WALLET") {
+      if (walletBalance < totalAmount) {
+        setErrorMessage(
+          `Insufficient wallet balance (Available: ₹${walletBalance}). Please select another payment method or add funds.`,
+        );
+        return;
+      }
+
+      try {
+        setIsSubmitting(true);
+        const res = await placeWalletOrderApi({ addressId: selectedAddressId });
+
+        if (res.data.success && res.data.order) {
+          isOrderPlacedRef.current = true;
+          await fetchCart();
+          navigate(`/orders/success/${res.data.order.orderId}`, {
+            replace: true,
+            state: { order: res.data.order },
+          });
+        }
+      } catch (err) {
+        setErrorMessage(
+          err.response?.data?.message || "Failed to place order with wallet",
         );
       } finally {
         setIsSubmitting(false);
@@ -462,6 +501,60 @@ export const CheckoutPage = () => {
                   <p className="payment-desc">
                     Instant & secure payment via Credit/Debit Cards, UPI, or
                     NetBanking.
+                  </p>
+                </div>
+              </label>
+
+              {/* Option: Wallet Payment */}
+              <label
+                className={`payment-option-card ${paymentMethod === "WALLET" ? "selected" : ""}`}
+                style={{
+                  opacity: walletBalance < totalAmount ? 0.6 : 1,
+                  cursor:
+                    walletBalance < totalAmount ? "not-allowed" : "pointer",
+                }}
+              >
+                <div className="checkout-radio-wrapper">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="WALLET"
+                    checked={paymentMethod === "WALLET"}
+                    onChange={(e) => {
+                      if (walletBalance >= totalAmount) {
+                        setPaymentMethod(e.target.value);
+                      }
+                    }}
+                    disabled={walletBalance < totalAmount}
+                  />
+                </div>
+                <div
+                  className="payment-option-details"
+                  style={{ width: "100%" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span className="payment-title">Altier Wallet</span>
+                    <span
+                      style={{
+                        fontWeight: "600",
+                        fontSize: "0.9rem",
+                        color:
+                          walletBalance >= totalAmount ? "#137333" : "#c5221f",
+                      }}
+                    >
+                      Balance: ₹{walletBalance}
+                    </span>
+                  </div>
+                  <p className="payment-desc">
+                    {walletBalance >= totalAmount
+                      ? "Pay instantly using your available wallet balance."
+                      : `Insufficient balance (Need ₹${totalAmount}). Please choose another payment method or top up your wallet in your profile.`}
                   </p>
                 </div>
               </label>

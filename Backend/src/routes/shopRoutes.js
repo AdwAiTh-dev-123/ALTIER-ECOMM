@@ -45,6 +45,12 @@ import {
   validateRazorpayVerify,
   validateReturnRequest,
 } from "../validators/shop/index.js";
+import {
+  getWallet,
+  createWalletTopupOrder,
+  verifyWalletTopup,
+  createWalletOrder,
+} from "../controllers/shop/walletController.js";
 
 const router = express.Router();
 
@@ -113,5 +119,10 @@ router.post(
   verifyRazorpayPayment,
 );
 router.post("/orders/razorpay/fail", authMiddleware, handleRazorpayFailure);
+
+router.get("/wallet",authMiddleware,getWallet);
+router.post("/wallet/topup/create",authMiddleware,createWalletTopupOrder);
+router.post("/wallet/topup/verify", authMiddleware, verifyWalletTopup);
+router.post("/orders/wallet",authMiddleware,createWalletOrder)
 
 export default router;

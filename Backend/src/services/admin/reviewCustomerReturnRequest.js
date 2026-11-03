@@ -1,7 +1,12 @@
 import Order from "../../models/Order.js";
 import Variant from "../../models/Variant.js";
+import { creditWalletRefund } from "../shop/walletService.js";
 
-export const reviewCustomerReturnRequest = async ({ id, decision, adminNotes }) => {
+export const reviewCustomerReturnRequest = async ({
+  id,
+  decision,
+  adminNotes,
+}) => {
   const order = await Order.findOne({
     $or: [{ _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }, { orderId: id }],
   });
@@ -29,6 +34,13 @@ export const reviewCustomerReturnRequest = async ({ id, decision, adminNotes }) 
     }
     if (order.paymentStatus === "Paid") {
       order.paymentStatus = "Refunded";
+
+      await creditWalletRefund({
+        userId: order.user,
+        amount: order.pricing.totalAmount,
+        orderId: order.orderId,
+        reason: `Refund for returned order #${order.orderId}`,
+      });
     }
   } else {
     order.orderStatus = "Delivered";

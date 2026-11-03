@@ -21,6 +21,8 @@ export const requestOrderReturn = async ({
     throw err;
   }
 
+  order.orderStatus = "Return Requested";
+
   order.returnRequest = {
     isRequested: true,
     reason,
@@ -30,9 +32,9 @@ export const requestOrderReturn = async ({
   };
 
   order.statusHistory.push({
-    status: "Delivered",
+    status: "Return Requested",
     timestamp: new Date(),
-    comment: `Return requested. Reason: ${reason}`,
+    comment: `Return requested by customer. Reason: ${reason}`,
     updatedBy: "Customer",
   });
 

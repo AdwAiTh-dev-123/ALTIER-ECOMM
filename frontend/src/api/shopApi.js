@@ -100,4 +100,17 @@ export function requestReturnApi(orderId, { reason }) {
   return api.post(`/orders/${orderId}/return`, { reason });
 }
 
+export function getWalletApi() {
+  return api.get("/wallet");
+}
 
+export function createWalletTopupOrderApi(amount) {
+  return api.post("/wallet/topup/create", { amount });
+}
+
+export function verifyWalletTopupApi(payload) {
+  return api.post("/wallet/topup/verify", payload);
+}
+export function placeWalletOrderApi({ addressId }) {
+  return api.post("/orders/wallet", { addressId });
+}

@@ -365,7 +365,8 @@ export const AdminOrdersPage = () => {
                         )}
 
                         {/* Return Review Button */}
-                        {order.orderStatus === "Return Requested" && (
+                        {(order.orderStatus === "Return Requested" ||
+                          order.returnRequest?.status === "Pending") && (
                           <button
                             type="button"
                             className="admin-order-btn-return"
@@ -686,6 +687,36 @@ export const AdminOrdersPage = () => {
                 ✕
               </button>
             </div>
+
+            {/* Pending Return Request Alert in Details Modal */}
+            {detailsModal.order.returnRequest?.status === "Pending" && (
+              <div className="admin-return-alert-banner">
+                <div className="admin-return-alert-content">
+                  <span className="admin-return-alert-title">
+                    ⚠️ Return Requested by Customer
+                  </span>
+                  <p className="admin-return-alert-reason">
+                    <strong>Reason:</strong> "{detailsModal.order.returnRequest?.reason}"
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="admin-return-alert-btn"
+                  onClick={() => {
+                    const currentOrder = detailsModal.order;
+                    setDetailsModal({ isOpen: false, order: null });
+                    setReturnModal({
+                      isOpen: true,
+                      order: currentOrder,
+                      action: "APPROVE",
+                      adminNote: "",
+                    });
+                  }}
+                >
+                  Review Return Now &rarr;
+                </button>
+              </div>
+            )}
 
             {/* Shipping Address */}
             <div className="admin-order-section-box">
