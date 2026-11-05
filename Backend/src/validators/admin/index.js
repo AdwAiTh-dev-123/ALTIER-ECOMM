@@ -7,3 +7,8 @@ export {
   validateOrderStatusUpdate,
   validateReturnReview,
 } from "./orderAdminValidator.js";
+
+export {
+  validateCreateCoupon,
+  validateCouponIdParam,
+} from "./couponValidator.js";

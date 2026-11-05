@@ -70,3 +70,20 @@ export function downloadAdminSalesReport(params = {}) {
     responseType: "blob",
   });
 }
+
+// Coupon APIs
+export function getAdminCoupons(params = {}) {
+  return api.get("/admin/coupons", { params });
+}
+
+export function createAdminCoupon(data) {
+  return api.post("/admin/coupons", data);
+}
+
+export function toggleAdminCouponStatus(couponId) {
+  return api.patch(`/admin/coupons/${couponId}/toggle`);
+}
+
+export function deleteAdminCoupon(couponId) {
+  return api.delete(`/admin/coupons/${couponId}`);
+}

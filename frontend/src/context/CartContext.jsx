@@ -224,7 +224,7 @@ export const CartProvider = ({ children }) => {
   const getShippingFee = () => {
     const subtotal = getSubtotal();
     if (subtotal === 0) return 0;
-    return subtotal >= 1500 ? 0 : 90; // Free pan-India shipping over 1500
+    return subtotal >= 1500 ? 0 : 99;
   };
 
   const getTotalAmount = () => {
@@ -233,7 +233,8 @@ export const CartProvider = ({ children }) => {
 
   const hasInvalidItems = () => {
     return cartItems.some(
-      (item) => !item.isListed || (item.stock > 0 && item.quantity > item.stock),
+      (item) =>
+        !item.isListed || (item.stock > 0 && item.quantity > item.stock),
     );
   };
 

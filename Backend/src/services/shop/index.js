@@ -29,3 +29,8 @@ export {
   fetchStorefrontProductsCatalog,
   fetchStorefrontProductById,
 } from "./shopCatalogService.js";
+
+export {
+  validateAndCalculateCoupon,
+  markCouponAsUsed,
+} from "./coupon/couponValidationService.js";

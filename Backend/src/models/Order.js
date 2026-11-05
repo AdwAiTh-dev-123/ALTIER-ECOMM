@@ -97,7 +97,14 @@ const OrderSchema = new mongoose.Schema(
     pricing: {
       subtotal: { type: Number, required: true, min: 0 },
       shippingFee: { type: Number, required: true, default: 0 },
+      couponDiscount: { type: Number, default: 0, min: 0 },
+      couponCode: { type: String, default: null },
       totalAmount: { type: Number, required: true, min: 0 },
+    },
+    coupon: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Coupon",
+      default: null,
     },
     paymentMethod: {
       type: String,

@@ -13,3 +13,6 @@ export {
   validateRazorpayVerify,
   validateReturnRequest,
 } from "./orderValidator.js";
+
+export { validateApplyCoupon } from "./couponValidator.js";
+

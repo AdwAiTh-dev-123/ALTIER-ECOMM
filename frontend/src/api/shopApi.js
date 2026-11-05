@@ -68,16 +68,24 @@ export function setDefaultAddressApi(id) {
   return api.patch(`/addresses/${id}/default`);
 }
 
-export function placeCodOrderApi({ addressId }) {
-  return api.post("/orders/cod", { addressId });
+export function placeCodOrderApi({ addressId, couponCode = null }) {
+  return api.post("/orders/cod", { addressId, couponCode });
 }
 
 export function getOrderByIdApi(orderId) {
   return api.get(`/orders/${orderId}`);
 }
 
-export function createRazorpayOrderApi({ addressId, retryOrderId }) {
-  return api.post("/orders/razorpay/create", { addressId, retryOrderId });
+export function createRazorpayOrderApi({
+  addressId,
+  retryOrderId,
+  couponCode = null,
+}) {
+  return api.post("/orders/razorpay/create", {
+    addressId,
+    retryOrderId,
+    couponCode,
+  });
 }
 
 export function verifyRazorpayPaymentApi(paymentPayload) {
@@ -111,8 +119,8 @@ export function createWalletTopupOrderApi(amount) {
 export function verifyWalletTopupApi(payload) {
   return api.post("/wallet/topup/verify", payload);
 }
-export function placeWalletOrderApi({ addressId }) {
-  return api.post("/orders/wallet", { addressId });
+export function placeWalletOrderApi({ addressId, couponCode = null }) {
+  return api.post("/orders/wallet", { addressId, couponCode });
 }
 
 export function cancelOrderItemApi(orderId, itemId, { reason }) {
@@ -128,4 +136,8 @@ export function requestOrderItemReturnApi(
     reason,
     comment,
   });
+}
+
+export function applyCouponApi(couponCode) {
+  return api.post("/coupons/apply", { couponCode });
 }

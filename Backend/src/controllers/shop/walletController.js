@@ -63,6 +63,7 @@ export const createWalletOrder = async (req, res, next) => {
     const order = await processWalletOrder({
       userId: req.user._id,
       addressId: req.body.addressId,
+      couponCode: req.body.couponCode,
     });
     return res.status(201).json({
       success: true,

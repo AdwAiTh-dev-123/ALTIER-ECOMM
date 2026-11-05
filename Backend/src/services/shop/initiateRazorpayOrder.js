@@ -3,6 +3,7 @@ import Order from "../../models/Order.js";
 import Cart from "../../models/Cart.js";
 import Variant from "../../models/Variant.js";
 import Address from "../../models/Address.js";
+import { validateAndCalculateCoupon } from "./index.js";
 
 const generateOrderId = () => {
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -14,11 +15,16 @@ export const initiateRazorpayOrder = async ({
   userId,
   addressId,
   retryOrderId,
+  couponCode = null,
 }) => {
   let address;
   let orderItems = [];
   let subtotal = 0;
   let existingOrder = null;
+  let couponResult = { hasCoupon: false, coupon: null, discountAmount: 0 };
+  let couponDiscount = 0;
+  let shippingFee = 0;
+  let totalAmount = 0;
 
   if (retryOrderId) {
     existingOrder = await Order.findOne({
@@ -38,6 +44,9 @@ export const initiateRazorpayOrder = async ({
 
     orderItems = existingOrder.items;
     subtotal = existingOrder.pricing.subtotal;
+    couponDiscount = existingOrder.pricing.couponDiscount || 0;
+    shippingFee = existingOrder.pricing.shippingFee;
+    totalAmount = existingOrder.pricing.totalAmount;
 
     for (const item of orderItems) {
       const variant = await Variant.findById(item.variant);
@@ -63,7 +72,10 @@ export const initiateRazorpayOrder = async ({
     }
 
     const cart = await Cart.findOne({ user: userId })
-      .populate("items.product")
+      .populate({
+        path: "items.product",
+        select: "name category isListed isDeleted",
+      })
       .populate("items.variant");
 
     if (!cart || cart.items.length === 0) {
@@ -111,10 +123,19 @@ export const initiateRazorpayOrder = async ({
         itemTotal,
       });
     }
-  }
 
-  const shippingFee = subtotal >= 1500 ? 0 : 99;
-  const totalAmount = subtotal + shippingFee;
+    // 2. Validate Coupon and Calculate Discount
+    couponResult = await validateAndCalculateCoupon({
+      couponCode,
+      userId,
+      cart,
+    });
+
+    couponDiscount = couponResult.hasCoupon ? couponResult.discountAmount : 0;
+    shippingFee =
+      subtotal - couponDiscount >= 1500 || subtotal >= 1500 ? 0 : 99;
+    totalAmount = Math.max(0, subtotal - couponDiscount) + shippingFee;
+  }
 
   const rzpOrder = await razorpayInstance.orders.create({
     amount: Math.round(totalAmount * 100),
@@ -148,7 +169,14 @@ export const initiateRazorpayOrder = async ({
         postalCode: address.postalCode,
         country: address.country || "India",
       },
-      pricing: { subtotal, shippingFee, totalAmount },
+      pricing: {
+        subtotal,
+        shippingFee,
+        couponDiscount,
+        couponCode: couponResult.hasCoupon ? couponResult.coupon.code : null,
+        totalAmount,
+      },
+      coupon: couponResult.hasCoupon ? couponResult.coupon._id : null,
       paymentMethod: "RAZORPAY",
       paymentStatus: "Pending",
       orderStatus: "Pending",

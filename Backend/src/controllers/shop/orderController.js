@@ -16,6 +16,7 @@ export const createCodOrder = async (req, res, next) => {
     const order = await processCodOrder({
       userId: req.user._id,
       addressId: req.body.addressId,
+      couponCode: req.body.couponCode,
     });
     return res.status(201).json({
       success: true,
@@ -29,11 +30,12 @@ export const createCodOrder = async (req, res, next) => {
 
 export const createRazorpayOrder = async (req, res, next) => {
   try {
-    const { addressId, retryOrderId } = req.body;
+    const { addressId, retryOrderId, couponCode } = req.body;
     const result = await initiateRazorpayOrder({
       userId: req.user._id,
       addressId,
       retryOrderId,
+      couponCode,
     });
     return res.status(200).json({
       success: true,

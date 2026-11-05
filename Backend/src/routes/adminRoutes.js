@@ -33,11 +33,19 @@ import {
   validateProductWithVariants,
   validateOrderStatusUpdate,
   validateReturnReview,
+  validateCreateCoupon,
+  validateCouponIdParam,
 } from "../validators/admin/index.js";
 import {
   getAdminSalesReport,
   downloadAdminSalesReport,
 } from "../controllers/admin/salesReportAdminController.js";
+import {
+  createCoupon,
+  getAllCoupons,
+  toggleCouponStatus,
+  deleteCoupon,
+} from "../controllers/admin/couponAdminController.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -133,7 +141,13 @@ router.patch(
 );
 
 //Sales report routes
-router.get("/sales-report",getAdminSalesReport);
-router.get("/sales-report/download",downloadAdminSalesReport)
+router.get("/sales-report", getAdminSalesReport);
+router.get("/sales-report/download", downloadAdminSalesReport);
+
+//Coupon
+router.get("/coupons", getAllCoupons);
+router.post("/coupons", validateCreateCoupon, createCoupon);
+router.patch("/coupons/:id/toggle", validateCouponIdParam, toggleCouponStatus);
+router.delete("/coupons/:id", validateCouponIdParam, deleteCoupon);
 
 export default router;

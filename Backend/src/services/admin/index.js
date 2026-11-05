@@ -14,3 +14,10 @@ export { toggleProductListingStatus } from "./toggleProductListingStatus.js";
 export { deleteProductAndVariants } from "./deleteProductAndVariants.js";
 export { fetchAllUsers } from "./fetchAllUsers.js";
 export { toggleUserBlockStatus } from "./toggleUserBlockStatus.js";
+
+export {
+  createNewCoupon,
+  fetchAllCoupons,
+  toggleCouponActiveStatus,
+  softDeleteCoupon,
+} from "./couponAdminService.js";

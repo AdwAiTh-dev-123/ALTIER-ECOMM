@@ -36,6 +36,7 @@ import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
 import AdminSalesReportPage from "./pages/admin/AdminSalesReportPage";
 import { OrderDetailsPage } from "./pages/storefront/OrderDetailsPage";
 import NotFoundPage from "./pages/common/NotFoundPage";
+import AdminCouponsPage from "./pages/admin/AdminCouponsPage";
 
 import "./App.css";
 import "./styles/storefront.css";
@@ -250,6 +251,7 @@ function App() {
           <Route path="categories/add" element={<AdminAddCategoryPage />} />
           <Route path="products" element={<AdminProductsPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="coupons" element={<AdminCouponsPage />} />
           <Route path="sales-report" element={<AdminSalesReportPage />} />
         </Route>
 

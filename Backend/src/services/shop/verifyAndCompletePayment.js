@@ -2,6 +2,7 @@ import crypto from "crypto";
 import Order from "../../models/Order.js";
 import Cart from "../../models/Cart.js";
 import Variant from "../../models/Variant.js";
+import { markCouponAsUsed } from "./index.js";
 
 export const verifyAndCompletePayment = async ({
   userId,
@@ -50,6 +51,14 @@ export const verifyAndCompletePayment = async ({
       err.statusCode = 400;
       throw err;
     }
+  }
+
+  // Mark coupon as redeemed once payment is verified
+  if (order.coupon) {
+    await markCouponAsUsed({
+      couponId: order.coupon,
+      userId,
+    });
   }
 
   order.paymentStatus = "Paid";

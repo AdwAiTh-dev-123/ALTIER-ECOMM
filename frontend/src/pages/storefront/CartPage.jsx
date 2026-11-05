@@ -22,27 +22,12 @@ export const CartPage = () => {
 
   const { toggleWishlist } = useWishlist();
   const navigate = useNavigate();
-  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isValidatingCheckout, setIsValidatingCheckout] = useState(false);
+  const [checkoutWarning, setCheckoutWarning] = useState("");
 
   useEffect(() => {
     fetchCart();
-
-    const handleFocus = () => {
-      fetchCart();
-    };
-
-    const interval = setInterval(() => {
-      fetchCart();
-    }, 5000);
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleFocus);
-    };
   }, [fetchCart]);
 
   const availableItems = cartItems.filter(
@@ -62,7 +47,7 @@ export const CartPage = () => {
     (acc, item) => acc + item.quantity,
     0,
   );
-  const shippingFee = subtotal === 0 ? 0 : subtotal >= 1500 ? 0 : 90;
+  const shippingFee = subtotal === 0 ? 0 : subtotal >= 1500 ? 0 : 99;
   const totalAmount = subtotal + shippingFee;
 
   const hasUnlisted = unlistedItems.length > 0;
@@ -88,6 +73,54 @@ export const CartPage = () => {
       totalStock: item.stock,
     });
     await removeFromCart(item.cartItemId);
+  };
+
+  const handleProceedToCheckout = async () => {
+    setCheckoutWarning("");
+    setIsValidatingCheckout(true);
+
+    try {
+      await fetchCart();
+
+      // 2. Inspect latest items
+      const latestUnlisted = cartItems.filter((item) => !item.isListed);
+      const latestSoldOut = cartItems.filter((item) => item.stock <= 0);
+      const latestOverStock = cartItems.filter(
+        (item) => item.isListed && item.stock > 0 && item.quantity > item.stock,
+      );
+
+      if (latestUnlisted.length > 0) {
+        setCheckoutWarning(
+          "Some items in your bag are no longer available. Please remove them before checkout.",
+        );
+        return;
+      }
+
+      if (latestSoldOut.length > 0) {
+        setCheckoutWarning(
+          "One or more items in your bag just sold out. Please remove them to continue.",
+        );
+        return;
+      }
+
+      if (latestOverStock.length > 0) {
+        setCheckoutWarning(
+          "Stock has changed. Please adjust item quantities to available amounts.",
+        );
+        return;
+      }
+
+      if (availableItems.length === 0) {
+        setCheckoutWarning("No available items in your bag to checkout.");
+        return;
+      }
+
+      navigate("/checkout");
+    } catch (err) {
+      setCheckoutWarning("Unable to verify bag items. Please try again.");
+    } finally {
+      setIsValidatingCheckout(false);
+    }
   };
 
   return (
@@ -161,7 +194,9 @@ export const CartPage = () => {
                 {cartItems.map((item) => {
                   const isUnlisted = !item.isListed;
                   const isOverStock =
-                    item.isListed && item.stock > 0 && item.quantity > item.stock;
+                    item.isListed &&
+                    item.stock > 0 &&
+                    item.quantity > item.stock;
                   const isOut = item.stock <= 0;
                   const rowTotal = item.price * item.quantity;
 
@@ -181,7 +216,9 @@ export const CartPage = () => {
                             <img src={item.image} alt={item.title} />
                           </Link>
                           {isOut && (
-                            <span className="cart-sold-out-badge">SOLD OUT</span>
+                            <span className="cart-sold-out-badge">
+                              SOLD OUT
+                            </span>
                           )}
                         </div>
 
@@ -202,7 +239,9 @@ export const CartPage = () => {
                             </span>
                           </div>
                           {item.sku && (
-                            <span className="cart-item-sku">SKU: {item.sku}</span>
+                            <span className="cart-item-sku">
+                              SKU: {item.sku}
+                            </span>
                           )}
 
                           {/* Stock Warnings */}
@@ -294,9 +333,9 @@ export const CartPage = () => {
                         style={
                           isOut
                             ? {
-                              textDecoration: "line-through",
-                              color: "var(--text-muted)",
-                            }
+                                textDecoration: "line-through",
+                                color: "var(--text-muted)",
+                              }
                             : {}
                         }
                       >
@@ -343,9 +382,12 @@ export const CartPage = () => {
                 <div className="shipping-progress-box">
                   <div className="shipping-progress-text">
                     <span>
-                      Add <strong>₹{(1500 - subtotal).toLocaleString()}</strong> more for <strong>FREE Delivery</strong>
+                      Add <strong>₹{(1500 - subtotal).toLocaleString()}</strong>{" "}
+                      more for <strong>FREE Delivery</strong>
                     </span>
-                    <span>{Math.min(100, Math.round((subtotal / 1500) * 100))}%</span>
+                    <span>
+                      {Math.min(100, Math.round((subtotal / 1500) * 100))}%
+                    </span>
                   </div>
                   <div className="shipping-progress-track">
                     <div
@@ -368,19 +410,41 @@ export const CartPage = () => {
               </div>
             </div>
 
+            {checkoutWarning && (
+              <div
+                style={{
+                  backgroundColor: "#fef2f2",
+                  color: "#dc2626",
+                  padding: "0.6rem 0.8rem",
+                  borderRadius: "6px",
+                  fontSize: "0.82rem",
+                  marginBottom: "1rem",
+                }}
+              >
+                ⚠️ {checkoutWarning}
+              </div>
+            )}
+
             <button
               type="button"
-              className={`btn btn-primary btn-block checkout-submit-btn ${hasUnlisted || hasOverStock || availableItems.length === 0 ? "disabled" : ""}`}
-              disabled={hasUnlisted || hasOverStock || availableItems.length === 0}
-              onClick={() => navigate("/checkout")}
+              className={`btn btn-primary btn-block checkout-submit-btn ${hasUnlisted || hasOverStock || availableItems.length === 0 || isValidatingCheckout ? "disabled" : ""}`}
+              disabled={
+                hasUnlisted ||
+                hasOverStock ||
+                availableItems.length === 0 ||
+                isValidatingCheckout
+              }
+              onClick={handleProceedToCheckout}
             >
-              {hasUnlisted
-                ? "Remove Unavailable Items"
-                : hasOverStock
-                  ? "Adjust Overstock Quantities"
-                  : availableItems.length === 0
-                    ? "All Items Are Sold Out"
-                    : `Proceed to Checkout (${totalCount} ${totalCount === 1 ? "item" : "items"})`}
+              {isValidatingCheckout
+                ? "Checking Stock..."
+                : hasUnlisted
+                  ? "Remove Unavailable Items"
+                  : hasOverStock
+                    ? "Adjust Overstock Quantities"
+                    : availableItems.length === 0
+                      ? "All Items Are Sold Out"
+                      : `Proceed to Checkout (${totalCount} ${totalCount === 1 ? "item" : "items"})`}
             </button>
 
             {/* Atelier Trust & Security Guarantees */}
@@ -413,11 +477,11 @@ export const CartPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="cart-confirm-icon">🗑️</div>
-            <h3 className="cart-confirm-title">
-              Clear Shopping Bag?
-            </h3>
+            <h3 className="cart-confirm-title">Clear Shopping Bag?</h3>
             <p className="cart-confirm-desc">
-              Are you sure you want to remove all {totalCount} item{totalCount !== 1 ? "s" : ""} from your bag? This action cannot be reversed.
+              Are you sure you want to remove all {totalCount} item
+              {totalCount !== 1 ? "s" : ""} from your bag? This action cannot be
+              reversed.
             </p>
             <div className="cart-confirm-actions">
               <button
@@ -441,7 +505,6 @@ export const CartPage = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

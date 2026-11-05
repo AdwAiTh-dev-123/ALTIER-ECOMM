@@ -54,6 +54,9 @@ import {
   createWalletOrder,
 } from "../controllers/shop/walletController.js";
 
+import { validateApplyCoupon } from "../validators/shop/index.js";
+import { applyCouponCode } from "../controllers/shop/couponShopController.js";
+
 const router = express.Router();
 
 router.get("/categories", getStorefrontCategories);
@@ -137,5 +140,13 @@ router.get("/wallet", authMiddleware, getWallet);
 router.post("/wallet/topup/create", authMiddleware, createWalletTopupOrder);
 router.post("/wallet/topup/verify", authMiddleware, verifyWalletTopup);
 router.post("/orders/wallet", authMiddleware, createWalletOrder);
+
+//Coupons
+router.post(
+  "/coupons/apply",
+  authMiddleware,
+  validateApplyCoupon,
+  applyCouponCode,
+);
 
 export default router;
