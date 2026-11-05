@@ -59,3 +59,14 @@ export function updateAdminOrderStatus(orderId, data) {
 export function reviewAdminReturnRequest(orderId, data) {
   return api.patch(`/admin/orders/${orderId}/return-review`, data);
 }
+
+export function getAdminSalesReport(params = {}) {
+  return api.get("/admin/sales-report", { params });
+}
+
+export function downloadAdminSalesReport(params = {}) {
+  return api.get("/admin/sales-report/download", {
+    params,
+    responseType: "blob",
+  });
+}

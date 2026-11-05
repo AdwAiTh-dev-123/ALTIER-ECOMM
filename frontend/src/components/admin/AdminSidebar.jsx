@@ -1,4 +1,3 @@
-// frontend/src/components/admin/AdminSidebar.jsx
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -123,6 +122,27 @@ const AdminSidebar = () => {
             <path d="M9 14l2 2 4-4" />
           </svg>
           <span>Orders</span>
+        </NavLink>
+
+        {/* Sales Report Link */}
+        <NavLink
+          to="/admin/sales-report"
+          className={({ isActive }) =>
+            `admin-nav-item ${isActive ? "active" : ""}`
+          }
+        >
+          <svg
+            className="admin-nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M12 20V10" />
+            <path d="M18 20V4" />
+            <path d="M6 20v-4" />
+          </svg>
+          <span>Sales Report</span>
         </NavLink>
       </div>
 

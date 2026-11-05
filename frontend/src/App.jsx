@@ -33,6 +33,7 @@ import OrderSuccessPage from "./pages/storefront/OrderSuccessPage";
 import { OrderFailurePage } from "./pages/storefront/OrderFailurePage";
 import { OrdersPage } from "./pages/storefront/OrdersPage";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
+import AdminSalesReportPage from "./pages/admin/AdminSalesReportPage";
 import { OrderDetailsPage } from "./pages/storefront/OrderDetailsPage";
 import NotFoundPage from "./pages/common/NotFoundPage";
 
@@ -249,6 +250,7 @@ function App() {
           <Route path="categories/add" element={<AdminAddCategoryPage />} />
           <Route path="products" element={<AdminProductsPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="sales-report" element={<AdminSalesReportPage />} />
         </Route>
 
         {/* Fallback route */}

@@ -34,6 +34,10 @@ import {
   validateOrderStatusUpdate,
   validateReturnReview,
 } from "../validators/admin/index.js";
+import {
+  getAdminSalesReport,
+  downloadAdminSalesReport,
+} from "../controllers/admin/salesReportAdminController.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -127,5 +131,9 @@ router.patch(
   validateReturnReview,
   reviewReturnRequest,
 );
+
+//Sales report routes
+router.get("/sales-report",getAdminSalesReport);
+router.get("/sales-report/download",downloadAdminSalesReport)
 
 export default router;
