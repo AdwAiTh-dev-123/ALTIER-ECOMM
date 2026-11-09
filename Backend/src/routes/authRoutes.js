@@ -13,6 +13,7 @@ import updateAvatar from "../controllers/auth/updateAvatar.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import sendChangeEmailOtpController from "../controllers/auth/sendChangeEmailOtp.js";
 import changeEmailController from "../controllers/auth/changeEmail.js";
+import { authLimiter } from "../middlewares/rateLimiter.js";
 import {
   validateChangePassword,
   validateForgotPassword,
@@ -50,14 +51,24 @@ const upload = multer({
 
 const router = express.Router();
 
-router.post("/register", validateRegister, register);
-router.post("/send-otp", validateSendOtp, sendOtp);
-router.post("/login", validateLogin, login);
+router.post("/register", authLimiter, validateRegister, register);
+router.post("/send-otp", authLimiter, validateSendOtp, sendOtp);
+router.post("/login", authLimiter, validateLogin, login);
 router.get("/me", authMiddleware, getMe);
 router.post("/logout", logOut);
 router.post("/google", googleAuth);
-router.post("/forgot-password", validateForgotPassword, forgotPassword);
-router.post("/reset-password", validateResetPassword, resetPassword);
+router.post(
+  "/forgot-password",
+  authLimiter,
+  validateForgotPassword,
+  forgotPassword,
+);
+router.post(
+  "/reset-password",
+  authLimiter,
+  validateResetPassword,
+  resetPassword,
+);
 router.put(
   "/change-password",
   authMiddleware,
@@ -68,6 +79,7 @@ router.patch("/avatar", authMiddleware, upload.single("avatar"), updateAvatar);
 router.post(
   "/send-change-email-otp",
   authMiddleware,
+  authLimiter,
   validateSendChangeEmailOtp,
   sendChangeEmailOtpController,
 );
