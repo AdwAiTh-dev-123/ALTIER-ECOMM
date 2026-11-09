@@ -597,3 +597,345 @@
     transform: rotate(360deg);
   }
 }
+
+/* 1. Header Layout & Top Action Button */
+.admin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* 2. Filter Ribbon Pill Buttons */
+.admin-filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.filter-pill-btn {
+  background-color: #ffffff;
+  color: #57534e;
+  border: 1px solid #e7e5e4;
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 9999px; /* Pill shape */
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.filter-pill-btn:hover {
+  background-color: #f5f4f0;
+  border-color: #d6d3d1;
+  color: #1c1917;
+}
+
+.filter-pill-btn.active {
+  background-color: #1c1917;
+  color: #ffffff;
+  border-color: #1c1917;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(28, 25, 23, 0.12);
+}
+
+/* 3. Table Row Action Buttons (Activate / Deactivate & Delete) */
+.actions-cell-flex {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Activate / Deactivate Toggle Button */
+.btn-action-text {
+  background-color: #f5f5f4;
+  border: 1px solid #e7e5e4;
+  color: #44403c;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-action-edit {
+  background-color: #ffffff;
+  border: 1px solid #d6d3d1;
+  color: #1c1917;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-action-edit:hover:not(:disabled) {
+  background-color: #f5f4f0;
+  border-color: #1c1917;
+}
+
+.btn-action-text:hover:not(:disabled) {
+  background-color: #e7e5e4;
+  color: #1c1917;
+  border-color: #d6d3d1;
+}
+
+.btn-action-text:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Delete Action Button */
+.btn-action-delete {
+  background-color: #ffffff;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-action-delete:hover:not(:disabled) {
+  background-color: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
+}
+
+.btn-action-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 4. Modal Danger & Action Buttons */
+.admin-btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: 1px solid #dc2626;
+  padding: 0.5rem 1.15rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.15);
+}
+
+.admin-btn-danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.25);
+}
+
+.admin-btn-danger:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* 5. Offers Type & Discount Badges */
+.badge-capsule {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-blue {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.badge-purple {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+.discount-tag {
+  display: inline-block;
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  margin-top: 1rem;
+}
+
+.admin-modal-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.admin-modal-form label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #44403c;
+  letter-spacing: 0.01em;
+}
+
+.admin-modal-form input[type="text"],
+.admin-modal-form input[type="number"],
+.admin-modal-form input[type="datetime-local"],
+.admin-modal-form select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.88rem;
+  color: #1c1917;
+  background-color: #ffffff;
+  border: 1px solid #d6d3d1;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.admin-modal-form input:focus,
+.admin-modal-form select:focus {
+  border-color: #1c1917;
+  box-shadow: 0 0 0 2px rgba(28, 25, 23, 0.08);
+}
+
+.admin-modal-form input::placeholder {
+  color: #a8a29e;
+  font-size: 0.85rem;
+}
+
+/* Custom dropdown chevron for select elements */
+.admin-modal-form select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 14px;
+  padding-right: 2.2rem;
+}
+
+/* Form validation error box */
+.admin-form-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* 1. Active State (Emerald Green) */
+.status-active {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.status-active .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* 2. Inactive State (Warm Neutral / Muted Charcoal) */
+.status-inactive {
+  background-color: #f5f5f4;
+  color: #57534e;
+  border: 1px solid #e7e5e4;
+}
+.status-inactive .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #a8a29e;
+}
+
+/* 3. Expired State (Rose Red) */
+.status-expired {
+  background-color: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+.status-expired .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #f43f5e;
+}
+
+.admin-toast {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background-color: #1c1917;
+  color: #ffffff;
+  padding: 0.75rem 1.6rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  animation: adminToastSlideCenter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-toast.error {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.admin-toast.success {
+  background-color: #15803d;
+  color: #ffffff;
+}
+
+@keyframes adminToastSlideCenter {
+  from {
+    transform: translate(-50%, -16px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}

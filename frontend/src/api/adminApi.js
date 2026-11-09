@@ -87,3 +87,25 @@ export function toggleAdminCouponStatus(couponId) {
 export function deleteAdminCoupon(couponId) {
   return api.delete(`/admin/coupons/${couponId}`);
 }
+
+// Offer APIs
+
+export function getAdminOffers(params = {}) {
+  return api.get("/admin/offers", { params });
+}
+
+export function createAdminOffer(data) {
+  return api.post("/admin/offers", data);
+}
+
+export function toggleAdminOfferStatus(offerId) {
+  return api.patch(`/admin/offers/${offerId}/toggle`);
+}
+
+export function deleteAdminOffer(offerId) {
+  return api.delete(`/admin/offers/${offerId}`);
+}
+
+export function updateAdminOffer(offerId, data) {
+  return api.put(`/admin/offers/${offerId}`, data);
+}

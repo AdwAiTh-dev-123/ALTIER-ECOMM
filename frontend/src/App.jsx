@@ -37,6 +37,7 @@ import AdminSalesReportPage from "./pages/admin/AdminSalesReportPage";
 import { OrderDetailsPage } from "./pages/storefront/OrderDetailsPage";
 import NotFoundPage from "./pages/common/NotFoundPage";
 import AdminCouponsPage from "./pages/admin/AdminCouponsPage";
+import AdminOffersPage from "./pages/admin/AdminOffersPage";
 
 import "./App.css";
 import "./styles/storefront.css";
@@ -252,6 +253,7 @@ function App() {
           <Route path="products" element={<AdminProductsPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="coupons" element={<AdminCouponsPage />} />
+          <Route path="offers" element={<AdminOffersPage />} />
           <Route path="sales-report" element={<AdminSalesReportPage />} />
         </Route>
 

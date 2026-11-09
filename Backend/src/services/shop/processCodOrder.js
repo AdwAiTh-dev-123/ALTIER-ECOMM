@@ -55,7 +55,7 @@ export const processCodOrder = async ({
       err.statusCode = 400;
       throw err;
     }
-    subtotal += variant.price * quantity;
+    subtotal += item.price * quantity;
     orderItems.push({
       product: product._id,
       variant: variant._id,
@@ -63,9 +63,9 @@ export const processCodOrder = async ({
       color: variant.color,
       size: variant.size,
       image: variant.images?.[0] || "",
-      price: variant.price,
+      price: item.price,
       quantity,
-      itemTotal: variant.price * quantity,
+      itemTotal: item.price * quantity,
     });
   }
 

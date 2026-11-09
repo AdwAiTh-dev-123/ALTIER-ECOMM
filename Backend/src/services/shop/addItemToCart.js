@@ -1,6 +1,8 @@
 import Cart from "../../models/Cart.js";
 import Product from "../../models/Product.js";
 import Variant from "../../models/Variant.js";
+import Offer from "../../models/Offer.js";
+import { calculateBestOffer } from "../../utils/offerHelper.js";
 import { getOrCreateCart } from "./getOrCreateCart.js";
 
 export const addItemToCart = async ({
@@ -59,10 +61,28 @@ export const addItemToCart = async ({
     cart = new Cart({ user: userId, items: [] });
   }
 
+  const now = new Date();
+  const activeOffers = await Offer.find({
+    isActive: true,
+    isDeleted: false,
+    startDate: { $lte: now },
+    endDate: { $gte: now },
+    $or: [
+      { offerType: "PRODUCT", product: productId },
+      { offerType: "CATEGORY", category: product.category?._id },
+    ],
+  }).lean();
+
+  const { finalPrice } = calculateBestOffer({
+    productId,
+    categoryId: product.category?._id,
+    originalPrice: variant.price,
+    activeOffers,
+  });
+
   const itemIndex = cart.items.findIndex(
     (item) => item.variant.toString() === variantId,
   );
-
   if (itemIndex > -1) {
     const newQty = cart.items[itemIndex].quantity + qty;
     if (newQty > variant.stock) {
@@ -71,7 +91,7 @@ export const addItemToCart = async ({
       throw err;
     }
     cart.items[itemIndex].quantity = newQty;
-    cart.items[itemIndex].price = variant.price;
+    cart.items[itemIndex].price = finalPrice;
   } else {
     if (qty > variant.stock) {
       const err = new Error(`Only ${variant.stock} units available in stock`);
@@ -82,10 +102,9 @@ export const addItemToCart = async ({
       product: productId,
       variant: variantId,
       quantity: qty,
-      price: variant.price,
+      price: finalPrice,
     });
   }
-
   await cart.save();
   return getOrCreateCart(userId);
 };

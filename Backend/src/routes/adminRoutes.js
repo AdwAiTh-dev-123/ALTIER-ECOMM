@@ -46,6 +46,13 @@ import {
   toggleCouponStatus,
   deleteCoupon,
 } from "../controllers/admin/couponAdminController.js";
+import {
+  createOffer,
+  getAllOffers,
+  updateOffer,
+  toggleOffer,
+  removeOffer,
+} from "../controllers/admin/offerAdminController.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -149,5 +156,12 @@ router.get("/coupons", getAllCoupons);
 router.post("/coupons", validateCreateCoupon, createCoupon);
 router.patch("/coupons/:id/toggle", validateCouponIdParam, toggleCouponStatus);
 router.delete("/coupons/:id", validateCouponIdParam, deleteCoupon);
+
+// Offer routes:
+router.get("/offers", getAllOffers);
+router.post("/offers", createOffer);
+router.put("/offers/:id", updateOffer);
+router.patch("/offers/:id/toggle", toggleOffer);
+router.delete("/offers/:id", removeOffer);
 
 export default router;

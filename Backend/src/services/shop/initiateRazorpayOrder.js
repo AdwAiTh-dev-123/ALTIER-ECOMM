@@ -109,7 +109,7 @@ export const initiateRazorpayOrder = async ({
         throw err;
       }
 
-      const itemTotal = variant.price * quantity;
+      const itemTotal = item.price * quantity;
       subtotal += itemTotal;
       orderItems.push({
         product: product._id,
@@ -118,7 +118,7 @@ export const initiateRazorpayOrder = async ({
         color: variant.color,
         size: variant.size,
         image: variant.images?.[0] || "",
-        price: variant.price,
+        price: item.price,
         quantity,
         itemTotal,
       });

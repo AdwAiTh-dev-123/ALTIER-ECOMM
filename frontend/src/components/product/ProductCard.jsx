@@ -97,9 +97,25 @@ export const ProductCard = ({ product }) => {
           <Link to={`/products/${product._id}`} className="product-card-title">
             {title}
           </Link>
-          <span className="product-card-price">
-            ₹{Number(price).toLocaleString()}
-          </span>
+          <div className="product-card-pricing">
+            {product.discountPercentage > 0 ? (
+              <>
+                <span className="product-card-price offer-price">
+                  ₹{Number(product.price).toLocaleString()}
+                </span>
+                <span className="product-card-original-price">
+                  ₹{Number(product.originalPrice || price).toLocaleString()}
+                </span>
+                <span className="product-offer-tag">
+                  {product.discountPercentage}% OFF
+                </span>
+              </>
+            ) : (
+              <span className="product-card-price">
+                ₹{Number(price).toLocaleString()}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Variants info */}
