@@ -6,3 +6,5 @@ export { resetPasswordWithToken } from "./resetPasswordWithToken.js";
 export { changeUserPassword } from "./changeUserPassword.js";
 export { authenticateWithGoogle } from "./authenticateWithGoogle.js";
 export { updateUserAvatarService } from "./updateUserAvatarService.js";
+export { sendChangeEmailOtp } from "./sendChangeEmailOtp.js";
+export { changeUserEmail } from "./changeUserEmail.js";

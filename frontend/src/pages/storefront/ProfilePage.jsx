@@ -8,7 +8,13 @@ import {
   deleteAddressApi,
   setDefaultAddressApi,
 } from "../../api/shopApi";
-import { changePasswordApi, updateAvatarApi } from "../../api/authApi";
+import {
+  changePasswordApi,
+  updateAvatarApi,
+  sendChangeEmailOtpApi,
+  changeEmailApi,
+} from "../../api/authApi";
+import OtpInput from "../../components/auth/OtpInput";
 import AddressModal from "../../components/common/AddressModal";
 import "../../styles/storefront/ProfilePage.css";
 import {
@@ -64,6 +70,26 @@ export const ProfilePage = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  //Change Email State
+  const [newEmail, setNewEmail] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailStep, setEmailStep] = useState("FORM"); // "FORM" | "OTP"
+  const [emailTimer, setEmailTimer] = useState(60);
+  const [emailStatus, setEmailStatus] = useState({
+    loading: false,
+    error: "",
+    success: "",
+  });
+
+  useEffect(() => {
+    if (emailStep !== "OTP" || emailTimer <= 0) return;
+    const interval = setInterval(() => {
+      setEmailTimer((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [emailStep, emailTimer]);
+  const canResendEmailOtp = emailTimer === 0;
 
   const [passwordStatus, setPasswordStatus] = useState({
     loading: false,
@@ -266,6 +292,125 @@ export const ProfilePage = () => {
       setPasswordStatus({
         loading: false,
         error: err.response?.data?.message || "Failed to change password",
+        success: "",
+      });
+    }
+  };
+
+  // 5. Change Email Handlers
+  const handleInitiateChangeEmail = async (e) => {
+    e.preventDefault();
+    setEmailStatus({ loading: true, error: "", success: "" });
+
+    const trimmed = newEmail.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmed) {
+      setEmailStatus({
+        loading: false,
+        error: "Please enter a new email address",
+        success: "",
+      });
+      return;
+    }
+
+    if (!emailRegex.test(trimmed)) {
+      setEmailStatus({
+        loading: false,
+        error: "Please provide a valid email format",
+        success: "",
+      });
+      return;
+    }
+
+    if (trimmed === user?.email?.toLowerCase()) {
+      setEmailStatus({
+        loading: false,
+        error: "New email cannot be identical to your current email",
+        success: "",
+      });
+      return;
+    }
+
+    try {
+      await sendChangeEmailOtpApi({ newEmail: trimmed });
+      setEmailStep("OTP");
+      setEmailTimer(60);
+      setEmailOtp("");
+      setEmailStatus({
+        loading: false,
+        error: "",
+        success: `Verification code sent to ${trimmed}`,
+      });
+    } catch (err) {
+      setEmailStatus({
+        loading: false,
+        error:
+          err.response?.data?.message || "Failed to send verification code",
+        success: "",
+      });
+    }
+  };
+
+  const handleVerifyAndUpdateEmail = async (e) => {
+    e.preventDefault();
+    if (emailOtp.length !== 6) {
+      setEmailStatus((prev) => ({
+        ...prev,
+        error: "Please enter the complete 6-digit verification code",
+      }));
+      return;
+    }
+
+    setEmailStatus({ loading: true, error: "", success: "" });
+
+    try {
+      const res = await changeEmailApi({
+        newEmail: newEmail.trim().toLowerCase(),
+        otp: emailOtp,
+      });
+
+      setEmailStatus({
+        loading: false,
+        error: "",
+        success: res.data.message || "Email updated successfully!",
+      });
+
+      showToast("Email address updated successfully!");
+      setNewEmail("");
+      setEmailOtp("");
+      setEmailStep("FORM");
+
+      // Refresh current session so header & app state update instantly
+      if (checkSession) {
+        await checkSession();
+      }
+    } catch (err) {
+      setEmailStatus({
+        loading: false,
+        error: err.response?.data?.message || "Failed to update email",
+        success: "",
+      });
+    }
+  };
+
+  const handleResendEmailOtp = async () => {
+    if (!canResendEmailOtp || emailStatus.loading) return;
+    setEmailStatus({ loading: true, error: "", success: "" });
+
+    try {
+      await sendChangeEmailOtpApi({ newEmail: newEmail.trim().toLowerCase() });
+      setEmailTimer(60);
+      setEmailOtp("");
+      setEmailStatus({
+        loading: false,
+        error: "",
+        success: "A fresh verification code was sent to your new email",
+      });
+    } catch (err) {
+      setEmailStatus({
+        loading: false,
+        error: err.response?.data?.message || "Failed to resend code",
         success: "",
       });
     }
@@ -601,201 +746,368 @@ export const ProfilePage = () => {
 
           {/* TAB 2: Security & Password */}
           {activeTab === "security" && (
-            <section className="profile-security-card">
-              <div className="security-card-header">
-                <span className="editorial-eyebrow">ACCOUNT PROTECTION</span>
-                <h2>Change Password</h2>
-                <p>
-                  Ensure your account is protected by using a strong password
-                  with at least 8 characters.
-                </p>
-              </div>
-
-              {user?.googleId && (
-                <div className="google-auth-notice">
-                  ℹ️ You are signed in via Google. If you create a password
-                  below, you will also be able to sign in using your email and
-                  password.
-                </div>
-              )}
-
-              {passwordStatus.error && (
-                <div className="profile-status-banner error">
-                  {passwordStatus.error}
-                </div>
-              )}
-
-              {passwordStatus.success && (
-                <div className="profile-status-banner success">
-                  ✓ {passwordStatus.success}
-                </div>
-              )}
-
-              <form
-                onSubmit={handlePasswordChange}
-                className="password-change-form"
+            <>
+              {/* Change Email Card */}
+              <div
+                className="profile-security-card"
+                style={{ marginBottom: "2rem" }}
               >
-                {/* Current Password (Optional if user only logged in with Google) */}
-                {!user?.googleId && (
-                  <div className="profile-form-group">
-                    <label
-                      className="profile-form-label"
-                      htmlFor="currentPassword"
+                <div className="security-card-header">
+                  <span className="editorial-eyebrow">CONTACT DETAILS</span>
+                  <h2>Change Email Address</h2>
+                  <p>
+                    Current Email: <strong>{user?.email}</strong>
+                  </p>
+                </div>
+
+                {emailStatus.error && (
+                  <div className="profile-status-banner error">
+                    {emailStatus.error}
+                  </div>
+                )}
+
+                {emailStatus.success && (
+                  <div className="profile-status-banner success">
+                    ✓ {emailStatus.success}
+                  </div>
+                )}
+
+                {emailStep === "FORM" ? (
+                  <form
+                    onSubmit={handleInitiateChangeEmail}
+                    className="password-change-form"
+                  >
+                    <div className="profile-form-group">
+                      <label
+                        className="profile-form-label"
+                        htmlFor="newEmailInput"
+                      >
+                        New Email Address *
+                      </label>
+                      <input
+                        id="newEmailInput"
+                        type="email"
+                        className="profile-form-input"
+                        placeholder="Enter your new email address"
+                        value={newEmail}
+                        onChange={(e) => {
+                          setNewEmail(e.target.value);
+                          if (emailStatus.error)
+                            setEmailStatus((prev) => ({ ...prev, error: "" }));
+                        }}
+                        disabled={emailStatus.loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="security-form-actions">
+                      <button
+                        type="submit"
+                        className="btn-update-password"
+                        disabled={emailStatus.loading || !newEmail.trim()}
+                      >
+                        {emailStatus.loading
+                          ? "Sending Code..."
+                          : "Send Verification Code"}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <form
+                    onSubmit={handleVerifyAndUpdateEmail}
+                    className="password-change-form"
+                  >
+                    <p
+                      style={{
+                        fontSize: "0.9rem",
+                        color: "#666",
+                        margin: "0 0 1rem 0",
+                      }}
                     >
-                      Current Password *
+                      Enter the 6-digit code sent to <strong>{newEmail}</strong>
+                    </p>
+
+                    <OtpInput
+                      value={emailOtp}
+                      onChange={setEmailOtp}
+                      length={6}
+                      disabled={emailStatus.loading}
+                    />
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: "1rem",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      <span style={{ color: "#777" }}>
+                        {canResendEmailOtp
+                          ? "Didn't receive code?"
+                          : `Resend in ${emailTimer}s`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleResendEmailOtp}
+                        disabled={!canResendEmailOtp || emailStatus.loading}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: canResendEmailOtp ? "#111" : "#aaa",
+                          fontWeight: "600",
+                          cursor: canResendEmailOtp ? "pointer" : "not-allowed",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        Resend Code
+                      </button>
+                    </div>
+
+                    <div
+                      className="security-form-actions"
+                      style={{
+                        display: "flex",
+                        gap: "1rem",
+                        marginTop: "1rem",
+                      }}
+                    >
+                      <button
+                        type="submit"
+                        className="btn-update-password"
+                        disabled={emailStatus.loading || emailOtp.length !== 6}
+                      >
+                        {emailStatus.loading
+                          ? "Verifying..."
+                          : "Verify & Update Email"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmailStep("FORM");
+                          setEmailOtp("");
+                          setEmailStatus({
+                            loading: false,
+                            error: "",
+                            success: "",
+                          });
+                        }}
+                        style={{
+                          background: "none",
+                          border: "1px solid #ddd",
+                          padding: "0.75rem 1.25rem",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontWeight: "500",
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+              <section className="profile-security-card">
+                <div className="security-card-header">
+                  <span className="editorial-eyebrow">ACCOUNT PROTECTION</span>
+                  <h2>Change Password</h2>
+                  <p>
+                    Ensure your account is protected by using a strong password
+                    with at least 8 characters.
+                  </p>
+                </div>
+
+                {user?.googleId && (
+                  <div className="google-auth-notice">
+                    ℹ️ You are signed in via Google. If you create a password
+                    below, you will also be able to sign in using your email and
+                    password.
+                  </div>
+                )}
+
+                {passwordStatus.error && (
+                  <div className="profile-status-banner error">
+                    {passwordStatus.error}
+                  </div>
+                )}
+
+                {passwordStatus.success && (
+                  <div className="profile-status-banner success">
+                    ✓ {passwordStatus.success}
+                  </div>
+                )}
+
+                <form
+                  onSubmit={handlePasswordChange}
+                  className="password-change-form"
+                >
+                  {/* Current Password (Optional if user only logged in with Google) */}
+                  {!user?.googleId && (
+                    <div className="profile-form-group">
+                      <label
+                        className="profile-form-label"
+                        htmlFor="currentPassword"
+                      >
+                        Current Password *
+                      </label>
+                      <div className="password-input-wrapper">
+                        <input
+                          id="currentPassword"
+                          type={showCurrentPassword ? "text" : "password"}
+                          className="profile-form-input"
+                          value={passwordData.currentPassword}
+                          onChange={(e) =>
+                            setPasswordData((prev) => ({
+                              ...prev,
+                              currentPassword: e.target.value,
+                            }))
+                          }
+                          placeholder="Enter your current password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() =>
+                            setShowCurrentPassword((prev) => !prev)
+                          }
+                          tabIndex="-1"
+                        >
+                          {showCurrentPassword ? "Hide" : "Show"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* New Password */}
+                  <div className="profile-form-group">
+                    <label className="profile-form-label" htmlFor="newPassword">
+                      New Password *
                     </label>
                     <div className="password-input-wrapper">
                       <input
-                        id="currentPassword"
-                        type={showCurrentPassword ? "text" : "password"}
+                        id="newPassword"
+                        type={showNewPassword ? "text" : "password"}
                         className="profile-form-input"
-                        value={passwordData.currentPassword}
+                        value={passwordData.newPassword}
                         onChange={(e) =>
                           setPasswordData((prev) => ({
                             ...prev,
-                            currentPassword: e.target.value,
+                            newPassword: e.target.value,
                           }))
                         }
-                        placeholder="Enter your current password"
+                        placeholder="At least 8 characters"
                         required
                       />
                       <button
                         type="button"
                         className="password-toggle-btn"
-                        onClick={() => setShowCurrentPassword((prev) => !prev)}
+                        onClick={() => setShowNewPassword((prev) => !prev)}
                         tabIndex="-1"
                       >
-                        {showCurrentPassword ? "Hide" : "Show"}
+                        {showNewPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+
+                    {/* Live Criteria Checklist */}
+                    <div className="profile-password-criteria">
+                      <div className="criteria-title">
+                        Password Requirements:
+                      </div>
+                      <ul className="criteria-list">
+                        <li
+                          className={`criteria-item ${passwordChecks.length ? "valid" : ""}`}
+                        >
+                          <span className="check-icon">
+                            {passwordChecks.length ? "✓" : "○"}
+                          </span>
+                          <span>At least 8 characters</span>
+                        </li>
+                        <li
+                          className={`criteria-item ${passwordChecks.upper ? "valid" : ""}`}
+                        >
+                          <span className="check-icon">
+                            {passwordChecks.upper ? "✓" : "○"}
+                          </span>
+                          <span>One uppercase letter (A-Z)</span>
+                        </li>
+                        <li
+                          className={`criteria-item ${passwordChecks.lower ? "valid" : ""}`}
+                        >
+                          <span className="check-icon">
+                            {passwordChecks.lower ? "✓" : "○"}
+                          </span>
+                          <span>One lowercase letter (a-z)</span>
+                        </li>
+                        <li
+                          className={`criteria-item ${passwordChecks.number ? "valid" : ""}`}
+                        >
+                          <span className="check-icon">
+                            {passwordChecks.number ? "✓" : "○"}
+                          </span>
+                          <span>One numeric digit (0-9)</span>
+                        </li>
+                        <li
+                          className={`criteria-item ${passwordChecks.special ? "valid" : ""}`}
+                        >
+                          <span className="check-icon">
+                            {passwordChecks.special ? "✓" : "○"}
+                          </span>
+                          <span>One special character (!@#$%^&*)</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="profile-form-group">
+                    <label
+                      className="profile-form-label"
+                      htmlFor="confirmPassword"
+                    >
+                      Confirm New Password *
+                    </label>
+                    <div className="password-input-wrapper">
+                      <input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="profile-form-input"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordData((prev) => ({
+                            ...prev,
+                            confirmPassword: e.target.value,
+                          }))
+                        }
+                        placeholder="Re-enter new password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle-btn"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        tabIndex="-1"
+                      >
+                        {showConfirmPassword ? "Hide" : "Show"}
                       </button>
                     </div>
                   </div>
-                )}
 
-                {/* New Password */}
-                <div className="profile-form-group">
-                  <label className="profile-form-label" htmlFor="newPassword">
-                    New Password *
-                  </label>
-                  <div className="password-input-wrapper">
-                    <input
-                      id="newPassword"
-                      type={showNewPassword ? "text" : "password"}
-                      className="profile-form-input"
-                      value={passwordData.newPassword}
-                      onChange={(e) =>
-                        setPasswordData((prev) => ({
-                          ...prev,
-                          newPassword: e.target.value,
-                        }))
-                      }
-                      placeholder="At least 8 characters"
-                      required
-                    />
+                  <div className="security-form-actions">
                     <button
-                      type="button"
-                      className="password-toggle-btn"
-                      onClick={() => setShowNewPassword((prev) => !prev)}
-                      tabIndex="-1"
+                      type="submit"
+                      className="btn-update-password"
+                      disabled={passwordStatus.loading || !isPasswordSecure}
                     >
-                      {showNewPassword ? "Hide" : "Show"}
+                      {passwordStatus.loading
+                        ? "Updating Password..."
+                        : "Update Password"}
                     </button>
                   </div>
-
-                  {/* Live Criteria Checklist */}
-                  <div className="profile-password-criteria">
-                    <div className="criteria-title">Password Requirements:</div>
-                    <ul className="criteria-list">
-                      <li
-                        className={`criteria-item ${passwordChecks.length ? "valid" : ""}`}
-                      >
-                        <span className="check-icon">
-                          {passwordChecks.length ? "✓" : "○"}
-                        </span>
-                        <span>At least 8 characters</span>
-                      </li>
-                      <li
-                        className={`criteria-item ${passwordChecks.upper ? "valid" : ""}`}
-                      >
-                        <span className="check-icon">
-                          {passwordChecks.upper ? "✓" : "○"}
-                        </span>
-                        <span>One uppercase letter (A-Z)</span>
-                      </li>
-                      <li
-                        className={`criteria-item ${passwordChecks.lower ? "valid" : ""}`}
-                      >
-                        <span className="check-icon">
-                          {passwordChecks.lower ? "✓" : "○"}
-                        </span>
-                        <span>One lowercase letter (a-z)</span>
-                      </li>
-                      <li
-                        className={`criteria-item ${passwordChecks.number ? "valid" : ""}`}
-                      >
-                        <span className="check-icon">
-                          {passwordChecks.number ? "✓" : "○"}
-                        </span>
-                        <span>One numeric digit (0-9)</span>
-                      </li>
-                      <li
-                        className={`criteria-item ${passwordChecks.special ? "valid" : ""}`}
-                      >
-                        <span className="check-icon">
-                          {passwordChecks.special ? "✓" : "○"}
-                        </span>
-                        <span>One special character (!@#$%^&*)</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Confirm Password */}
-                <div className="profile-form-group">
-                  <label
-                    className="profile-form-label"
-                    htmlFor="confirmPassword"
-                  >
-                    Confirm New Password *
-                  </label>
-                  <div className="password-input-wrapper">
-                    <input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      className="profile-form-input"
-                      value={passwordData.confirmPassword}
-                      onChange={(e) =>
-                        setPasswordData((prev) => ({
-                          ...prev,
-                          confirmPassword: e.target.value,
-                        }))
-                      }
-                      placeholder="Re-enter new password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle-btn"
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      tabIndex="-1"
-                    >
-                      {showConfirmPassword ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="security-form-actions">
-                  <button
-                    type="submit"
-                    className="btn-update-password"
-                    disabled={passwordStatus.loading || !isPasswordSecure}
-                  >
-                    {passwordStatus.loading
-                      ? "Updating Password..."
-                      : "Update Password"}
-                  </button>
-                </div>
-              </form>
-            </section>
+                </form>
+              </section>
+            </>
           )}
 
           {/* TAB 3: My Wallet */}

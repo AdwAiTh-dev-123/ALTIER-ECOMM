@@ -32,7 +32,11 @@ export function resetPassword({ token, password }) {
   return api.post("/auth/reset-password", { token, password });
 }
 
-export function changePasswordApi({ currentPassword, newPassword, confirmPassword }) {
+export function changePasswordApi({
+  currentPassword,
+  newPassword,
+  confirmPassword,
+}) {
   return api.put("/auth/change-password", {
     currentPassword,
     newPassword,
@@ -48,3 +52,10 @@ export function updateAvatarApi(formData) {
   });
 }
 
+export function sendChangeEmailOtpApi({ newEmail }) {
+  return api.post("/auth/send-change-email-otp", { newEmail });
+}
+
+export function changeEmailApi({ newEmail, otp }) {
+  return api.put("/auth/change-email", { newEmail, otp });
+}

@@ -11,12 +11,16 @@ import resetPassword from "../controllers/auth/resetPassword.js";
 import changePassword from "../controllers/auth/changePassword.js";
 import updateAvatar from "../controllers/auth/updateAvatar.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import sendChangeEmailOtpController from "../controllers/auth/sendChangeEmailOtp.js";
+import changeEmailController from "../controllers/auth/changeEmail.js";
 import {
   validateChangePassword,
   validateForgotPassword,
   validateLogin,
   validateRegister,
   validateResetPassword,
+  validateSendChangeEmailOtp,
+  validateChangeEmail,
   validateSendOtp,
 } from "../validators/auth/index.js";
 
@@ -61,5 +65,18 @@ router.put(
   changePassword,
 );
 router.patch("/avatar", authMiddleware, upload.single("avatar"), updateAvatar);
+router.post(
+  "/send-change-email-otp",
+  authMiddleware,
+  validateSendChangeEmailOtp,
+  sendChangeEmailOtpController,
+);
+
+router.put(
+  "/change-email",
+  authMiddleware,
+  validateChangeEmail,
+  changeEmailController,
+);
 
 export default router;
