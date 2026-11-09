@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { getStorefrontCategories, getStorefrontProducts } from '../../api/shopApi';
-import { ProductCard } from '../../components/product/ProductCard';
-import Pagination from '../../components/common/Pagination';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  getStorefrontCategories,
+  getStorefrontProducts,
+} from "../../api/shopApi";
+import { ProductCard } from "../../components/product/ProductCard";
 
 export const ShopPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -10,32 +12,33 @@ export const ShopPage = () => {
   // Categories & Products state
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState("");
 
   // Filter & Query States
   const [selectedCategory, setSelectedCategory] = useState(
-    searchParams.get('category') || 'all'
+    searchParams.get("category") || "all",
   );
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [debouncedMinPrice, setDebouncedMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState('');
-  const [sortBy, setSortBy] = useState('newest');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [debouncedMinPrice, setDebouncedMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+
+  // Pagination & Infinite Scroll States
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({
-    totalPages: 1,
-    totalItems: 0,
-    limit: 12,
-  });
+  const [hasMore, setHasMore] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
 
-  const scrollRibbonRef = useRef(null);
+  // Sentinel ref for the IntersectionObserver
+  const sentinelRef = useRef(null);
 
-  // Sync state if URL searchParams changes externally (e.g. from Home page links)
+  // Sync state if URL searchParams change
   useEffect(() => {
-    const catFromUrl = searchParams.get('category') || 'all';
+    const catFromUrl = searchParams.get("category") || "all";
     setSelectedCategory(catFromUrl);
   }, [searchParams]);
 
@@ -46,7 +49,7 @@ export const ShopPage = () => {
         const res = await getStorefrontCategories();
         setCategories(res.data.data || []);
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.error("Failed to load categories:", err);
       }
     }
     loadCategories();
@@ -71,84 +74,129 @@ export const ShopPage = () => {
     return () => clearTimeout(timer);
   }, [minPrice, maxPrice]);
 
-  // 4. Fetch all products from backend whenever filters or page change
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const params = {
-        page: currentPage,
-        limit: 12,
-        sortBy,
-      };
-
-      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
-      if (selectedCategory !== 'all') params.category = selectedCategory;
-      if (debouncedMinPrice !== '') params.minPrice = debouncedMinPrice;
-      if (debouncedMaxPrice !== '') params.maxPrice = debouncedMaxPrice;
-
-      const res = await getStorefrontProducts(params);
-      setProducts(res.data.data || []);
-
-      if (res.data.pagination) {
-        setPagination(res.data.pagination);
+  // 4. Fetch products (Page 1 resets list; Page > 1 appends to list)
+  const fetchProducts = useCallback(
+    async (pageToFetch) => {
+      if (pageToFetch === 1) {
+        setIsInitialLoading(true);
+      } else {
+        setIsLoadingMore(true);
       }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch products');
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, sortBy, debouncedSearch, selectedCategory, debouncedMinPrice, debouncedMaxPrice]);
+      setError("");
 
+      try {
+        const params = {
+          page: pageToFetch,
+          limit: 12,
+          sortBy,
+        };
 
+        if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+        if (selectedCategory !== "all") params.category = selectedCategory;
+        if (debouncedMinPrice !== "") params.minPrice = debouncedMinPrice;
+        if (debouncedMaxPrice !== "") params.maxPrice = debouncedMaxPrice;
+
+        const res = await getStorefrontProducts(params);
+        const newItems = res.data.data || [];
+        const paginationData = res.data.pagination || {};
+
+        setTotalItems(paginationData.totalItems || 0);
+        setHasMore(
+          paginationData.hasMore ?? pageToFetch < paginationData.totalPages,
+        );
+
+        setProducts((prev) =>
+          pageToFetch === 1 ? newItems : [...prev, ...newItems],
+        );
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to fetch products");
+        if (pageToFetch === 1) setProducts([]);
+      } finally {
+        setIsInitialLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [
+      sortBy,
+      debouncedSearch,
+      selectedCategory,
+      debouncedMinPrice,
+      debouncedMaxPrice,
+    ],
+  );
+
+  // Trigger fetch when filters or page change
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    fetchProducts(currentPage);
+  }, [fetchProducts, currentPage]);
 
-  // Category select handler (used by both the scrollable ribbon and the dropdown)
+  // 5. IntersectionObserver: Watch sentinel and load next page when scrolled into view
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        // If sentinel is visible, more pages exist, and we're not already loading
+        if (
+          firstEntry.isIntersecting &&
+          hasMore &&
+          !isInitialLoading &&
+          !isLoadingMore
+        ) {
+          setCurrentPage((prevPage) => prevPage + 1);
+        }
+      },
+      {
+        root: null, // viewport
+        rootMargin: "200px", // Pre-fetch 200px before user actually hits the absolute bottom!
+        threshold: 0,
+      },
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      if (sentinel) observer.unobserve(sentinel);
+    };
+  }, [hasMore, isInitialLoading, isLoadingMore]);
+
+  // Category select handler
   const handleCategorySelect = (catId) => {
     setCurrentPage(1);
     setSelectedCategory(catId);
 
     const nextParams = new URLSearchParams(searchParams);
-    if (catId === 'all') {
-      nextParams.delete('category');
+    if (catId === "all") {
+      nextParams.delete("category");
     } else {
-      nextParams.set('category', catId);
+      nextParams.set("category", catId);
     }
     setSearchParams(nextParams);
   };
 
   // Reset all filters
   const handleClearFilters = () => {
-    setSearchQuery('');
-    setDebouncedSearch('');
-    setMinPrice('');
-    setDebouncedMinPrice('');
-    setMaxPrice('');
-    setDebouncedMaxPrice('');
-    setSortBy('newest');
+    setSearchQuery("");
+    setDebouncedSearch("");
+    setMinPrice("");
+    setDebouncedMinPrice("");
+    setMaxPrice("");
+    setDebouncedMaxPrice("");
+    setSortBy("newest");
     setCurrentPage(1);
-    setSelectedCategory('all');
+    setSelectedCategory("all");
 
     const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('category');
+    nextParams.delete("category");
     setSearchParams(nextParams);
   };
 
-
-  // Scroll ribbon helper
-  const handleRibbonScroll = (direction) => {
-    if (scrollRibbonRef.current) {
-      const scrollOffset = direction === 'left' ? -250 : 250;
-      scrollRibbonRef.current.scrollBy({ left: scrollOffset, behavior: 'smooth' });
-    }
-  };
-
-  // Find active category name for header
   const activeCategoryObj = categories.find((c) => c._id === selectedCategory);
-  const pageTitle = activeCategoryObj ? activeCategoryObj.name : 'All Collections';
+  const pageTitle = activeCategoryObj
+    ? activeCategoryObj.name
+    : "All Collections";
 
   return (
     <div className="shop-page-root" id="collections-top">
@@ -158,72 +206,59 @@ export const ShopPage = () => {
         <h1 className="editorial-title">{pageTitle}</h1>
         <p className="editorial-subtitle">
           {activeCategoryObj?.description ||
-            'Explore our full catalog of thoughtfully designed, ethical wardrobe essentials.'}
+            "Explore our full catalog of thoughtfully designed, ethical wardrobe essentials."}
         </p>
       </div>
 
-      {/* Sleek Horizontal Scrollable Category Ribbon (Never wraps, even with 50+ categories) */}
-      {categories.length > 0 && (
-        <div className="category-ribbon-wrapper">
-          <button
-            type="button"
-            className="ribbon-arrow-btn ribbon-arrow-left"
-            onClick={() => handleRibbonScroll('left')}
-            aria-label="Scroll categories left"
+      <div className="shop-layout">
+        {/* LEFT COLUMN: Sticky Filter Sidebar */}
+        <aside className="shop-filter-bar">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
           >
-            ‹
-          </button>
-
-          <div className="category-scroll-ribbon" ref={scrollRibbonRef}>
+            <span
+              style={{
+                fontWeight: 700,
+                fontSize: "0.95rem",
+                letterSpacing: "0.04em",
+              }}
+            >
+              FILTERS
+            </span>
             <button
               type="button"
-              className={`ribbon-pill ${selectedCategory === 'all' ? 'active' : ''}`}
-              onClick={() => handleCategorySelect('all')}
+              className="btn btn-secondary btn-sm"
+              onClick={handleClearFilters}
+              style={{ fontSize: "11px", padding: "4px 10px" }}
             >
-              All Garments
+              Reset All
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat._id}
-                type="button"
-                className={`ribbon-pill ${selectedCategory === cat._id ? 'active' : ''}`}
-                onClick={() => handleCategorySelect(cat._id)}
-              >
-                {cat.name}
-              </button>
-            ))}
           </div>
 
-          <button
-            type="button"
-            className="ribbon-arrow-btn ribbon-arrow-right"
-            onClick={() => handleRibbonScroll('right')}
-            aria-label="Scroll categories right"
-          >
-            ›
-          </button>
-        </div>
-      )}
-
-      <div className="shop-layout">
-        {/* Compact, Perfectly Aligned Filter Controls Bar */}
-        <aside className="shop-filter-bar">
           {/* Search Box */}
           <div className="filter-group filter-search">
-            <label className="filter-label" htmlFor="search-input">Search Collection</label>
+            <label className="filter-label" htmlFor="search-input">
+              Search
+            </label>
             <input
               id="search-input"
               type="text"
-              placeholder="Search by title or fabric..."
+              placeholder="Search garments..."
               className="input-field"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          {/* Compact Category Dropdown (Clean and resilient for large numbers of categories) */}
-          <div className="filter-group" style={{ minWidth: '160px' }}>
-            <label className="filter-label" htmlFor="category-select">Category</label>
+          {/* Categories Filter */}
+          <div className="filter-group">
+            <label className="filter-label" htmlFor="category-select">
+              Category
+            </label>
             <select
               id="category-select"
               className="select-field"
@@ -240,53 +275,39 @@ export const ShopPage = () => {
           </div>
 
           {/* Price Range Filter Inputs */}
-          <div className="filter-group" style={{ minWidth: '170px' }}>
-            <span className="filter-label">Price (₹)</span>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div className="filter-group">
+            <span className="filter-label">Price Range (₹)</span>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <input
                 type="number"
                 min="0"
                 placeholder="Min"
                 className="input-field"
-                style={{ width: '75px', padding: '6px 8px' }}
+                style={{ width: "100%", padding: "6px 8px" }}
                 value={minPrice}
                 onKeyDown={(e) => {
-                  if (e.key === '-' || e.key === 'e') e.preventDefault();
+                  if (e.key === "-" || e.key === "e") e.preventDefault();
                 }}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === '') {
-                    setMinPrice('');
-                  } else {
-                    const num = Number(val);
-                    if (num >= 0) {
-                      setMinPrice(val);
-                    }
-                  }
+                  setMinPrice(val === "" ? "" : Math.max(0, Number(val)));
                   setCurrentPage(1);
                 }}
               />
-              <span style={{ color: 'var(--text-muted)' }}>–</span>
+              <span style={{ color: "var(--text-muted)" }}>–</span>
               <input
                 type="number"
                 min="0"
                 placeholder="Max"
                 className="input-field"
-                style={{ width: '75px', padding: '6px 8px' }}
+                style={{ width: "100%", padding: "6px 8px" }}
                 value={maxPrice}
                 onKeyDown={(e) => {
-                  if (e.key === '-' || e.key === 'e') e.preventDefault();
+                  if (e.key === "-" || e.key === "e") e.preventDefault();
                 }}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === '') {
-                    setMaxPrice('');
-                  } else {
-                    const num = Number(val);
-                    if (num >= 0) {
-                      setMaxPrice(val);
-                    }
-                  }
+                  setMaxPrice(val === "" ? "" : Math.max(0, Number(val)));
                   setCurrentPage(1);
                 }}
               />
@@ -294,8 +315,10 @@ export const ShopPage = () => {
           </div>
 
           {/* Sort Dropdown */}
-          <div className="filter-group" style={{ minWidth: '150px' }}>
-            <label className="filter-label" htmlFor="sort-select">Sort By</label>
+          <div className="filter-group">
+            <label className="filter-label" htmlFor="sort-select">
+              Sort By
+            </label>
             <select
               id="sort-select"
               className="select-field"
@@ -312,40 +335,41 @@ export const ShopPage = () => {
               <option value="name-desc">Name: Z to A</option>
             </select>
           </div>
-
-          {/* Clear Button */}
-          <div className="filter-group filter-actions">
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={handleClearFilters}
-              title="Reset all filters"
-            >
-              Reset
-            </button>
-          </div>
         </aside>
 
-        {/* Product Catalog Results */}
+        {/* RIGHT COLUMN: Product Catalog Results */}
         <main className="shop-grid-container">
           <div className="shop-results-header">
             <span className="results-count">
-              {loading ? (
-                'Loading collection...'
-              ) : (
-                `Showing ${products.length} of ${pagination.totalItems} ${pagination.totalItems === 1 ? 'item' : 'items'}`
-              )}
+              {isInitialLoading
+                ? "Loading collection..."
+                : `Showing ${products.length} of ${totalItems} ${totalItems === 1 ? "garment" : "garments"}`}
             </span>
           </div>
 
           {error && (
-            <div style={{ padding: '16px', background: '#fee2e2', color: '#b91c1c', borderRadius: '6px', marginBottom: '16px' }}>
+            <div
+              style={{
+                padding: "16px",
+                background: "#fee2e2",
+                color: "#b91c1c",
+                borderRadius: "6px",
+                marginBottom: "16px",
+              }}
+            >
               {error}
             </div>
           )}
 
-          {loading ? (
-            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          {isInitialLoading ? (
+            <div
+              style={{
+                padding: "4rem",
+                textAlign: "center",
+                color: "var(--text-muted)",
+              }}
+            >
+              <div className="infinite-spinner" />
               <p>Fetching collection...</p>
             </div>
           ) : products.length > 0 ? (
@@ -356,22 +380,29 @@ export const ShopPage = () => {
                 ))}
               </div>
 
-              {/* Backend Pagination */}
-              {pagination.totalPages > 1 && (
-                <div style={{ marginTop: '36px' }}>
-                  <Pagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    totalItems={pagination.totalItems}
-                    limit={pagination.limit}
-                    onPageChange={(page) => {
-                      setCurrentPage(page);
-                      const el = document.getElementById('collections-top');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+              {/* Invisible sentinel element observed by IntersectionObserver */}
+              <div ref={sentinelRef} style={{ height: "20px" }} />
+
+              {/* Infinite Scroll Footer Feedback */}
+              <div className="infinite-scroll-status">
+                {isLoadingMore && (
+                  <div>
+                    <div className="infinite-spinner" />
+                    <p>Loading more garments...</p>
+                  </div>
+                )}
+                {!hasMore && products.length > 0 && (
+                  <p
+                    style={{
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                      fontSize: "0.8rem",
                     }}
-                  />
-                </div>
-              )}
+                  >
+                    ✦ You have reached the end of the collection
+                  </p>
+                )}
+              </div>
             </>
           ) : (
             <div className="empty-results-box">
