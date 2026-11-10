@@ -25,8 +25,7 @@ export const Navbar = () => {
       <div className="navbar-container">
         {/* Brand Logo */}
         <Link to="/" className="navbar-logo">
-          ATELIER
-          <span className="navbar-logo-sub">STUDIO</span>
+          <img src="/logo.png" alt="ALTIER" className="navbar-logo-img" />
         </Link>
 
         {/* Main Navigation */}

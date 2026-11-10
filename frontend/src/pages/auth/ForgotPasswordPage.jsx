@@ -46,7 +46,7 @@ const ForgotPasswordPage = () => {
       const res = await forgotPassword({ email: email.trim() });
       setSuccessMessage(
         res.data?.message ||
-          "Password reset link has been sent to your email. Please check your inbox or server console."
+          "Password reset link has been sent to your email. Please check your inbox or server console.",
       );
     } catch (err) {
       const errorMsg =
@@ -63,10 +63,11 @@ const ForgotPasswordPage = () => {
       <div className="auth-card">
         {/* Header Branding */}
         <div className="auth-header">
-          <div className="auth-wordmark">ATELIER</div>
+          <div className="auth-wordmark">ALTIER</div>
           <h1 className="auth-title">Reset Password</h1>
           <p className="auth-subtitle">
-            Enter your registered email address and we'll send you a 15-minute recovery link.
+            Enter your registered email address and we'll send you a 15-minute
+            recovery link.
           </p>
         </div>
 

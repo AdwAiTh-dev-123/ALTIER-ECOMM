@@ -88,7 +88,15 @@ const AdminProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, category, status, stock, sortBy, sortOrder, currentPage]);
+  }, [
+    debouncedSearch,
+    category,
+    status,
+    stock,
+    sortBy,
+    sortOrder,
+    currentPage,
+  ]);
 
   useEffect(() => {
     loadProducts();
@@ -167,13 +175,7 @@ const AdminProductsPage = () => {
     <div className="admin-page-container">
       {/* Page Header */}
       <div className="admin-page-header">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div className="admin-header-row">
           <div>
             <h1 className="admin-page-title">Products Management</h1>
             <p className="admin-page-subtitle">
@@ -376,7 +378,10 @@ const AdminProductsPage = () => {
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ padding: "3.5rem 1rem", textAlign: "center" }}>
+                  <td
+                    colSpan="7"
+                    style={{ padding: "3.5rem 1rem", textAlign: "center" }}
+                  >
                     <div
                       style={{
                         display: "flex",
@@ -458,16 +463,16 @@ const AdminProductsPage = () => {
                   const uniqueSizes = [...new Set(variants.map((v) => v.size))];
                   const isActionLoading = actionLoadingId === product._id;
 
-                  const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+                  const totalStock = variants.reduce(
+                    (sum, v) => sum + (v.stock || 0),
+                    0,
+                  );
 
                   return (
                     <tr
                       key={product._id}
                       className={!product.isListed ? "row-blocked" : ""}
                     >
-
-
-
                       {/* Thumbnail & Title */}
                       <td>
                         <div
@@ -526,10 +531,11 @@ const AdminProductsPage = () => {
                       {/* ✅ Insert Total Stock Column */}
                       <td>
                         <span
-                          className={`admin-status-badge ${totalStock === 0
+                          className={`admin-status-badge ${
+                            totalStock === 0
                               ? "status-blocked"
                               : "status-active"
-                            }`}
+                          }`}
                         >
                           <span className="status-dot"></span>
                           {totalStock === 0
@@ -551,10 +557,11 @@ const AdminProductsPage = () => {
                       {/* Status */}
                       <td>
                         <span
-                          className={`admin-status-badge ${product.isListed
-                            ? "status-active"
-                            : "status-blocked"
-                            }`}
+                          className={`admin-status-badge ${
+                            product.isListed
+                              ? "status-active"
+                              : "status-blocked"
+                          }`}
                         >
                           <span className="status-dot"></span>
                           {product.isListed ? "Listed" : "Unlisted"}
@@ -582,8 +589,9 @@ const AdminProductsPage = () => {
                             type="button"
                             disabled={isActionLoading}
                             onClick={() => handleToggleListing(product._id)}
-                            className={`admin-action-btn btn-toggle ${product.isListed ? "btn-block" : "btn-unblock"
-                              }`}
+                            className={`admin-action-btn btn-toggle ${
+                              product.isListed ? "btn-block" : "btn-unblock"
+                            }`}
                           >
                             {isActionLoading
                               ? "Updating..."
@@ -688,7 +696,7 @@ const AdminProductsPage = () => {
           setSuccessToast(
             editingProduct
               ? "Product updated successfully"
-              : "Product created successfully"
+              : "Product created successfully",
           );
           setTimeout(() => setSuccessToast(""), 3000);
         }}

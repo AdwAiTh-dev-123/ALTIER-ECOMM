@@ -77,10 +77,28 @@ const LoginPage = () => {
         navigate("/", { replace: true });
       }
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.message ||
-        "Unable to sign in.Please verify your credentials";
-      setServerError(errorMsg);
+      const data = err.response?.data;
+      const baseMessage =
+        data?.message || "Unable to sign in. Please verify your credentials.";
+
+      const attemptsMade = data?.attemptsMade;
+      const attemptsLeft = data?.attemptsLeft;
+
+      if (
+        typeof attemptsMade === "number" &&
+        attemptsMade >= 6 &&
+        typeof attemptsLeft === "number"
+      ) {
+        if (attemptsLeft > 0) {
+          setServerError(
+            `${baseMessage} — ⚠️ Warning: Attempt ${attemptsMade} of 10. You have only ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left before your account is locked.`,
+          );
+        } else {
+          setServerError(baseMessage);
+        }
+      } else {
+        setServerError(baseMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -91,7 +109,7 @@ const LoginPage = () => {
       <div className="auth-card">
         {/* Header Branding */}
         <div className="auth-header">
-          <div className="auth-wordmark">ATELIER</div>
+          <div className="auth-wordmark">ALTIER</div>
           <h1 className="auth-title">Welcome Back</h1>
           <p className="auth-subtitle">
             Sign in to access your saved pieces and orders.

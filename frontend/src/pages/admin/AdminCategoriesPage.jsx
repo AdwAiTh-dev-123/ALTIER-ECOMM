@@ -52,7 +52,6 @@ const AdminCategoriesPage = () => {
     error: "",
   });
 
-
   // ✅ AFTER
   // Debounce search typing only (resets page to 1 on new search)
   useEffect(() => {
@@ -137,7 +136,9 @@ const AdminCategoriesPage = () => {
           return {
             ...prev,
             active: wasListed ? Math.max(0, prev.active - 1) : prev.active + 1,
-            unlisted: wasListed ? prev.unlisted + 1 : Math.max(0, prev.unlisted - 1),
+            unlisted: wasListed
+              ? prev.unlisted + 1
+              : Math.max(0, prev.unlisted - 1),
           };
         });
       }
@@ -174,7 +175,9 @@ const AdminCategoriesPage = () => {
           ...prev,
           total: Math.max(0, prev.total - 1),
           active: target.isListed ? Math.max(0, prev.active - 1) : prev.active,
-          unlisted: !target.isListed ? Math.max(0, prev.unlisted - 1) : prev.unlisted,
+          unlisted: !target.isListed
+            ? Math.max(0, prev.unlisted - 1)
+            : prev.unlisted,
         }));
       }
 
@@ -204,7 +207,10 @@ const AdminCategoriesPage = () => {
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editModal.name.trim()) {
-      setEditModal((prev) => ({ ...prev, error: "Category name is required." }));
+      setEditModal((prev) => ({
+        ...prev,
+        error: "Category name is required.",
+      }));
       return;
     }
 
@@ -221,7 +227,7 @@ const AdminCategoriesPage = () => {
 
       // Update table state locally
       setCategories((prev) =>
-        prev.map((c) => (c._id === updated._id ? { ...c, ...updated } : c))
+        prev.map((c) => (c._id === updated._id ? { ...c, ...updated } : c)),
       );
 
       // Keep category statistics in sync if visibility changed
@@ -229,14 +235,26 @@ const AdminCategoriesPage = () => {
       if (prevCat && prevCat.isListed !== updated.isListed) {
         setStats((prev) => ({
           ...prev,
-          active: updated.isListed ? prev.active + 1 : Math.max(0, prev.active - 1),
-          unlisted: updated.isListed ? Math.max(0, prev.unlisted - 1) : prev.unlisted + 1,
+          active: updated.isListed
+            ? prev.active + 1
+            : Math.max(0, prev.active - 1),
+          unlisted: updated.isListed
+            ? Math.max(0, prev.unlisted - 1)
+            : prev.unlisted + 1,
         }));
       }
 
       setSuccessToast(res.data?.message || "Category updated successfully.");
       setTimeout(() => setSuccessToast(""), 4000);
-      setEditModal({ isOpen: false, categoryId: null, name: "", description: "", isListed: true, loading: false, error: "" });
+      setEditModal({
+        isOpen: false,
+        categoryId: null,
+        name: "",
+        description: "",
+        isListed: true,
+        loading: false,
+        error: "",
+      });
     } catch (err) {
       setEditModal((prev) => ({
         ...prev,
@@ -246,41 +264,25 @@ const AdminCategoriesPage = () => {
     }
   };
 
-
   return (
     <div className="admin-page-container">
       {/* Page Header */}
       <div className="admin-page-header">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div className="admin-header-row">
           <div>
             <h1 className="admin-page-title">Category Management</h1>
             <p className="admin-page-subtitle">
-              Organize, classify, and publish apparel collections across your
-              boutique store.
+              Organize, create, and control active product categories in your
+              store.
             </p>
           </div>
           <Link
             to="/admin/categories/add"
-            className="admin-action-btn"
-            style={{
-              backgroundColor: "#1c1917",
-              color: "#ffffff",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              padding: "0.6rem 1.1rem",
-              fontSize: "0.85rem",
-              borderRadius: "6px",
-            }}
+            className="admin-btn-primary"
+            style={{ textDecoration: "none" }}
           >
-            <span>+</span> Add Category
+            <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>+</span>
+            <span>Add Category</span>
           </Link>
         </div>
       </div>
@@ -481,19 +483,20 @@ const AdminCategoriesPage = () => {
                       <td className="admin-date-text">
                         {item.createdAt
                           ? new Date(item.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            },
-                          )
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )
                           : "—"}
                       </td>
                       <td>
                         <span
-                          className={`admin-status-badge ${item.isListed ? "status-active" : "status-blocked"
-                            }`}
+                          className={`admin-status-badge ${
+                            item.isListed ? "status-active" : "status-blocked"
+                          }`}
                         >
                           <span className="status-dot"></span>
                           {item.isListed ? "Listed" : "Unlisted"}
@@ -518,8 +521,9 @@ const AdminCategoriesPage = () => {
                             type="button"
                             disabled={isActionLoading}
                             onClick={() => handleToggleClick(item)}
-                            className={`admin-action-btn btn-toggle ${item.isListed ? "btn-block" : "btn-unblock"
-                              }`}
+                            className={`admin-action-btn btn-toggle ${
+                              item.isListed ? "btn-block" : "btn-unblock"
+                            }`}
                           >
                             {isActionLoading
                               ? "Updating..."
@@ -533,7 +537,10 @@ const AdminCategoriesPage = () => {
                             disabled={isActionLoading}
                             onClick={() => handleOpenEdit(item)}
                             className="admin-action-btn admin-btn-secondary"
-                            style={{ padding: "0.35rem 0.75rem", fontSize: "0.8rem" }}
+                            style={{
+                              padding: "0.35rem 0.75rem",
+                              fontSize: "0.8rem",
+                            }}
                           >
                             Edit
                           </button>
@@ -600,10 +607,11 @@ const AdminCategoriesPage = () => {
               </button>
               <button
                 type="button"
-                className={`admin-modal-confirm-btn ${confirmModal.category?.isListed
-                  ? "btn-confirm-block"
-                  : "btn-confirm-unblock"
-                  }`}
+                className={`admin-modal-confirm-btn ${
+                  confirmModal.category?.isListed
+                    ? "btn-confirm-block"
+                    : "btn-confirm-unblock"
+                }`}
                 onClick={handleConfirmToggle}
               >
                 Yes,{" "}
@@ -665,7 +673,10 @@ const AdminCategoriesPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="admin-modal-title">Edit Category</h3>
-            <p className="admin-modal-message" style={{ marginBottom: "1.25rem" }}>
+            <p
+              className="admin-modal-message"
+              style={{ marginBottom: "1.25rem" }}
+            >
               Update category details and storefront visibility.
             </p>
 

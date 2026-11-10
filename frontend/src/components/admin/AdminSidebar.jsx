@@ -10,7 +10,7 @@ const AdminSidebar = () => {
     <aside className="admin-sidebar">
       <div className="admin-sidebar-header">
         <Link to="/admin" className="admin-brand">
-          <span className="admin-brand-main">ATELIER</span>
+          <img src="/logo.png" alt="ALTIER" className="admin-logo-img" />
           <span className="admin-brand-badge">ADMIN</span>
         </Link>
       </div>

@@ -13,7 +13,7 @@ import updateAvatar from "../controllers/auth/updateAvatar.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import sendChangeEmailOtpController from "../controllers/auth/sendChangeEmailOtp.js";
 import changeEmailController from "../controllers/auth/changeEmail.js";
-import { authLimiter } from "../middlewares/rateLimiter.js";
+import { authLimiter, loginLimiter } from "../middlewares/rateLimiter.js";
 import {
   validateChangePassword,
   validateForgotPassword,
@@ -53,7 +53,7 @@ const router = express.Router();
 
 router.post("/register", authLimiter, validateRegister, register);
 router.post("/send-otp", authLimiter, validateSendOtp, sendOtp);
-router.post("/login", authLimiter, validateLogin, login);
+router.post("/login", loginLimiter, validateLogin, login);
 router.get("/me", authMiddleware, getMe);
 router.post("/logout", logOut);
 router.post("/google", googleAuth);

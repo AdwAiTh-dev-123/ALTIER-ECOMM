@@ -17,28 +17,46 @@ export const getOrCreateWallet = async (userId) => {
   return wallet;
 };
 
+const MAX_WALLET_TOPUP = 50000;
+
 export const initiateAddMoney = async ({ userId, amount }) => {
   const parsedAmount = Number(amount);
 
-  if (!parsedAmount || parsedAmount < 1) {
+  if (!parsedAmount || isNaN(parsedAmount) || parsedAmount < 1) {
     const err = new Error("Amount must be at least 1");
     err.statusCode = 400;
     throw err;
   }
 
-  const receipt = `WLT-TOPUP-${Date.now().toString().slice(-6)}`;
-  const rzpOrder = await razorpayInstance.orders.create({
-    amount: Math.round(parsedAmount * 100),
-    currency: "INR",
-    receipt,
-  });
+  if (parsedAmount > MAX_WALLET_TOPUP) {
+    const err = new Error(
+      `Wallet amount cannot exceed ₹${MAX_WALLET_TOPUP.toLocaleString("en-IN")} per transaction.`,
+    );
+    err.statusCode = 400;
+    throw err;
+  }
 
-  return {
-    keyId: process.env.RAZORPAY_KEY_ID,
-    razorpayOrderId: rzpOrder.id,
-    amount: rzpOrder.amount,
-    currency: rzpOrder.currency,
-  };
+  try {
+    const receipt = `WLT-TOPUP-${Date.now().toString().slice(-6)}`;
+    const rzpOrder = await razorpayInstance.orders.create({
+      amount: Math.round(parsedAmount * 100),
+      currency: "INR",
+      receipt,
+    });
+
+    return {
+      keyId: process.env.RAZORPAY_KEY_ID,
+      razorpayOrderId: rzpOrder.id,
+      amount: rzpOrder.amount,
+      currency: rzpOrder.currency,
+    };
+  } catch (rzpErr) {
+    const err = new Error(
+      rzpErr.error?.description || "Payment gateway rejected the top-up order.",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
 };
 
 export const verifyAndCreditWallet = async ({

@@ -181,7 +181,7 @@ const RegisterPage = () => {
       <div className="auth-card">
         {/* Header Branding */}
         <div className="auth-header">
-          <div className="auth-wordmark">ATELIER</div>
+          <div className="auth-wordmark">ALTIER</div>
           <h1 className="auth-title">
             {step === "FORM" ? "Create Account" : "Verify Email"}
           </h1>

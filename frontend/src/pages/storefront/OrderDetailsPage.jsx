@@ -102,7 +102,7 @@ export const OrderDetailsPage = () => {
         await fetchOrderDetails();
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to cancel order");
+      setErrorMessage(err.response?.data?.message || "Failed to cancel order");
     } finally {
       setIsSubmitting(false);
     }
@@ -111,7 +111,7 @@ export const OrderDetailsPage = () => {
   // 2. Request Return Action
   const handleConfirmReturn = async () => {
     if (!returnReason.trim()) {
-      alert("Please provide a reason for the return request.");
+      setErrorMessage("Please provide a reason for the return request.");
       return;
     }
     try {
@@ -143,7 +143,9 @@ export const OrderDetailsPage = () => {
         await fetchOrderDetails();
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to submit return request");
+      setErrorMessage(
+        err.response?.data?.message || "Failed to submit return request",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -191,7 +193,7 @@ export const OrderDetailsPage = () => {
     ["Pending", "Confirmed"].includes(order.orderStatus) &&
     (!isOnlinePayment || isPaymentSuccessful) &&
     hasActiveItems;
-    
+
   const canReturn = order.orderStatus === "Delivered" && !hasReturnRequest;
 
   const orderSteps = isPaymentFailed
@@ -870,6 +872,21 @@ export const OrderDetailsPage = () => {
                 ? `Are you sure you want to cancel ${activeItemTarget.title} (${activeItemTarget.size})?`
                 : `Are you sure you want to cancel order ${order.orderId}?`}
             </p>
+
+            {errorMessage && (
+              <div
+                style={{
+                  color: "#dc2626",
+                  background: "#fee2e2",
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "4px",
+                  fontSize: "0.82rem",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                {errorMessage}
+              </div>
+            )}
             <div style={{ marginBottom: "1.25rem" }}>
               <label
                 style={{
@@ -941,6 +958,21 @@ export const OrderDetailsPage = () => {
                 ? `Please let us know why you wish to return ${activeItemTarget.title} (${activeItemTarget.size}).`
                 : `Order ${order.orderId} was delivered. Please let us know why you wish to return your purchase.`}
             </p>
+
+            {errorMessage && (
+              <div
+                style={{
+                  color: "#dc2626",
+                  background: "#fee2e2",
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "4px",
+                  fontSize: "0.82rem",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                {errorMessage}
+              </div>
+            )}
             <div style={{ marginBottom: "1.25rem" }}>
               <label
                 style={{
@@ -974,6 +1006,7 @@ export const OrderDetailsPage = () => {
                   setIsReturnModalOpen(false);
                   setActiveItemTarget(null);
                   setReturnReason("");
+                  setErrorMessage("");
                 }}
               >
                 Back

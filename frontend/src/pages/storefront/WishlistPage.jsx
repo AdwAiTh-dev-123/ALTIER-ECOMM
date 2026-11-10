@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useWishlist } from '../../context/WishlistContext';
-import { useCart } from '../../context/CartContext';
-import { getStorefrontProductById } from '../../api/shopApi';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useWishlist } from "../../context/WishlistContext";
+import { useCart } from "../../context/CartContext";
+import { getStorefrontProductById } from "../../api/shopApi";
 import "../../styles/storefront/WishlistPage.css";
 
 export const WishlistPage = () => {
-  const { wishlist, removeFromWishlist, clearWishlist, feedback, fetchWishlist } = useWishlist();
+  const {
+    wishlist,
+    removeFromWishlist,
+    clearWishlist,
+    feedback,
+    fetchWishlist,
+  } = useWishlist();
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -15,7 +21,8 @@ export const WishlistPage = () => {
     }
   }, [fetchWishlist]);
 
-  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [localFeedback, setLocalFeedback] = useState(null);
 
   const handleMoveToCart = async (product) => {
     // 1. Identify in-stock variant from memory
@@ -26,16 +33,25 @@ export const WishlistPage = () => {
       try {
         const res = await getStorefrontProductById(product._id);
         const fetchedProd = res.data?.data || res.data?.product || {};
-        variants = Array.isArray(fetchedProd.variants) ? fetchedProd.variants : [];
+        variants = Array.isArray(fetchedProd.variants)
+          ? fetchedProd.variants
+          : [];
       } catch (err) {
-        console.error('Failed to load product variants:', err);
+        console.error("Failed to load product variants:", err);
       }
     }
 
     const variant = variants.find((v) => Number(v.stock) > 0) || variants[0];
 
-    if (!variant || (variant.stock !== undefined && Number(variant.stock) <= 0)) {
-      alert('This garment is currently out of stock.');
+    if (
+      !variant ||
+      (variant.stock !== undefined && Number(variant.stock) <= 0)
+    ) {
+      setLocalFeedback({
+        type: "error",
+        message: "This garment is currently out of stock.",
+      });
+      setTimeout(() => setLocalFeedback(null), 3500);
       return;
     }
 
@@ -51,9 +67,11 @@ export const WishlistPage = () => {
   return (
     <div className="wishlist-page-root">
       {/* Toast Feedback Notification */}
-      {feedback && (
-        <div className={`cart-floating-toast ${feedback.type === 'error' ? 'error' : 'success'}`}>
-          {feedback.message}
+      {(feedback || localFeedback) && (
+        <div
+          className={`cart-floating-toast ${(localFeedback || feedback).type === "error" ? "error" : "success"}`}
+        >
+          {(localFeedback || feedback).message}
         </div>
       )}
 
@@ -80,7 +98,10 @@ export const WishlistPage = () => {
         <div className="empty-cart-view">
           <div className="empty-cart-icon">🔖</div>
           <h2>Your wishlist is empty</h2>
-          <p>Save pieces you love while browsing our catalog to revisit and acquire them later.</p>
+          <p>
+            Save pieces you love while browsing our catalog to revisit and
+            acquire them later.
+          </p>
           <Link to="/collections" className="btn btn-primary btn-lg">
             Explore Collections &rarr;
           </Link>
@@ -92,9 +113,11 @@ export const WishlistPage = () => {
             {wishlist.map((item) => {
               const displayImage =
                 item.images?.[0] ||
-                'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800';
-              const title = item.name || item.title || 'Untitled Garment';
-              const variants = Array.isArray(item.variants) ? item.variants : [];
+                "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800";
+              const title = item.name || item.title || "Untitled Garment";
+              const variants = Array.isArray(item.variants)
+                ? item.variants
+                : [];
               const variantPrices = variants
                 .map((v) => Number(v.price))
                 .filter((p) => !isNaN(p) && p > 0);
@@ -116,7 +139,11 @@ export const WishlistPage = () => {
                 <div key={item._id} className="wishlist-card">
                   <div className="wishlist-card-media">
                     <Link to={`/products/${item._id}`}>
-                      <img src={displayImage} alt={title} className="wishlist-card-img" />
+                      <img
+                        src={displayImage}
+                        alt={title}
+                        className="wishlist-card-img"
+                      />
                     </Link>
 
                     {/* Direct Remove Action */}
@@ -139,9 +166,12 @@ export const WishlistPage = () => {
 
                   <div className="wishlist-card-body">
                     <span className="wishlist-card-category">
-                      {item.category?.name || 'Studio Piece'}
+                      {item.category?.name || "Studio Piece"}
                     </span>
-                    <Link to={`/products/${item._id}`} className="wishlist-card-title">
+                    <Link
+                      to={`/products/${item._id}`}
+                      className="wishlist-card-title"
+                    >
                       {title}
                     </Link>
                     <span className="wishlist-card-price">
@@ -151,12 +181,13 @@ export const WishlistPage = () => {
                     {/* Move to Bag Button */}
                     <button
                       type="button"
-                      className={`btn btn-primary btn-block wishlist-move-btn ${isOutOfStock ? 'disabled' : ''
-                        }`}
+                      className={`btn btn-primary btn-block wishlist-move-btn ${
+                        isOutOfStock ? "disabled" : ""
+                      }`}
                       disabled={isOutOfStock}
                       onClick={() => handleMoveToCart(item)}
                     >
-                      {isOutOfStock ? 'Sold Out' : 'Move to Bag →'}
+                      {isOutOfStock ? "Sold Out" : "Move to Bag →"}
                     </button>
                   </div>
                 </div>
@@ -176,11 +207,10 @@ export const WishlistPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="wishlist-confirm-icon">🔖</div>
-            <h3 className="wishlist-confirm-title">
-              Clear Entire Wishlist?
-            </h3>
+            <h3 className="wishlist-confirm-title">Clear Entire Wishlist?</h3>
             <p className="wishlist-confirm-desc">
-              Are you sure you want to remove all saved silhouettes from your wishlist?
+              Are you sure you want to remove all saved silhouettes from your
+              wishlist?
             </p>
             <div className="wishlist-confirm-actions">
               <button
@@ -204,7 +234,6 @@ export const WishlistPage = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

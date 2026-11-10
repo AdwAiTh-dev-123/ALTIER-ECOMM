@@ -108,7 +108,8 @@ const AdminSalesReportPage = () => {
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
-      alert("Failed to export sales report. Please try again.");
+      console.error("Failed to export sales report:", err);
+      setErrorMessage("Failed to export sales report. Please try again.");
     } finally {
       if (isPdf) setIsExportingPdf(false);
       else setIsExportingExcel(false);

@@ -449,6 +449,14 @@ export const ProfilePage = () => {
       return;
     }
 
+    if (amountNum > 50000) {
+      showToast(
+        "Maximum wallet recharge limit is ₹50,000 per transaction.",
+        "error",
+      );
+      return;
+    }
+
     try {
       setIsProcessingTopup(true);
 
@@ -1171,6 +1179,7 @@ export const ProfilePage = () => {
                     <input
                       type="number"
                       min="1"
+                      max="50000"
                       step="any"
                       placeholder="Enter amount (₹)"
                       value={topupAmount}

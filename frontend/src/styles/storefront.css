@@ -2097,6 +2097,7 @@ details[open] .accordion-header::after {
   line-height: 1.6;
   color: var(--text-secondary);
   margin: 0;
+  white-space: pre-line;
 }
 
 .details-divider {
@@ -4442,4 +4443,71 @@ details[open] .accordion-header::after {
   padding: 2px 6px;
   border-radius: 4px;
   letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   STOREFRONT ORDER ACTION MODALS (Cancel / Return)
+   ========================================================= */
+.admin-order-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 1.5rem;
+  animation: storefrontFadeIn 0.2s ease-out;
+}
+
+.admin-order-modal-card {
+  background-color: #ffffff !important;
+  color: #1c1917 !important;
+  border-radius: 10px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: storefrontScaleUp 0.2s ease-out;
+  position: relative;
+}
+
+.admin-order-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #d6d3d1;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: #1c1917;
+  background-color: #fafaf9;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.admin-order-input:focus {
+  border-color: #1c1917;
+  background-color: #ffffff;
+}
+
+@keyframes storefrontFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes storefrontScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }

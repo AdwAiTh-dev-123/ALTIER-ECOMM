@@ -1,12 +1,17 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useSearchParams, useParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useSearchParams,
+  useParams,
+} from "react-router-dom";
 import { resetPassword } from "../../api/authApi";
 import "../../styles/auth.css";
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
-  const {token: routeToken} = useParams();
-  const token = routeToken || searchParams.get("token")
+  const { token: routeToken } = useParams();
+  const token = routeToken || searchParams.get("token");
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -48,7 +53,8 @@ const ResetPasswordPage = () => {
     if (!formData.password) {
       errors.password = "Please enter your new password";
     } else if (!isPasswordSecure) {
-      errors.password = "Please satisfy all password security requirements below";
+      errors.password =
+        "Please satisfy all password security requirements below";
     }
 
     if (!formData.confirmPassword) {
@@ -66,7 +72,9 @@ const ResetPasswordPage = () => {
     setSuccessMessage("");
 
     if (!token) {
-      setServerError("Reset token is missing. Please request a new recovery link.");
+      setServerError(
+        "Reset token is missing. Please request a new recovery link.",
+      );
       return;
     }
 
@@ -86,7 +94,8 @@ const ResetPasswordPage = () => {
       });
 
       setSuccessMessage(
-        res.data?.message || "Password reset successful! Redirecting to login..."
+        res.data?.message ||
+          "Password reset successful! Redirecting to login...",
       );
 
       // Auto-redirect to login after 2 seconds
@@ -108,7 +117,7 @@ const ResetPasswordPage = () => {
       <div className="auth-card">
         {/* Header Branding */}
         <div className="auth-header">
-          <div className="auth-wordmark">ATELIER</div>
+          <div className="auth-wordmark">ALTIER</div>
           <h1 className="auth-title">Create New Password</h1>
           <p className="auth-subtitle">
             Enter and confirm your new secure password below.
@@ -159,10 +168,20 @@ const ResetPasswordPage = () => {
         {/* Missing Token Guard */}
         {!token ? (
           <div style={{ textAlign: "center", margin: "20px 0" }}>
-            <p style={{ color: "#78716C", fontSize: "14px", marginBottom: "16px" }}>
+            <p
+              style={{
+                color: "#78716C",
+                fontSize: "14px",
+                marginBottom: "16px",
+              }}
+            >
               No valid password reset token was detected in your URL link.
             </p>
-            <Link to="/forgot-password" className="btn-primary" style={{ textDecoration: "none" }}>
+            <Link
+              to="/forgot-password"
+              className="btn-primary"
+              style={{ textDecoration: "none" }}
+            >
               Request New Link &rarr;
             </Link>
           </div>
@@ -201,7 +220,9 @@ const ResetPasswordPage = () => {
 
               {/* Password Checklist */}
               <div className="password-checklist">
-                <span className="checklist-title">Password Security Rules:</span>
+                <span className="checklist-title">
+                  Password Security Rules:
+                </span>
                 <div className="checklist-grid">
                   <span
                     className={`check-item ${passwordChecks.length ? "met" : ""}`}

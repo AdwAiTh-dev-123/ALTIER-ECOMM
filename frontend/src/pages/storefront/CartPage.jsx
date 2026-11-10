@@ -135,7 +135,7 @@ export const CartPage = () => {
       {/* Page Header */}
       <div className="cart-header-row">
         <div>
-          <span className="editorial-eyebrow">YOUR ATELIER BAG</span>
+          <span className="editorial-eyebrow">YOUR ALTIER BAG</span>
           <h1 className="editorial-title">Shopping Bag</h1>
         </div>
         {cartItems.length > 0 && (
@@ -451,7 +451,7 @@ export const CartPage = () => {
             <div className="summary-trust-badges">
               <div className="summary-trust-item">
                 <span className="summary-trust-icon">🛡️</span>
-                <span>Authentic Atelier Quality Guaranteed</span>
+                <span>Authentic Altier Quality Guaranteed</span>
               </div>
               <div className="summary-trust-item">
                 <span className="summary-trust-icon">🚚</span>

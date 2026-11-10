@@ -12,7 +12,27 @@
 }
 
 .admin-page-header {
-  margin-bottom: 0.5rem;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.admin-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.admin-header-row > div:first-child {
+  flex: 1;
+  min-width: 260px;
+}
+
+.admin-header-row .admin-btn-primary {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .admin-page-title {
@@ -600,11 +620,8 @@
 
 /* 1. Header Layout & Top Action Button */
 .admin-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  flex-wrap: wrap;
+  width: 100%;
+  margin-bottom: 1rem;
 }
 
 /* 2. Filter Ribbon Pill Buttons */

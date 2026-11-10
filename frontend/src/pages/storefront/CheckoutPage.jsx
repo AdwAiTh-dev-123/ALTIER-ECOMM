@@ -42,6 +42,7 @@ export const CheckoutPage = () => {
   const [editingAddress, setEditingAddress] = useState(null);
 
   // Payment state
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -140,6 +141,22 @@ export const CheckoutPage = () => {
       return;
     }
 
+    if (paymentMethod === "COD" || paymentMethod === "WALLET") {
+      if (paymentMethod === "WALLET" && walletBalance < totalAmount) {
+        setErrorMessage(
+          `Insufficient wallet balance (Available: ₹${walletBalance}). Please select another payment method or add funds.`,
+        );
+        return;
+      }
+      setIsConfirmModalOpen(true);
+      return;
+    }
+    executeOrderPlacement();
+  };
+  const executeOrderPlacement = async () => {
+    setIsConfirmModalOpen(false);
+    setErrorMessage("");
+
     if (paymentMethod === "COD") {
       try {
         setIsSubmitting(true);
@@ -173,13 +190,6 @@ export const CheckoutPage = () => {
         setIsSubmitting(false);
       }
     } else if (paymentMethod === "WALLET") {
-      if (walletBalance < totalAmount) {
-        setErrorMessage(
-          `Insufficient wallet balance (Available: ₹${walletBalance}). Please select another payment method or add funds.`,
-        );
-        return;
-      }
-
       try {
         setIsSubmitting(true);
         const res = await placeWalletOrderApi({
@@ -825,6 +835,128 @@ export const CheckoutPage = () => {
           </div>
         </aside>
       </div>
+
+      {/* Checkout Confirmation Modal for COD & Wallet */}
+      {isConfirmModalOpen && (
+        <div className="admin-order-modal-backdrop">
+          <div className="admin-order-modal-card" style={{ maxWidth: "460px" }}>
+            <h3
+              style={{
+                margin: "0 0 0.5rem",
+                fontSize: "1.25rem",
+                color: "#1c1917",
+              }}
+            >
+              Confirm Your Order
+            </h3>
+            <p
+              style={{
+                color: "#666",
+                fontSize: "0.88rem",
+                marginBottom: "1.25rem",
+              }}
+            >
+              Please review your payment and shipping details before we place
+              your order.
+            </p>
+
+            <div
+              style={{
+                background: "#fafaf9",
+                border: "1px solid #e7e5e4",
+                borderRadius: "8px",
+                padding: "1rem",
+                marginBottom: "1.25rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "0.5rem",
+                  fontSize: "0.9rem",
+                }}
+              >
+                <span style={{ color: "#78716c" }}>Payment Method:</span>
+                <strong style={{ color: "#1c1917" }}>
+                  {paymentMethod === "COD"
+                    ? "Cash on Delivery (COD)"
+                    : "Altier Wallet"}
+                </strong>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "0.5rem",
+                  fontSize: "0.9rem",
+                }}
+              >
+                <span style={{ color: "#78716c" }}>Total Amount:</span>
+                <strong style={{ color: "#1c1917", fontSize: "1.05rem" }}>
+                  ₹{totalAmount.toLocaleString("en-IN")}
+                </strong>
+              </div>
+
+              {paymentMethod === "WALLET" && (
+                <div
+                  style={{
+                    fontSize: "0.82rem",
+                    color: "#15803d",
+                    marginTop: "0.5rem",
+                    paddingTop: "0.5rem",
+                    borderTop: "1px dashed #e7e5e4",
+                  }}
+                >
+                  Remaining balance after order: ₹
+                  {(walletBalance - totalAmount).toLocaleString("en-IN")}
+                </div>
+              )}
+
+              {paymentMethod === "COD" && (
+                <div
+                  style={{
+                    fontSize: "0.82rem",
+                    color: "#b45309",
+                    marginTop: "0.5rem",
+                    paddingTop: "0.5rem",
+                    borderTop: "1px dashed #e7e5e4",
+                  }}
+                >
+                  💵 Please keep exact cash ready upon delivery.
+                </div>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "0.75rem",
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setIsConfirmModalOpen(false)}
+                disabled={isSubmitting}
+              >
+                Go Back
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ backgroundColor: "#1c1917", borderColor: "#1c1917" }}
+                onClick={executeOrderPlacement}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Placing..." : "Confirm & Place Order"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reusable Address Modal */}
       <AddressModal
