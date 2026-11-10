@@ -1,5 +1,4 @@
-import rateLimit from "express-rate-limit";
-
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 // 1. General limiter for all API requests
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes window
@@ -36,7 +35,7 @@ export const loginLimiter = rateLimit({
   // Track attempts per user email (fallback to IP for malformed requests)
   keyGenerator: (req) => {
     const email = req.body?.email?.trim()?.toLowerCase();
-    return email ? `login:${email}` : `login:ip:${req.ip}`;
+    return email ? `login:${email}` : ipKeyGenerator(req.ip);
   },
 
   // Only failed requests count against the 10-attempt limit
