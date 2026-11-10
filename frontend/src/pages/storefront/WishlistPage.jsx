@@ -24,29 +24,11 @@ export const WishlistPage = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [localFeedback, setLocalFeedback] = useState(null);
 
-  const handleMoveToCart = async (product) => {
-    // 1. Identify in-stock variant from memory
-    let variants = Array.isArray(product.variants) ? product.variants : [];
+  const handleMoveToCart = async (item) => {
+    // Target the specific variant saved in the wishlist
+    const targetVariant = item.selectedVariant || item.variants?.[0];
 
-    // Fallback: If variants are not in memory, fetch fresh from product API
-    if (variants.length === 0 && product._id) {
-      try {
-        const res = await getStorefrontProductById(product._id);
-        const fetchedProd = res.data?.data || res.data?.product || {};
-        variants = Array.isArray(fetchedProd.variants)
-          ? fetchedProd.variants
-          : [];
-      } catch (err) {
-        console.error("Failed to load product variants:", err);
-      }
-    }
-
-    const variant = variants.find((v) => Number(v.stock) > 0) || variants[0];
-
-    if (
-      !variant ||
-      (variant.stock !== undefined && Number(variant.stock) <= 0)
-    ) {
+    if (!targetVariant || Number(targetVariant.stock) <= 0) {
       setLocalFeedback({
         type: "error",
         message: "This garment is currently out of stock.",
@@ -55,12 +37,12 @@ export const WishlistPage = () => {
       return;
     }
 
-    // 2. Add to cart
-    const success = await addToCart(product, variant, 1);
+    // Add that exact variant to cart
+    const success = await addToCart(item, targetVariant, 1);
 
-    // 3. Automatically remove from wishlist once added to cart
+    // Automatically remove from wishlist once added to cart
     if (success) {
-      removeFromWishlist(product._id);
+      removeFromWishlist(item._id, targetVariant?._id || item.variantId);
     }
   };
 
@@ -111,32 +93,16 @@ export const WishlistPage = () => {
         <div className="wishlist-grid-container">
           <div className="products-grid">
             {wishlist.map((item) => {
-              const displayImage =
-                item.images?.[0] ||
-                "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800";
+              const displayImage = item.images?.[0];
               const title = item.name || item.title || "Untitled Garment";
-              const variants = Array.isArray(item.variants)
-                ? item.variants
-                : [];
-              const variantPrices = variants
-                .map((v) => Number(v.price))
-                .filter((p) => !isNaN(p) && p > 0);
-
-              // Calculate resolved price: check item.price, or lowest variant price, or basePrice
-              const resolvedPrice =
-                item.price && Number(item.price) > 0
-                  ? Number(item.price)
-                  : variantPrices.length > 0
-                    ? Math.min(...variantPrices)
-                    : item.basePrice || 0;
-
-              const totalStock =
-                item.totalStock ??
-                variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-              const isOutOfStock = totalStock <= 0 && variants.length > 0;
+              // Directly use the variant's out-of-stock status calculated by the backend
+              const isOutOfStock = Boolean(item.isOutOfStock);
 
               return (
-                <div key={item._id} className="wishlist-card">
+                <div
+                  key={item.wishlistItemId || item._id}
+                  className="wishlist-card"
+                >
                   <div className="wishlist-card-media">
                     <Link to={`/products/${item._id}`}>
                       <img
@@ -150,7 +116,12 @@ export const WishlistPage = () => {
                     <button
                       type="button"
                       className="wishlist-remove-btn"
-                      onClick={() => removeFromWishlist(item._id)}
+                      onClick={() =>
+                        removeFromWishlist(
+                          item._id,
+                          item.variantId || item.selectedVariant?._id,
+                        )
+                      }
                       title="Remove from saved garments"
                       aria-label="Remove item"
                     >
@@ -166,7 +137,7 @@ export const WishlistPage = () => {
 
                   <div className="wishlist-card-body">
                     <span className="wishlist-card-category">
-                      {item.category?.name || "Studio Piece"}
+                      {item.category?.name || "Collection Piece"}
                     </span>
                     <Link
                       to={`/products/${item._id}`}
@@ -174,8 +145,25 @@ export const WishlistPage = () => {
                     >
                       {title}
                     </Link>
-                    <span className="wishlist-card-price">
-                      ₹{Number(resolvedPrice).toLocaleString()}
+
+                    {/* Displays the exact saved variant size & color */}
+                    {(item.color || item.size) && (
+                      <div
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "#78716c",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {item.color} {item.size ? `• Size: ${item.size}` : ""}
+                      </div>
+                    )}
+
+                    <span
+                      className="wishlist-card-price"
+                      style={{ marginTop: "4px" }}
+                    >
+                      ₹{Number(item.price).toLocaleString("en-IN")}
                     </span>
 
                     {/* Move to Bag Button */}

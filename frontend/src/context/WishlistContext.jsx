@@ -1,11 +1,16 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { useAuth } from "./AuthContext";
 import {
   getWishlistApi,
   toggleWishlistApi,
   clearWishlistApi,
-} from '../api/shopApi';
-
+} from "../api/shopApi";
 
 const WishlistContext = createContext();
 
@@ -30,9 +35,11 @@ export const WishlistProvider = ({ children }) => {
       const res = await getWishlistApi();
       const items = res.data?.data || [];
       // Ensure only valid active products are in the list
-      setWishlist(items.filter((item) => item && (item._id || typeof item === 'string')));
+      setWishlist(
+        items.filter((item) => item && (item._id || typeof item === "string")),
+      );
     } catch (err) {
-      console.error('Failed to load user wishlist from database:', err);
+      console.error("Failed to load user wishlist from database:", err);
       setWishlist([]);
     } finally {
       setLoading(false);
@@ -54,22 +61,26 @@ export const WishlistProvider = ({ children }) => {
   /**
    * Check if a product ID exists in the active wishlist
    */
-  const isInWishlist = (productId) => {
+  const isInWishlist = (productId, variantId = null) => {
     if (!productId) return false;
     return wishlist.some((item) => {
-      const id = typeof item === 'object' && item !== null ? item._id : item;
-      return String(id) === String(productId);
+      const pId = item.product?._id || item._id;
+      if (String(pId) !== String(productId)) return false;
+      if (variantId && item.variantId) {
+        return String(item.variantId) === String(variantId);
+      }
+      return true;
     });
   };
 
   /**
    * Toggle product in MongoDB wishlist
    */
-  const toggleWishlist = async (product) => {
+  const toggleWishlist = async (product, selectedVariant = null) => {
     if (!userId) {
       setFeedback({
-        type: 'error',
-        message: 'Please sign in to save garments to your wishlist.',
+        type: "error",
+        message: "Please sign in to save garments to your wishlist.",
       });
       return false;
     }
@@ -83,40 +94,47 @@ export const WishlistProvider = ({ children }) => {
     }
 
     const prodId = product?._id || product;
+    const varId =
+      selectedVariant?._id ||
+      product?.variantId ||
+      product?.selectedVariant?._id ||
+      null;
     if (!prodId) return false;
 
-    const title = product?.name || product?.title || 'Garment';
-    const isCurrentlySaved = isInWishlist(prodId);
+    const title = product?.name || product?.title || "Garment";
+    const isCurrentlySaved = isInWishlist(prodId, varId);
 
     // Optimistic UI update
     if (isCurrentlySaved) {
-      setWishlist((prev) => prev.filter((p) => String(p._id || p) !== String(prodId)));
+      setWishlist((prev) =>
+        prev.filter((p) => String(p._id || p) !== String(prodId)),
+      );
       setFeedback({
-        type: 'remove',
+        type: "remove",
         message: `"${title}" removed from your saved items.`,
       });
     } else {
       setWishlist((prev) => [product, ...prev]);
       setFeedback({
-        type: 'add',
+        type: "add",
         message: `"${title}" saved to your wishlist.`,
       });
     }
 
     try {
-      const res = await toggleWishlistApi(prodId);
+      const res = await toggleWishlistApi(prodId, varId);
       const serverSaved = res.data?.isWishlisted;
 
       // Re-fetch enriched wishlist from database to populate variants, stock, and pricing
       await fetchWishlist();
       return serverSaved ?? !isCurrentlySaved;
     } catch (err) {
-      console.error('Failed to update wishlist in database:', err);
+      console.error("Failed to update wishlist in database:", err);
       // Rollback on server error
       fetchWishlist();
       setFeedback({
-        type: 'error',
-        message: err.response?.data?.message || 'Could not update wishlist.',
+        type: "error",
+        message: err.response?.data?.message || "Could not update wishlist.",
       });
       return isCurrentlySaved;
     }
@@ -125,23 +143,43 @@ export const WishlistProvider = ({ children }) => {
   /**
    * Explicitly remove product from MongoDB wishlist
    */
-  const removeFromWishlist = async (productId) => {
+  const removeFromWishlist = async (productId, variantId = null) => {
     if (!userId || !productId) return;
 
-    const item = wishlist.find((p) => String(p._id || p) === String(productId));
-    const title = item?.name || item?.title || 'Garment';
+    const item = wishlist.find((p) => {
+      const pId = p.product?._id || p._id;
+      if (String(pId) !== String(productId)) return false;
+      if (variantId && p.variantId) {
+        return String(p.variantId) === String(variantId);
+      }
+      return true;
+    });
 
-    // Optimistic removal
-    setWishlist((prev) => prev.filter((p) => String(p._id || p) !== String(productId)));
+    const targetVariantId =
+      variantId || item?.variantId || item?.selectedVariant?._id || null;
+    const title = item?.name || item?.title || "Garment";
+
+    // Optimistic removal from local state
+    setWishlist((prev) =>
+      prev.filter((p) => {
+        const pId = p.product?._id || p._id;
+        if (String(pId) !== String(productId)) return true;
+        if (targetVariantId && p.variantId) {
+          return String(p.variantId) !== String(targetVariantId);
+        }
+        return false;
+      }),
+    );
     setFeedback({
-      type: 'remove',
+      type: "remove",
       message: `"${title}" removed from your saved items.`,
     });
 
     try {
-      await toggleWishlistApi(productId);
+      await toggleWishlistApi(productId, targetVariantId);
+      await fetchWishlist();
     } catch (err) {
-      console.error('Failed to remove from wishlist:', err);
+      console.error("Failed to remove from wishlist:", err);
       fetchWishlist();
     }
   };
@@ -155,14 +193,13 @@ export const WishlistProvider = ({ children }) => {
       await clearWishlistApi();
       setWishlist([]);
       setFeedback({
-        type: 'info',
-        message: 'All saved items cleared.',
+        type: "info",
+        message: "All saved items cleared.",
       });
     } catch (err) {
-      console.error('Failed to clear wishlist:', err);
+      console.error("Failed to clear wishlist:", err);
     }
   };
-
 
   return (
     <WishlistContext.Provider
@@ -186,8 +223,7 @@ export const WishlistProvider = ({ children }) => {
 export const useWishlist = () => {
   const context = useContext(WishlistContext);
   if (!context) {
-    throw new Error('useWishlist must be used within a WishlistProvider');
+    throw new Error("useWishlist must be used within a WishlistProvider");
   }
   return context;
 };
-

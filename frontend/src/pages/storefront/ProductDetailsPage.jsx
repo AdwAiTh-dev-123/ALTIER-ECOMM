@@ -35,10 +35,7 @@ export const ProductDetailsPage = () => {
         }
         setProduct(prodData);
 
-        // Select first available variant with stock
-        const firstInStock =
-          prodData.variants?.find((v) => v.stock > 0) || prodData.variants?.[0];
-        setSelectedVariant(firstInStock || null);
+        setSelectedVariant(prodData.variants?.[0] || null);
       } catch (err) {
         setError(err.response?.data?.message || "Garment could not be found.");
       } finally {
@@ -124,13 +121,10 @@ export const ProductDetailsPage = () => {
       return;
     }
     if (user.role === "admin") return;
-    toggleWishlist({
-      ...product,
-      price: Number(selectedVariant?.price || product.price || 0),
-    });
+    toggleWishlist(product, selectedVariant);
   };
 
-  const isSaved = isInWishlist(product._id);
+  const isSaved = isInWishlist(product._id, selectedVariant?._id);
   const currentStock = selectedVariant?.stock || 0;
   const isOutOfStock = currentStock <= 0;
 

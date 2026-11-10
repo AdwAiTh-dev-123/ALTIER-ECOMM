@@ -36,8 +36,8 @@ export function getWishlistApi() {
   return api.get("/wishlist");
 }
 
-export function toggleWishlistApi(productId) {
-  return api.post("/wishlist/toggle", { productId });
+export function toggleWishlistApi(productId, variantId = null) {
+  return api.post("/wishlist/toggle", { productId, variantId });
 }
 
 export function clearWishlistApi() {
