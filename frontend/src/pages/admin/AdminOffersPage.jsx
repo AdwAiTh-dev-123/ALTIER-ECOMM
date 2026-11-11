@@ -76,7 +76,8 @@ const AdminOffersPage = () => {
   const [openSortDropdown, setOpenSortDropdown] = useState(false);
   const sortDropdownRef = useRef(null);
 
-  const [openOfferTypeFilterDropdown, setOpenOfferTypeFilterDropdown] = useState(false);
+  const [openOfferTypeFilterDropdown, setOpenOfferTypeFilterDropdown] =
+    useState(false);
   const offerTypeFilterDropdownRef = useRef(null);
 
   // Modal States
@@ -510,12 +511,19 @@ const AdminOffersPage = () => {
 
     try {
       setFormSubmitting(true);
+
+      const payload = {
+        ...formData,
+        startDate: new Date(formData.startDate).toISOString(),
+        endDate: new Date(formData.endDate).toISOString(),
+      };
+
       let res;
       if (editingOfferId) {
-        res = await updateAdminOffer(editingOfferId, formData);
+        res = await updateAdminOffer(editingOfferId, payload);
         showToast(`Offer "${formData.name}" updated successfully!`);
       } else {
-        res = await createAdminOffer(formData);
+        res = await createAdminOffer(payload);
         showToast(`Offer "${formData.name}" created successfully!`);
       }
 
@@ -626,8 +634,8 @@ const AdminOffersPage = () => {
     SORT_OPTIONS.find((opt) => opt.value === sortBy)?.label || "Newest First";
 
   const currentOfferTypeFilterLabel =
-    OFFER_TYPE_FILTER_OPTIONS.find((opt) => opt.value === offerTypeFilter)?.label ||
-    "All Offers";
+    OFFER_TYPE_FILTER_OPTIONS.find((opt) => opt.value === offerTypeFilter)
+      ?.label || "All Offers";
 
   // Selected Target Name lookup
   const selectedProductName =
@@ -966,7 +974,8 @@ const AdminOffersPage = () => {
                           }}
                         >
                           <div>
-                            From: {new Date(offer.startDate).toLocaleDateString()}
+                            From:{" "}
+                            {new Date(offer.startDate).toLocaleDateString()}
                           </div>
                           <div>
                             To: {new Date(offer.endDate).toLocaleDateString()}
@@ -1111,9 +1120,7 @@ const AdminOffersPage = () => {
                     <button
                       type="button"
                       className="admin-form-input admin-in-dom-select-btn"
-                      onClick={() =>
-                        setOpenOfferTypeDropdown((prev) => !prev)
-                      }
+                      onClick={() => setOpenOfferTypeDropdown((prev) => !prev)}
                       aria-expanded={openOfferTypeDropdown}
                     >
                       <span>
@@ -1216,61 +1223,63 @@ const AdminOffersPage = () => {
                           autoFocus
                         />
                         <div className="admin-picker-options-list">
-                          {formData.offerType === "PRODUCT" ? (
-                            products
-                              .filter((p) =>
-                                p.name
-                                  .toLowerCase()
-                                  .includes(targetSearch.toLowerCase()),
-                              )
-                              .map((p) => (
-                                <button
-                                  key={p._id}
-                                  type="button"
-                                  className={`admin-picker-option-item ${formData.productId === p._id ? "selected" : ""}`}
-                                  onClick={() => {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      productId: p._id,
-                                    }));
-                                    setOpenTargetDropdown(false);
-                                    setTargetSearch("");
-                                  }}
-                                >
-                                  <span>{p.name}</span>
-                                  {formData.productId === p._id && (
-                                    <span className="admin-offer-check">✓</span>
-                                  )}
-                                </button>
-                              ))
-                          ) : (
-                            categories
-                              .filter((c) =>
-                                c.name
-                                  .toLowerCase()
-                                  .includes(targetSearch.toLowerCase()),
-                              )
-                              .map((c) => (
-                                <button
-                                  key={c._id}
-                                  type="button"
-                                  className={`admin-picker-option-item ${formData.categoryId === c._id ? "selected" : ""}`}
-                                  onClick={() => {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      categoryId: c._id,
-                                    }));
-                                    setOpenTargetDropdown(false);
-                                    setTargetSearch("");
-                                  }}
-                                >
-                                  <span>{c.name}</span>
-                                  {formData.categoryId === c._id && (
-                                    <span className="admin-offer-check">✓</span>
-                                  )}
-                                </button>
-                              ))
-                          )}
+                          {formData.offerType === "PRODUCT"
+                            ? products
+                                .filter((p) =>
+                                  p.name
+                                    .toLowerCase()
+                                    .includes(targetSearch.toLowerCase()),
+                                )
+                                .map((p) => (
+                                  <button
+                                    key={p._id}
+                                    type="button"
+                                    className={`admin-picker-option-item ${formData.productId === p._id ? "selected" : ""}`}
+                                    onClick={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        productId: p._id,
+                                      }));
+                                      setOpenTargetDropdown(false);
+                                      setTargetSearch("");
+                                    }}
+                                  >
+                                    <span>{p.name}</span>
+                                    {formData.productId === p._id && (
+                                      <span className="admin-offer-check">
+                                        ✓
+                                      </span>
+                                    )}
+                                  </button>
+                                ))
+                            : categories
+                                .filter((c) =>
+                                  c.name
+                                    .toLowerCase()
+                                    .includes(targetSearch.toLowerCase()),
+                                )
+                                .map((c) => (
+                                  <button
+                                    key={c._id}
+                                    type="button"
+                                    className={`admin-picker-option-item ${formData.categoryId === c._id ? "selected" : ""}`}
+                                    onClick={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        categoryId: c._id,
+                                      }));
+                                      setOpenTargetDropdown(false);
+                                      setTargetSearch("");
+                                    }}
+                                  >
+                                    <span>{c.name}</span>
+                                    {formData.categoryId === c._id && (
+                                      <span className="admin-offer-check">
+                                        ✓
+                                      </span>
+                                    )}
+                                  </button>
+                                ))}
                         </div>
                       </div>
                     )}
