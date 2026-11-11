@@ -1,0 +1,337 @@
+/* ==========================================================================
+   frontend/src/styles/storefront/ShopPage.css
+   Collections Catalog - Desktop Layout & Mobile 2-Column Responsive Design
+   ========================================================================== */
+
+/* 1. Page Root & Editorial Header */
+.shop-page-root {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-bottom: 64px;
+}
+
+.collections-editorial-header {
+  padding: 16px 0 12px;
+  border-bottom: 1px solid var(--border-subtle, #e7e5e4);
+}
+
+.editorial-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-terracotta, #c2410c);
+  margin-bottom: 6px;
+}
+
+.editorial-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary, #1c1917);
+  margin: 0 0 6px 0;
+}
+
+.editorial-subtitle {
+  font-size: 14px;
+  color: var(--text-muted, #78716c);
+  max-width: 600px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 2. Desktop Two-Column Layout */
+.shop-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 36px;
+  align-items: start;
+}
+
+/* 3. Sticky Filter Sidebar (Desktop) */
+.shop-filter-bar {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: var(--radius-sm, 4px);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--shadow-subtle, 0 1px 3px rgba(0, 0, 0, 0.04));
+  position: sticky;
+  top: 90px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #44403c);
+}
+
+.input-field,
+.select-field {
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: var(--radius-sm, 4px);
+  font-size: 14px;
+  background-color: #ffffff;
+  color: var(--text-primary, #1c1917);
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input-field:focus,
+.select-field:focus {
+  border-color: var(--text-primary, #1c1917);
+}
+
+/* 4. Products Catalog Area */
+.shop-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shop-results-header {
+  font-size: 13px;
+  color: var(--text-muted, #78716c);
+}
+
+/* Desktop Grid (Default: 3-4 items) */
+.shop-grid-container .products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+/* Infinite Scroll Status & Spinner */
+.infinite-scroll-status {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted, #78716c);
+  font-size: 0.9rem;
+}
+
+.infinite-spinner {
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--text-primary, #1c1917);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 8px;
+}
+
+.empty-results-box {
+  padding: 48px 24px;
+  text-align: center;
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* Mobile Filter Bar Toggle (Hidden by default on desktop) */
+.mobile-filter-bar-toggle {
+  display: none;
+}
+
+.mobile-apply-btn {
+  display: none;
+}
+
+/* ==========================================================================
+   Mobile & Tablet Responsiveness (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .shop-page-root {
+    gap: 16px;
+    padding-bottom: 40px;
+  }
+
+  .collections-editorial-header {
+    padding: 10px 0 8px;
+  }
+
+  .editorial-title {
+    font-size: 22px;
+    margin-bottom: 2px;
+  }
+
+  .editorial-subtitle {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* 1-Column Layout on Mobile (Sidebar + Catalog stacked) */
+  .shop-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* 1. SHRINKED & COLLAPSIBLE MOBILE FILTER BAR */
+  .mobile-filter-bar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background-color: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-subtle, #e7e5e4);
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .btn-toggle-filters {
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary, #1c1917);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .active-filter-indicator {
+    color: var(--accent-terracotta, #c2410c);
+    font-size: 12px;
+  }
+
+  .mobile-results-count {
+    font-size: 12px;
+    color: var(--text-muted, #78716c);
+    font-weight: 500;
+  }
+
+  /* When collapsed on mobile, hide the bulky filters */
+  .shop-filter-bar {
+    display: none;
+    position: static;
+    max-height: none;
+    padding: 14px;
+    gap: 14px;
+    border-radius: var(--radius-sm, 4px);
+    box-shadow: none;
+  }
+
+  /* When expanded on mobile, show with compact form controls */
+  .shop-filter-bar.open {
+    display: flex;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .shop-filter-bar .input-field,
+  .shop-filter-bar .select-field {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .mobile-apply-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    background-color: var(--primary, #1c1917);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* Hide the desktop results counter in favor of the mobile filter bar count */
+  .shop-results-header {
+    display: none;
+  }
+
+  /* 2. EXACT 2 PRODUCTS PER ROW ON MOBILE */
+  .shop-grid-container .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* 3. PROPORTIONALLY REDUCE SIZES FOR 2-COLUMN DISPLAY */
+  .shop-grid-container .product-card-info {
+    padding: 8px 6px;
+  }
+
+  .shop-grid-container .product-card-title {
+    font-size: 12px;
+    line-height: 1.3;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shop-grid-container .product-card-price {
+    font-size: 13px;
+  }
+
+  .shop-grid-container .product-card-original-price {
+    font-size: 10px;
+  }
+
+  .shop-grid-container .product-offer-tag {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .shop-grid-container .card-save-btn {
+    width: 26px;
+    height: 26px;
+    top: 6px;
+    right: 6px;
+  }
+
+  .shop-grid-container .card-save-btn svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .shop-grid-container .stock-badge {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+
+  .shop-grid-container .card-swatches-list {
+    gap: 3px;
+  }
+
+  .shop-grid-container .card-color-dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .shop-grid-container .variant-label-sm {
+    font-size: 10px;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

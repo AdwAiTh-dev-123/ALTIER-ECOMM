@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getAdminSalesReport,
   downloadAdminSalesReport,
 } from "../../api/adminApi";
 import Pagination from "../../components/common/Pagination";
-import "../../styles/admins/admin.css";
+import "../../styles/admins/AdminSalesReportPage.css";
 
 const PRESET_RANGES = [
   { label: "Today", value: "today" },
@@ -12,6 +12,23 @@ const PRESET_RANGES = [
   { label: "Last 30 Days", value: "month" },
   { label: "This Year", value: "year" },
   { label: "Custom Range", value: "custom" },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { label: "Valid Orders (Active)", value: "all" },
+  { label: "Delivered Only", value: "Delivered" },
+  { label: "Shipped", value: "Shipped" },
+  { label: "Confirmed", value: "Confirmed" },
+  { label: "Pending", value: "Pending" },
+  { label: "Cancelled", value: "Cancelled" },
+  { label: "Returned", value: "Returned" },
+];
+
+const PAYMENT_METHOD_OPTIONS = [
+  { label: "All Methods", value: "all" },
+  { label: "Razorpay", value: "RAZORPAY" },
+  { label: "Cash on Delivery (COD)", value: "COD" },
+  { label: "Wallet", value: "WALLET" },
 ];
 
 const AdminSalesReportPage = () => {
@@ -40,6 +57,42 @@ const AdminSalesReportPage = () => {
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // In-DOM Dropdowns
+  const [openRangeDropdown, setOpenRangeDropdown] = useState(false);
+  const rangeDropdownRef = useRef(null);
+
+  const [openStatusDropdown, setOpenStatusDropdown] = useState(false);
+  const statusDropdownRef = useRef(null);
+
+  const [openPaymentDropdown, setOpenPaymentDropdown] = useState(false);
+  const paymentDropdownRef = useRef(null);
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        rangeDropdownRef.current &&
+        !rangeDropdownRef.current.contains(event.target)
+      ) {
+        setOpenRangeDropdown(false);
+      }
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target)
+      ) {
+        setOpenStatusDropdown(false);
+      }
+      if (
+        paymentDropdownRef.current &&
+        !paymentDropdownRef.current.contains(event.target)
+      ) {
+        setOpenPaymentDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fetch report data
   const loadSalesReport = useCallback(async () => {
@@ -90,7 +143,6 @@ const AdminSalesReportPage = () => {
         format,
       });
 
-      // Create browser blob download link
       const blob = new Blob([res.data], {
         type: isPdf
           ? "application/pdf"
@@ -116,39 +168,73 @@ const AdminSalesReportPage = () => {
     }
   };
 
+  // Reset Filters Handler
+  const handleResetFilters = () => {
+    setDateRange("month");
+    setStartDate("");
+    setEndDate("");
+    setStatusFilter("all");
+    setPaymentMethod("all");
+    setCurrentPage(1);
+  };
+
+  // Helper Labels
+  const currentRangeLabel =
+    PRESET_RANGES.find((p) => p.value === dateRange)?.label || "Last 30 Days";
+  const currentStatusLabel =
+    STATUS_FILTER_OPTIONS.find((s) => s.value === statusFilter)?.label ||
+    "Valid Orders";
+  const currentPaymentLabel =
+    PAYMENT_METHOD_OPTIONS.find((m) => m.value === paymentMethod)?.label ||
+    "All Methods";
+
+  // Semantic Status Badges
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case "Delivered":
+        return "status-delivered";
+      case "Shipped":
+        return "status-shipped";
+      case "Confirmed":
+        return "status-confirmed";
+      case "Pending":
+        return "status-pending";
+      case "Cancelled":
+        return "status-cancelled";
+      case "Returned":
+        return "status-returned";
+      default:
+        return "status-confirmed";
+    }
+  };
+
+  const hasActiveFilters =
+    dateRange !== "month" ||
+    statusFilter !== "all" ||
+    paymentMethod !== "all" ||
+    startDate ||
+    endDate;
+
   return (
     <div className="admin-page-container">
       {/* Header */}
-      <div
-        className="admin-page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: "1rem",
-        }}
-      >
-        <div>
-          <h1 className="admin-page-title">Sales Analytics & Report</h1>
+      <div className="admin-page-header">
+        <div className="admin-header-titles">
+          <h1 className="admin-page-title">Sales Analytics & Reports</h1>
           <p className="admin-page-subtitle">
             Inspect total revenue, volume trends, and export verified sales
-            reports.
+            audits in Excel or PDF format.
           </p>
         </div>
 
         {/* Download Buttons */}
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+        <div className="admin-header-actions">
           <button
             type="button"
-            className="admin-btn-secondary"
+            className="admin-btn-export-excel"
             onClick={() => handleDownload("excel")}
             disabled={isExportingExcel || isLoading || orders.length === 0}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.4rem",
-            }}
+            aria-label="Export Sales Report as Excel"
           >
             <span>📊</span>
             <span>
@@ -160,14 +246,10 @@ const AdminSalesReportPage = () => {
 
           <button
             type="button"
-            className="admin-btn-primary"
+            className="admin-btn-export-pdf"
             onClick={() => handleDownload("pdf")}
             disabled={isExportingPdf || isLoading || orders.length === 0}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.4rem",
-            }}
+            aria-label="Export Sales Report as PDF"
           >
             <span>📄</span>
             <span>{isExportingPdf ? "Generating PDF..." : "Export PDF"}</span>
@@ -181,7 +263,7 @@ const AdminSalesReportPage = () => {
 
       {/* Metric Summary Cards */}
       <div className="admin-stats-grid">
-        <div className="admin-stat-card stat-success">
+        <div className="admin-stat-card stat-revenue">
           <div className="admin-stat-header">
             <span className="admin-stat-label">Total Revenue</span>
             <span className="admin-stat-icon-wrap">💰</span>
@@ -189,12 +271,10 @@ const AdminSalesReportPage = () => {
           <div className="admin-stat-value">
             ₹{Number(summary.totalSalesAmount || 0).toLocaleString("en-IN")}
           </div>
-          <span className="admin-stat-note">
-            Gross sales in selected period
-          </span>
+          <span className="admin-stat-note">Gross sales in selected range</span>
         </div>
 
-        <div className="admin-stat-card">
+        <div className="admin-stat-card stat-orders">
           <div className="admin-stat-header">
             <span className="admin-stat-label">Completed Orders</span>
             <span className="admin-stat-icon-wrap">📦</span>
@@ -203,18 +283,16 @@ const AdminSalesReportPage = () => {
           <span className="admin-stat-note">Successful fulfillment count</span>
         </div>
 
-        <div className="admin-stat-card">
+        <div className="admin-stat-card stat-units">
           <div className="admin-stat-header">
             <span className="admin-stat-label">Units Sold</span>
             <span className="admin-stat-icon-wrap">🏷️</span>
           </div>
           <div className="admin-stat-value">{summary.totalItemsSold}</div>
-          <span className="admin-stat-note">
-            Total apparel pieces dispatched
-          </span>
+          <span className="admin-stat-note">Total pieces dispatched</span>
         </div>
 
-        <div className="admin-stat-card">
+        <div className="admin-stat-card stat-aov">
           <div className="admin-stat-header">
             <span className="admin-stat-label">Average Order Value</span>
             <span className="admin-stat-icon-wrap">📈</span>
@@ -222,36 +300,20 @@ const AdminSalesReportPage = () => {
           <div className="admin-stat-value">
             ₹{Number(summary.averageOrderValue || 0).toLocaleString("en-IN")}
           </div>
-          <span className="admin-stat-note">Average cart spend per order</span>
+          <span className="admin-stat-note">Average spend per customer order</span>
         </div>
       </div>
 
       {/* Filter Controls Bar */}
-      <div
-        className="admin-panel-card"
-        style={{
-          padding: "1.25rem 1.5rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-        }}
-      >
-        {/* Preset Range Tabs */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "1rem",
-          }}
-        >
-          <div className="admin-filter-tabs">
+      <div className="admin-sales-controls-card">
+        <div className="admin-sales-controls-row">
+          {/* Preset Range Tabs (Desktop Only) */}
+          <div className="admin-sales-tabs-desktop">
             {PRESET_RANGES.map((preset) => (
               <button
                 key={preset.value}
                 type="button"
-                className={`admin-filter-tab ${dateRange === preset.value ? "active" : ""}`}
+                className={`admin-sales-tab-btn ${dateRange === preset.value ? "active" : ""}`}
                 onClick={() => {
                   setDateRange(preset.value);
                   setCurrentPage(1);
@@ -262,103 +324,179 @@ const AdminSalesReportPage = () => {
             ))}
           </div>
 
-          {/* Secondary Filters: Status & Payment Method */}
+          {/* Preset Range In-DOM Dropdown (Mobile Only) */}
           <div
-            style={{
-              display: "flex",
-              gap: "0.75rem",
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
+            className="admin-sales-dropdown-wrap admin-sales-range-mobile-wrap"
+            ref={rangeDropdownRef}
           >
-            <select
-              className="admin-select"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
+            <button
+              type="button"
+              className="admin-sales-dropdown-btn"
+              onClick={() => setOpenRangeDropdown((prev) => !prev)}
+              aria-expanded={openRangeDropdown}
             >
-              <option value="all">Status: Valid Orders</option>
-              <option value="Delivered">Status: Delivered Only</option>
-              <option value="Shipped">Status: Shipped</option>
-              <option value="Confirmed">Status: Confirmed</option>
-              <option value="Pending">Status: Pending</option>
-            </select>
+              <span className="admin-sales-dropdown-btn-text">
+                Range: <strong>{currentRangeLabel}</strong>
+              </span>
+              <span
+                className={`admin-sales-dropdown-chevron ${openRangeDropdown ? "open" : ""}`}
+              >
+                ▼
+              </span>
+            </button>
 
-            <select
-              className="admin-select"
-              value={paymentMethod}
-              onChange={(e) => {
-                setPaymentMethod(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="all">Payment: All Methods</option>
-              <option value="RAZORPAY">Razorpay</option>
-              <option value="COD">Cash on Delivery (COD)</option>
-              <option value="WALLET">Wallet</option>
-            </select>
+            {openRangeDropdown && (
+              <div className="admin-sales-dropdown-menu">
+                {PRESET_RANGES.map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    className={`admin-sales-dropdown-item ${dateRange === preset.value ? "selected" : ""}`}
+                    onClick={() => {
+                      setDateRange(preset.value);
+                      setCurrentPage(1);
+                      setOpenRangeDropdown(false);
+                    }}
+                  >
+                    <span>{preset.label}</span>
+                    {dateRange === preset.value && (
+                      <span className="admin-sales-check">✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Secondary Filters: Status & Payment Method */}
+          <div className="admin-sales-filters-group">
+            {/* Status In-DOM Dropdown */}
+            <div className="admin-sales-dropdown-wrap" ref={statusDropdownRef}>
+              <button
+                type="button"
+                className="admin-sales-dropdown-btn"
+                onClick={() => setOpenStatusDropdown((prev) => !prev)}
+                aria-expanded={openStatusDropdown}
+              >
+                <span className="admin-sales-dropdown-btn-text">
+                  Status: <strong>{currentStatusLabel}</strong>
+                </span>
+                <span
+                  className={`admin-sales-dropdown-chevron ${openStatusDropdown ? "open" : ""}`}
+                >
+                  ▼
+                </span>
+              </button>
+
+              {openStatusDropdown && (
+                <div className="admin-sales-dropdown-menu">
+                  {STATUS_FILTER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`admin-sales-dropdown-item ${statusFilter === opt.value ? "selected" : ""}`}
+                      onClick={() => {
+                        setStatusFilter(opt.value);
+                        setCurrentPage(1);
+                        setOpenStatusDropdown(false);
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {statusFilter === opt.value && (
+                        <span className="admin-sales-check">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Payment Method In-DOM Dropdown */}
+            <div className="admin-sales-dropdown-wrap" ref={paymentDropdownRef}>
+              <button
+                type="button"
+                className="admin-sales-dropdown-btn"
+                onClick={() => setOpenPaymentDropdown((prev) => !prev)}
+                aria-expanded={openPaymentDropdown}
+              >
+                <span className="admin-sales-dropdown-btn-text">
+                  Payment: <strong>{currentPaymentLabel}</strong>
+                </span>
+                <span
+                  className={`admin-sales-dropdown-chevron ${openPaymentDropdown ? "open" : ""}`}
+                >
+                  ▼
+                </span>
+              </button>
+
+              {openPaymentDropdown && (
+                <div className="admin-sales-dropdown-menu">
+                  {PAYMENT_METHOD_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`admin-sales-dropdown-item ${paymentMethod === opt.value ? "selected" : ""}`}
+                      onClick={() => {
+                        setPaymentMethod(opt.value);
+                        setCurrentPage(1);
+                        setOpenPaymentDropdown(false);
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {paymentMethod === opt.value && (
+                        <span className="admin-sales-check">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                className="admin-btn-clear-sales-filters"
+                onClick={handleResetFilters}
+              >
+                <span>Clear Filters ✕</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Custom Date Pickers */}
         {dateRange === "custom" && (
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-              alignItems: "center",
-              flexWrap: "wrap",
-              paddingTop: "0.5rem",
-              borderTop: "1px solid #f5f4f0",
-            }}
-          >
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-            >
-              <label
-                style={{
-                  fontSize: "0.82rem",
-                  fontWeight: 600,
-                  color: "#44403c",
-                }}
-              >
+          <div className="admin-sales-custom-dates-bar">
+            <div className="admin-sales-date-field">
+              <label htmlFor="sales-start-date" className="admin-sales-date-label">
                 Start Date:
               </label>
               <input
+                id="sales-start-date"
                 type="date"
                 value={startDate}
                 onChange={(e) => {
                   setStartDate(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="admin-search-input"
-                style={{ padding: "0.4rem 0.75rem", width: "auto" }}
+                className="admin-sales-date-input"
               />
             </div>
 
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-            >
-              <label
-                style={{
-                  fontSize: "0.82rem",
-                  fontWeight: 600,
-                  color: "#44403c",
-                }}
-              >
+            <div className="admin-sales-date-field">
+              <label htmlFor="sales-end-date" className="admin-sales-date-label">
                 End Date:
               </label>
               <input
+                id="sales-end-date"
                 type="date"
                 value={endDate}
                 onChange={(e) => {
                   setEndDate(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="admin-search-input"
-                style={{ padding: "0.4rem 0.75rem", width: "auto" }}
+                className="admin-sales-date-input"
               />
             </div>
           </div>
@@ -366,8 +504,8 @@ const AdminSalesReportPage = () => {
       </div>
 
       {/* Orders Table Panel */}
-      <div className="admin-panel-card">
-        <div className="admin-table-responsive">
+      <div className="admin-sales-table-card">
+        <div className="admin-sales-table-responsive">
           <table className="admin-table">
             <thead>
               <tr>
@@ -383,39 +521,42 @@ const AdminSalesReportPage = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td
-                    colSpan="7"
-                    style={{
-                      textAlign: "center",
-                      padding: "2.5rem 1rem",
-                      color: "#78716c",
-                    }}
-                  >
+                  <td colSpan="7" className="admin-empty-state-cell">
                     Loading sales records...
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan="7"
-                    style={{
-                      textAlign: "center",
-                      padding: "2.5rem 1rem",
-                      color: "#78716c",
-                    }}
-                  >
-                    No orders match the selected date range and filters.
+                  <td colSpan="7" className="admin-empty-state-cell">
+                    <div className="admin-empty-state-content">
+                      <div className="admin-empty-icon">📊</div>
+                      <h3 className="admin-empty-title">
+                        No sales records found
+                      </h3>
+                      <p className="admin-empty-desc">
+                        No orders match the selected date range and filter
+                        parameters. Try widening your date selection or clearing
+                        filters.
+                      </p>
+                      {hasActiveFilters && (
+                        <button
+                          type="button"
+                          className="admin-empty-reset-btn"
+                          onClick={handleResetFilters}
+                        >
+                          Reset All Filters
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 orders.map((order) => (
                   <tr key={order._id}>
                     <td>
-                      <strong
-                        style={{ fontFamily: "monospace", color: "#1c1917" }}
-                      >
+                      <span className="admin-order-id-code">
                         {order.orderId}
-                      </strong>
+                      </span>
                     </td>
                     <td className="admin-date-text">
                       {new Date(order.createdAt).toLocaleDateString("en-IN", {
@@ -425,58 +566,37 @@ const AdminSalesReportPage = () => {
                       })}
                     </td>
                     <td>
-                      <div style={{ fontWeight: 600, color: "#1c1917" }}>
-                        {order.shippingAddress?.fullName ||
-                          order.user?.name ||
-                          "Customer"}
-                      </div>
-                      <div style={{ fontSize: "0.75rem", color: "#78716c" }}>
-                        {order.user?.email || order.shippingAddress?.phone}
+                      <div className="admin-customer-cell">
+                        <span className="admin-customer-name">
+                          {order.shippingAddress?.fullName ||
+                            order.user?.name ||
+                            "Customer"}
+                        </span>
+                        <span className="admin-customer-sub">
+                          {order.user?.email || order.shippingAddress?.phone}
+                        </span>
                       </div>
                     </td>
                     <td>
-                      <span
-                        style={{
-                          fontSize: "0.8rem",
-                          fontWeight: 500,
-                          color: "#44403c",
-                        }}
-                      >
+                      <span className="admin-payment-pill">
                         {order.paymentMethod}
                       </span>
                     </td>
-                    <td style={{ color: "#44403c" }}>
-                      {order.items?.length || 0}{" "}
-                      {order.items?.length === 1 ? "item" : "items"}
+                    <td>
+                      <span className="admin-items-count">
+                        {order.items?.length || 0}{" "}
+                        {order.items?.length === 1 ? "item" : "items"}
+                      </span>
                     </td>
                     <td>
                       <span
-                        className={`admin-status-badge ${
-                          order.orderStatus === "Delivered"
-                            ? "status-active"
-                            : "status-blocked"
-                        }`}
-                        style={{
-                          backgroundColor:
-                            order.orderStatus === "Delivered"
-                              ? "#ecfdf5"
-                              : "#eff6ff",
-                          color:
-                            order.orderStatus === "Delivered"
-                              ? "#065f46"
-                              : "#1e40af",
-                        }}
+                        className={`admin-status-badge ${getStatusBadgeClass(order.orderStatus)}`}
                       >
-                        ● {order.orderStatus}
+                        <span className="status-dot"></span>
+                        {order.orderStatus}
                       </span>
                     </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        fontWeight: 700,
-                        color: "#1c1917",
-                      }}
-                    >
+                    <td className="admin-amount-cell">
                       ₹
                       {(order.pricing?.totalAmount || 0).toLocaleString(
                         "en-IN",

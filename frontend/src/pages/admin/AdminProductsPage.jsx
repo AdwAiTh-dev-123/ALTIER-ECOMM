@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getAdminProducts,
   getAdminCategories,
@@ -28,6 +28,53 @@ const AdminProductsPage = () => {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
 
+  // In-DOM Dropdowns state ('category' | 'stock' | 'sort' | null)
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const controlsRightRef = useRef(null);
+
+  // Close open dropdown when tapping/clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        controlsRightRef.current &&
+        !controlsRightRef.current.contains(e.target)
+      ) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const SORT_OPTIONS = [
+    { value: "createdAt-desc", label: "Newest First" },
+    { value: "createdAt-asc", label: "Oldest First" },
+    { value: "name-asc", label: "Name (A – Z)" },
+    { value: "name-desc", label: "Name (Z – A)" },
+  ];
+
+  const currentSortLabel =
+    SORT_OPTIONS.find((o) => o.value === `${sortBy}-${sortOrder}`)?.label ||
+    "Newest First";
+
+  const currentCategoryLabel =
+    category === "all"
+      ? "All Categories"
+      : categories.find((c) => c._id === category)?.name || "All Categories";
+
+  const STOCK_OPTIONS = [
+    { value: "all", label: "All Stock" },
+    { value: "inStock", label: "In Stock" },
+    { value: "outOfStock", label: "Out of Stock" },
+  ];
+
+  const currentStockLabel =
+    STOCK_OPTIONS.find((s) => s.value === stock)?.label || "All Stock";
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     totalPages: 1,
@@ -50,6 +97,12 @@ const AdminProductsPage = () => {
 
   // Delete modal state
   const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    product: null,
+  });
+
+  // Confirmation modal state for listing/unlisting
+  const [toggleModal, setToggleModal] = useState({
     isOpen: false,
     product: null,
   });
@@ -121,18 +174,25 @@ const AdminProductsPage = () => {
     sortBy !== "createdAt" ||
     sortOrder !== "desc";
 
-  // Toggle Listed/Unlisted status
-  const handleToggleListing = async (productId) => {
-    setActionLoadingId(productId);
+  // Confirm toggle Listed/Unlisted status
+  const handleConfirmToggle = async () => {
+    const target = toggleModal.product;
+    if (!target) return;
+
+    setToggleModal({ isOpen: false, product: null });
+    setActionLoadingId(target._id);
     setErrorMessage("");
     try {
-      const res = await toggleProductStatus(productId);
+      const res = await toggleProductStatus(target._id);
       setProducts((prev) =>
         prev.map((p) =>
-          p._id === productId ? { ...p, isListed: !p.isListed } : p,
+          p._id === target._id ? { ...p, isListed: !p.isListed } : p,
         ),
       );
-      setSuccessToast(res.data.message || "Product status updated");
+      setSuccessToast(
+        res.data?.message ||
+          `Product successfully ${target.isListed ? "unlisted" : "published"}`,
+      );
       setTimeout(() => setSuccessToast(""), 3000);
     } catch (err) {
       setErrorMessage(
@@ -236,71 +296,161 @@ const AdminProductsPage = () => {
         </div>
 
         {/* Right Controls Group: Category, Stock, Sort, Status */}
-        <div className="admin-controls-right">
-          {/* Category Filter */}
+        <div className="admin-controls-right" ref={controlsRightRef}>
+          {/* Custom Category Dropdown */}
           <div className="admin-sort-wrap">
-            <label htmlFor="prod-filter-cat" className="admin-sort-label">
-              Category:
-            </label>
-            <select
-              id="prod-filter-cat"
-              className="admin-select"
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setCurrentPage(1);
-              }}
+            <button
+              type="button"
+              className="admin-custom-dropdown-btn"
+              onClick={() =>
+                setOpenDropdown((prev) =>
+                  prev === "category" ? null : "category",
+                )
+              }
+              aria-expanded={openDropdown === "category"}
             >
-              <option value="all">All Categories</option>
-              {categories.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              <span className="admin-dropdown-btn-text">
+                Category: <strong>{currentCategoryLabel}</strong>
+              </span>
+              <span
+                className={`admin-dropdown-chevron ${openDropdown === "category" ? "open" : ""}`}
+              >
+                ▾
+              </span>
+            </button>
+
+            {openDropdown === "category" && (
+              <div className="admin-custom-dropdown-menu">
+                <button
+                  type="button"
+                  className={`admin-dropdown-item ${category === "all" ? "selected" : ""}`}
+                  onClick={() => {
+                    setCategory("all");
+                    setCurrentPage(1);
+                    setOpenDropdown(null);
+                  }}
+                >
+                  <span>All Categories</span>
+                  {category === "all" && (
+                    <span className="dropdown-check">✓</span>
+                  )}
+                </button>
+                {categories.map((c) => {
+                  const isSelected = category === c._id;
+                  return (
+                    <button
+                      key={c._id}
+                      type="button"
+                      className={`admin-dropdown-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => {
+                        setCategory(c._id);
+                        setCurrentPage(1);
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      <span>{c.name}</span>
+                      {isSelected && (
+                        <span className="dropdown-check">✓</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Stock Filter */}
+          {/* Custom Stock Dropdown */}
           <div className="admin-sort-wrap">
-            <label htmlFor="prod-filter-stock" className="admin-sort-label">
-              Stock:
-            </label>
-            <select
-              id="prod-filter-stock"
-              className="admin-select"
-              value={stock}
-              onChange={(e) => {
-                setStock(e.target.value);
-                setCurrentPage(1);
-              }}
+            <button
+              type="button"
+              className="admin-custom-dropdown-btn"
+              onClick={() =>
+                setOpenDropdown((prev) => (prev === "stock" ? null : "stock"))
+              }
+              aria-expanded={openDropdown === "stock"}
             >
-              <option value="all">All Stock</option>
-              <option value="inStock">In Stock</option>
-              <option value="outOfStock">Out of Stock</option>
-            </select>
+              <span className="admin-dropdown-btn-text">
+                Stock: <strong>{currentStockLabel}</strong>
+              </span>
+              <span
+                className={`admin-dropdown-chevron ${openDropdown === "stock" ? "open" : ""}`}
+              >
+                ▾
+              </span>
+            </button>
+
+            {openDropdown === "stock" && (
+              <div className="admin-custom-dropdown-menu">
+                {STOCK_OPTIONS.map((opt) => {
+                  const isSelected = stock === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`admin-dropdown-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => {
+                        setStock(opt.value);
+                        setCurrentPage(1);
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && (
+                        <span className="dropdown-check">✓</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Sort By */}
+          {/* Custom Sort Dropdown */}
           <div className="admin-sort-wrap">
-            <label htmlFor="prod-sort" className="admin-sort-label">
-              Sort By:
-            </label>
-            <select
-              id="prod-sort"
-              className="admin-select"
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [newField, newOrder] = e.target.value.split("-");
-                setSortBy(newField);
-                setSortOrder(newOrder);
-                setCurrentPage(1);
-              }}
+            <button
+              type="button"
+              className="admin-custom-dropdown-btn"
+              onClick={() =>
+                setOpenDropdown((prev) => (prev === "sort" ? null : "sort"))
+              }
+              aria-expanded={openDropdown === "sort"}
             >
-              <option value="createdAt-desc">Newest First</option>
-              <option value="createdAt-asc">Oldest First</option>
-              <option value="name-asc">Name (A – Z)</option>
-              <option value="name-desc">Name (Z – A)</option>
-            </select>
+              <span className="admin-dropdown-btn-text">
+                Sort: <strong>{currentSortLabel}</strong>
+              </span>
+              <span
+                className={`admin-dropdown-chevron ${openDropdown === "sort" ? "open" : ""}`}
+              >
+                ▾
+              </span>
+            </button>
+
+            {openDropdown === "sort" && (
+              <div className="admin-custom-dropdown-menu">
+                {SORT_OPTIONS.map((opt) => {
+                  const isSelected = `${sortBy}-${sortOrder}` === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`admin-dropdown-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => {
+                        const [newField, newOrder] = opt.value.split("-");
+                        setSortBy(newField);
+                        setSortOrder(newOrder);
+                        setCurrentPage(1);
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && (
+                        <span className="dropdown-check">✓</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Status Tabs (All, Listed, Unlisted) */}
@@ -329,16 +479,7 @@ const AdminProductsPage = () => {
             <button
               type="button"
               onClick={handleClearFilters}
-              style={{
-                fontSize: "0.78rem",
-                padding: "0.42rem 0.75rem",
-                color: "var(--text-muted, #78716c)",
-                border: "1px dashed var(--border-subtle, #e7e5e4)",
-                background: "transparent",
-                borderRadius: "4px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
+              className="admin-btn-clear-filters"
             >
               Clear Filters
             </button>
@@ -350,7 +491,9 @@ const AdminProductsPage = () => {
       <div className="admin-panel-card">
         {/* Scrollable Container with sticky header */}
         <div className="admin-table-responsive">
-          <table className="admin-table">
+          <table
+            className={`admin-table ${products.length === 0 ? "admin-table-empty" : ""}`}
+          >
             <thead>
               <tr>
                 <th>Product</th>
@@ -378,31 +521,9 @@ const AdminProductsPage = () => {
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan="7"
-                    style={{ padding: "3.5rem 1rem", textAlign: "center" }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "0.75rem",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "52px",
-                          height: "52px",
-                          borderRadius: "50%",
-                          backgroundColor: "var(--bg-muted, #f5f4f0)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "var(--text-muted, #78716c)",
-                        }}
-                      >
+                  <td colSpan="7" className="admin-empty-cell">
+                    <div className="admin-empty-wrapper">
+                      <div className="admin-empty-icon-circle">
                         <svg
                           width="24"
                           height="24"
@@ -416,35 +537,31 @@ const AdminProductsPage = () => {
                           <path d="M16 10a4 4 0 0 1-8 0" />
                         </svg>
                       </div>
-                      <div>
-                        <h3
-                          style={{
-                            fontSize: "0.95rem",
-                            fontWeight: "600",
-                            color: "var(--text-primary, #1c1917)",
-                            margin: "0 0 4px",
-                          }}
-                        >
-                          No products found in your catalog
-                        </h3>
-                        <p
-                          style={{
-                            fontSize: "0.82rem",
-                            color: "var(--text-muted, #78716c)",
-                            margin: 0,
-                          }}
-                        >
+                      <div className="admin-empty-text-wrap">
+                        <h3 className="admin-empty-heading">
                           {hasActiveFilters
-                            ? "Try adjusting your search query or filters."
+                            ? "No matching products found"
+                            : "No products found in your catalog"}
+                        </h3>
+                        <p className="admin-empty-description">
+                          {hasActiveFilters
+                            ? "Try adjusting your search query or filters to find what you're looking for."
                             : "Get started by adding your first product with color and size variants."}
                         </p>
                       </div>
-                      {!hasActiveFilters && (
+                      {hasActiveFilters ? (
+                        <button
+                          type="button"
+                          onClick={handleClearFilters}
+                          className="admin-empty-action-btn btn-clear-empty"
+                        >
+                          Clear All Filters
+                        </button>
+                      ) : (
                         <button
                           type="button"
                           onClick={() => setIsModalOpen(true)}
-                          className="admin-btn-primary"
-                          style={{ marginTop: "0.5rem", fontSize: "0.82rem" }}
+                          className="admin-btn-primary admin-empty-action-btn"
                         >
                           <span>+</span> Add First Product
                         </button>
@@ -568,27 +685,16 @@ const AdminProductsPage = () => {
                         </span>
                       </td>
 
-                      {/* Actions: Matching Category/User styling */}
-                      <td
-                        style={{
-                          textAlign: "right",
-                          width: "230px",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "flex-end",
-                            gap: "0.5rem",
-                          }}
-                        >
+                      {/* Actions */}
+                      <td className="admin-actions-cell text-right">
+                        <div className="admin-actions-group">
                           {/* List/Unlist Button */}
                           <button
                             type="button"
                             disabled={isActionLoading}
-                            onClick={() => handleToggleListing(product._id)}
+                            onClick={() =>
+                              setToggleModal({ isOpen: true, product })
+                            }
                             className={`admin-action-btn btn-toggle ${
                               product.isListed ? "btn-block" : "btn-unblock"
                             }`}
@@ -608,11 +714,7 @@ const AdminProductsPage = () => {
                               setEditingProduct(product);
                               setIsModalOpen(true);
                             }}
-                            className="admin-action-btn admin-btn-secondary"
-                            style={{
-                              padding: "0.35rem 0.75rem",
-                              fontSize: "0.8rem",
-                            }}
+                            className="admin-action-btn btn-edit"
                           >
                             Edit
                           </button>
@@ -648,6 +750,54 @@ const AdminProductsPage = () => {
           loading={loading}
         />
       </div>
+
+      {/* Listing / Unlisting Confirmation Modal */}
+      {toggleModal.isOpen && (
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal-box">
+            <h3 className="admin-modal-title">
+              {toggleModal.product?.isListed
+                ? "Unlist Product"
+                : "Publish Product to Storefront"}
+            </h3>
+            <p className="admin-modal-message">
+              Are you sure you want to{" "}
+              {toggleModal.product?.isListed ? "hide" : "publish"}{" "}
+              <strong>{toggleModal.product?.name}</strong>?
+              {toggleModal.product?.isListed && (
+                <span className="admin-modal-warning">
+                  {" "}
+                  This product and all its variants will no longer appear or be
+                  purchasable by customers in the storefront catalog.
+                </span>
+              )}
+            </p>
+            <div className="admin-modal-actions">
+              <button
+                type="button"
+                className="admin-btn-secondary"
+                onClick={() => setToggleModal({ isOpen: false, product: null })}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={`admin-modal-confirm-btn ${
+                  toggleModal.product?.isListed
+                    ? "btn-confirm-block"
+                    : "btn-confirm-unblock"
+                }`}
+                onClick={handleConfirmToggle}
+              >
+                Yes,{" "}
+                {toggleModal.product?.isListed
+                  ? "Unlist Product"
+                  : "Publish Product"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && (

@@ -6,6 +6,7 @@ import { ProductCard } from "../../components/product/ProductCard";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useAuth } from "../../context/AuthContext";
+import "../../styles/storefront/ProductDetailsPage.css";
 
 export const ProductDetailsPage = () => {
   const { id } = useParams();

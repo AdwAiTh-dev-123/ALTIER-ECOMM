@@ -5,9 +5,11 @@ import {
   getStorefrontProducts,
 } from "../../api/shopApi";
 import { ProductCard } from "../../components/product/ProductCard";
+import "../../styles/storefront/ShopPage.css";
 
 export const ShopPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Categories & Products state
   const [categories, setCategories] = useState([]);
@@ -211,8 +213,28 @@ export const ShopPage = () => {
       </div>
 
       <div className="shop-layout">
+        <div className="mobile-filter-bar-toggle">
+          <button
+            type="button"
+            className="btn-toggle-filters"
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+          >
+            <span>
+              ⚙️ {showMobileFilters ? "Hide Filters" : "Filters & Sort"}
+            </span>
+            {(selectedCategory !== "all" ||
+              minPrice ||
+              maxPrice ||
+              searchQuery) && (
+              <span className="active-filter-indicator">● Active</span>
+            )}
+          </button>
+          <span className="mobile-results-count">
+            {isInitialLoading ? "..." : `${products.length} garments`}
+          </span>
+        </div>
         {/* LEFT COLUMN: Sticky Filter Sidebar */}
-        <aside className="shop-filter-bar">
+        <aside className={`shop-filter-bar ${showMobileFilters ? "open" : ""}`}>
           <div
             style={{
               display: "flex",
@@ -335,6 +357,14 @@ export const ShopPage = () => {
               <option value="name-desc">Name: Z to A</option>
             </select>
           </div>
+          {/* Mobile Apply / View Results Button */}
+          <button
+            type="button"
+            className="mobile-apply-btn"
+            onClick={() => setShowMobileFilters(false)}
+          >
+            View {products.length} Garments →
+          </button>
         </aside>
 
         {/* RIGHT COLUMN: Product Catalog Results */}

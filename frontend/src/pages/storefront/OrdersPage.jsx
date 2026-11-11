@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getUserOrdersApi } from "../../api/shopApi";
 import "../../styles/storefront/OrdersPage.css";
@@ -10,6 +10,36 @@ export const OrdersPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(e.target)
+      ) {
+        setIsStatusDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const STATUS_TABS = [
+    { id: "ALL", label: "All Orders" },
+    { id: "ACTIVE", label: "Active" },
+    { id: "FAILED", label: "Failed" },
+    { id: "Delivered", label: "Delivered" },
+    { id: "Cancelled", label: "Cancelled" },
+  ];
+
+  const currentTabLabel =
+    STATUS_TABS.find((t) => t.id === statusFilter)?.label || "All Orders";
 
   const fetchOrders = async () => {
     try {
@@ -69,15 +99,9 @@ export const OrdersPage = () => {
 
       {/* Filter and Search Bar */}
       <div className="orders-filter-row orders-filter-card">
-        {/* Status Filter Tabs */}
+        {/* Desktop: Status Filter Tabs */}
         <div className="orders-status-pills">
-          {[
-            { id: "ALL", label: "All Orders" },
-            { id: "ACTIVE", label: "Active" },
-            { id: "FAILED", label: "Failed" },
-            { id: "Delivered", label: "Delivered" },
-            { id: "Cancelled", label: "Cancelled" },
-          ].map((tab) => (
+          {STATUS_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -89,11 +113,49 @@ export const OrdersPage = () => {
           ))}
         </div>
 
+        {/* Mobile: In-DOM Custom Status Dropdown */}
+        <div className="orders-status-dropdown-wrapper" ref={statusDropdownRef}>
+          <button
+            type="button"
+            className="orders-status-dropdown-btn"
+            onClick={() => setIsStatusDropdownOpen((prev) => !prev)}
+            aria-expanded={isStatusDropdownOpen}
+          >
+            <span className="orders-dropdown-btn-text">
+              Status: <strong>{currentTabLabel}</strong>
+            </span>
+            <span
+              className={`orders-dropdown-chevron ${isStatusDropdownOpen ? "open" : ""}`}
+            >
+              ▾
+            </span>
+          </button>
+
+          {isStatusDropdownOpen && (
+            <div className="orders-status-dropdown-menu">
+              {STATUS_TABS.map((tab) => {
+                const isSelected = statusFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`orders-dropdown-item ${isSelected ? "selected" : ""}`}
+                    onClick={() => {
+                      setStatusFilter(tab.id);
+                      setIsStatusDropdownOpen(false);
+                    }}
+                  >
+                    <span>{tab.label}</span>
+                    {isSelected && <span className="dropdown-check">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Search Input */}
-        <form
-          onSubmit={handleSearchSubmit}
-          className="orders-search-box"
-        >
+        <form onSubmit={handleSearchSubmit} className="orders-search-box">
           <input
             type="text"
             placeholder="Search by Order ID or Item..."
@@ -101,10 +163,7 @@ export const OrdersPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="orders-search-input"
           />
-          <button
-            type="submit"
-            className="btn btn-secondary"
-          >
+          <button type="submit" className="btn btn-secondary">
             Search
           </button>
         </form>
@@ -128,18 +187,13 @@ export const OrdersPage = () => {
       ) : orders.length === 0 ? (
         <div className="order-receipt-card orders-empty-box">
           <div className="orders-empty-icon">📦</div>
-          <h3 className="orders-empty-title">
-            No orders found
-          </h3>
+          <h3 className="orders-empty-title">No orders found</h3>
           <p className="orders-empty-desc">
             {searchTerm || statusFilter !== "ALL"
               ? "No orders match your filter criteria."
               : "You haven't placed any orders yet."}
           </p>
-          <Link
-            to="/collections"
-            className="btn btn-primary"
-          >
+          <Link to="/collections" className="btn btn-primary">
             Explore Collections &rarr;
           </Link>
         </div>
@@ -156,107 +210,58 @@ export const OrdersPage = () => {
               },
             );
 
+            const isFailed = order.paymentStatus === "Failed";
+            const isDelivered = order.orderStatus === "Delivered";
+            const isCancelled = order.orderStatus === "Cancelled";
+            const badgeClass = isFailed
+              ? "badge-failed"
+              : isDelivered
+                ? "badge-delivered"
+                : isCancelled
+                  ? "badge-cancelled"
+                  : "badge-active";
+
             return (
-              <div
-                key={order._id}
-                style={{
-                  background: "#fff",
-                  border: "1px solid #e5e5e5",
-                  borderRadius: "6px",
-                  overflow: "hidden",
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
-                }}
-              >
+              <div key={order._id} className="order-history-card">
                 {/* Order Top Bar */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "1rem",
-                    padding: "1rem 1.5rem",
-                    background: "#fbfaf8",
-                    borderBottom: "1px solid #f0ede6",
-                    fontSize: "0.85rem",
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}
-                  >
-                    <div>
-                      <span style={{ color: "#777", display: "block" }}>
+                <div className="order-history-header">
+                  <div className="order-history-meta-group">
+                    <div className="order-meta-item">
+                      <span className="order-history-meta-label">
                         Order Placed
                       </span>
-                      <strong>{formattedDate}</strong>
+                      <strong className="order-history-meta-value">
+                        {formattedDate}
+                      </strong>
                     </div>
-                    <div>
-                      <span style={{ color: "#777", display: "block" }}>
+                    <div className="order-meta-item">
+                      <span className="order-history-meta-label">
                         Total Amount
                       </span>
-                      <strong>
+                      <strong className="order-history-meta-value">
                         ₹{order.pricing.totalAmount.toLocaleString()}
                       </strong>
                     </div>
-                    <div>
-                      <span style={{ color: "#777", display: "block" }}>
+                    <div className="order-meta-item order-meta-ref">
+                      <span className="order-history-meta-label">
                         Order Reference
                       </span>
-                      <strong style={{ fontFamily: "monospace" }}>
+                      <strong className="order-history-meta-value order-history-code">
                         {order.orderId}
                       </strong>
                     </div>
                   </div>
 
                   {/* Status Badge & Actions */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.75rem",
-                      flexWrap: "wrap",
-                    }}
-                  >
+                  <div className="order-history-actions-group">
                     {/* Status Badge */}
-                    <span
-                      style={{
-                        padding: "0.3rem 0.85rem",
-                        borderRadius: "14px",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        background:
-                          order.paymentStatus === "Failed"
-                            ? "#fef2f2"
-                            : order.orderStatus === "Delivered"
-                              ? "#ecfdf5"
-                              : order.orderStatus === "Cancelled"
-                                ? "#fef2f2"
-                                : "#eff6ff",
-                        color:
-                          order.paymentStatus === "Failed"
-                            ? "#991b1b"
-                            : order.orderStatus === "Delivered"
-                              ? "#065f46"
-                              : order.orderStatus === "Cancelled"
-                                ? "#991b1b"
-                                : "#1e40af",
-                        border:
-                          order.paymentStatus === "Failed"
-                            ? "1px solid #fecaca"
-                            : "none",
-                      }}
-                    >
-                      ●{" "}
-                      {order.paymentStatus === "Failed"
-                        ? "Payment Failed"
-                        : order.orderStatus}
+                    <span className={`order-status-badge ${badgeClass}`}>
+                      ● {isFailed ? "Payment Failed" : order.orderStatus}
                     </span>
 
-                    {/* Retry Payment Button (Shows only on failed orders) */}
-                    {order.paymentStatus === "Failed" &&
-                      order.orderStatus !== "Cancelled" && (
+                    {/* Action Buttons */}
+                    <div className="order-action-btns">
+                      {isFailed && order.orderStatus !== "Cancelled" && (
                         <button
                           type="button"
                           onClick={() =>
@@ -268,89 +273,45 @@ export const OrdersPage = () => {
                               },
                             })
                           }
-                          className="btn btn-primary"
-                          style={{
-                            padding: "0.4rem 0.9rem",
-                            fontSize: "0.8rem",
-                            background: "#dc2626",
-                            borderColor: "#dc2626",
-                          }}
+                          className="btn btn-primary order-btn-retry"
                         >
                           Retry Payment ↻
                         </button>
                       )}
 
-                    <Link
-                      to={`/orders/${order.orderId}`}
-                      className="btn btn-secondary"
-                      style={{ padding: "0.4rem 0.9rem", fontSize: "0.8rem" }}
-                    >
-                      View Details &rarr;
-                    </Link>
+                      <Link
+                        to={`/orders/${order.orderId}`}
+                        className="btn btn-secondary order-btn-details"
+                      >
+                        View Details &rarr;
+                      </Link>
+                    </div>
                   </div>
                 </div>
 
                 {/* Items Preview */}
-                <div style={{ padding: "1.25rem 1.5rem" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "1rem",
-                    }}
-                  >
+                <div className="order-history-items-body">
+                  <div className="order-items-list">
                     {order.items.map((item) => (
-                      <div
-                        key={item._id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "1rem",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "1.25rem",
-                          }}
-                        >
+                      <div key={item._id} className="order-history-item-row">
+                        <div className="order-history-item-info">
                           <img
                             src={item.image}
                             alt={item.title}
-                            style={{
-                              width: "56px",
-                              height: "72px",
-                              objectFit: "cover",
-                              borderRadius: "4px",
-                              border: "1px solid #f0f0f0",
-                            }}
+                            className="order-history-item-img"
                           />
-                          <div>
-                            <h4
-                              style={{
-                                margin: 0,
-                                fontSize: "0.95rem",
-                                fontWeight: 600,
-                              }}
-                            >
+                          <div className="order-history-item-details">
+                            <h4 className="order-history-item-name">
                               {item.title}
                             </h4>
-                            <p
-                              style={{
-                                margin: "0.2rem 0 0",
-                                color: "#666",
-                                fontSize: "0.82rem",
-                              }}
-                            >
+                            <p className="order-history-item-spec">
                               {item.color} | Size: {item.size} | Qty:{" "}
                               {item.quantity}
                             </p>
                           </div>
                         </div>
 
-                        <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>
+                        <div className="order-history-item-price">
                           ₹{item.itemTotal.toLocaleString()}
                         </div>
                       </div>

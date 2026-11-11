@@ -1,13 +1,19 @@
-// frontend/src/pages/admin/AdminDashboardPage.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAdminUsers, getAdminProducts } from "../../api/adminApi";
-import "../../styles/admins/AdminProductsPage.css";
-import "../../styles/admins/AdminUsersPage.css";
+import "../../styles/admins/AdminDashboardPage.css";
 
 const AdminDashboardPage = () => {
-  const [userStats, setUserStats] = useState({ total: 0, active: 0, blocked: 0 });
-  const [productStats, setProductStats] = useState({ total: 0, listed: 0, unlisted: 0 });
+  const [userStats, setUserStats] = useState({
+    total: 0,
+    active: 0,
+    blocked: 0,
+  });
+  const [productStats, setProductStats] = useState({
+    total: 0,
+    listed: 0,
+    unlisted: 0,
+  });
   const [recentUsers, setRecentUsers] = useState([]);
   const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,31 +51,54 @@ const AdminDashboardPage = () => {
   }, []);
 
   return (
-    <div className="admin-page-container">
+    <div className="admin-dashboard-root">
       {/* Page Header */}
       <div className="admin-page-header">
         <div>
           <h1 className="admin-page-title">Overview Dashboard</h1>
           <p className="admin-page-subtitle">
-            Real-time status of apparel catalog, inventory, and customer activity.
+            Real-time status of apparel catalog, inventory, and customer
+            activity.
           </p>
         </div>
       </div>
 
       {/* Product Catalog Stats */}
       <div>
-        <div style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#1c1917", margin: 0 }}>
+        <div
+          style={{
+            marginBottom: "0.75rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.05rem",
+              fontWeight: "700",
+              color: "#1c1917",
+              margin: 0,
+            }}
+          >
             Product Catalog
           </h2>
-          <Link to="/admin/products" style={{ fontSize: "0.82rem", color: "#78716c", textDecoration: "none", fontWeight: "500" }}>
+          <Link
+            to="/admin/products"
+            style={{
+              fontSize: "0.82rem",
+              color: "#78716c",
+              textDecoration: "none",
+              fontWeight: "500",
+            }}
+          >
             View Catalog →
           </Link>
         </div>
         <div className="admin-stats-grid">
           <div className="admin-stat-card">
             <div className="admin-stat-header">
-              <span className="admin-stat-label">Total Products</span>
+              <span className="admin-stat-label">Total</span>
               <span className="admin-stat-icon-wrap">📦</span>
             </div>
             <div className="admin-stat-value">
@@ -80,18 +109,20 @@ const AdminDashboardPage = () => {
 
           <div className="admin-stat-card stat-success">
             <div className="admin-stat-header">
-              <span className="admin-stat-label">Listed Products</span>
+              <span className="admin-stat-label">Listed</span>
               <span className="admin-stat-icon-wrap">✓</span>
             </div>
             <div className="admin-stat-value">
               {loading ? "..." : productStats.listed}
             </div>
-            <span className="admin-stat-note">Active on customer storefront</span>
+            <span className="admin-stat-note">
+              Active on customer storefront
+            </span>
           </div>
 
           <div className="admin-stat-card stat-danger">
             <div className="admin-stat-header">
-              <span className="admin-stat-label">Unlisted Products</span>
+              <span className="admin-stat-label">Unlisted</span>
               <span className="admin-stat-icon-wrap">✕</span>
             </div>
             <div className="admin-stat-value">
@@ -104,18 +135,40 @@ const AdminDashboardPage = () => {
 
       {/* User Accounts Stats */}
       <div style={{ marginTop: "0.5rem" }}>
-        <div style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#1c1917", margin: 0 }}>
+        <div
+          style={{
+            marginBottom: "0.75rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.05rem",
+              fontWeight: "700",
+              color: "#1c1917",
+              margin: 0,
+            }}
+          >
             Customer Accounts
           </h2>
-          <Link to="/admin/users" style={{ fontSize: "0.82rem", color: "#78716c", textDecoration: "none", fontWeight: "500" }}>
+          <Link
+            to="/admin/users"
+            style={{
+              fontSize: "0.82rem",
+              color: "#78716c",
+              textDecoration: "none",
+              fontWeight: "500",
+            }}
+          >
             Manage Users →
           </Link>
         </div>
         <div className="admin-stats-grid">
           <div className="admin-stat-card">
             <div className="admin-stat-header">
-              <span className="admin-stat-label">Total Users</span>
+              <span className="admin-stat-label">Total</span>
               <span className="admin-stat-icon-wrap">👥</span>
             </div>
             <div className="admin-stat-value">
@@ -126,30 +179,41 @@ const AdminDashboardPage = () => {
 
           <div className="admin-stat-card stat-success">
             <div className="admin-stat-header">
-              <span className="admin-stat-label">Active Users</span>
+              <span className="admin-stat-label">Active</span>
               <span className="admin-stat-icon-wrap">✓</span>
             </div>
             <div className="admin-stat-value">
               {loading ? "..." : userStats.active}
             </div>
-            <span className="admin-stat-note">Full store & checkout access</span>
+            <span className="admin-stat-note">
+              Full store & checkout access
+            </span>
           </div>
 
           <div className="admin-stat-card stat-danger">
             <div className="admin-stat-header">
-              <span className="admin-stat-label">Restricted / Blocked</span>
+              <span className="admin-stat-label">Blocked</span>
               <span className="admin-stat-icon-wrap">✕</span>
             </div>
             <div className="admin-stat-value">
               {loading ? "..." : userStats.blocked}
             </div>
-            <span className="admin-stat-note">Access blocked by administrator</span>
+            <span className="admin-stat-note">
+              Access blocked by administrator
+            </span>
           </div>
         </div>
       </div>
 
       {/* Two Recent Activity Panels: Products & Users */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem", marginTop: "0.5rem" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1.75rem",
+          marginTop: "0.5rem",
+        }}
+      >
         {/* Recent Added Products Panel */}
         <div className="admin-panel-card">
           <div className="admin-panel-header">
@@ -186,7 +250,13 @@ const AdminDashboardPage = () => {
                   return (
                     <tr key={p._id}>
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                          }}
+                        >
                           <div className="admin-prod-thumb">
                             {firstImg ? (
                               <img src={firstImg} alt={p.name} />
@@ -206,7 +276,7 @@ const AdminDashboardPage = () => {
                             )}
                           </div>
                           <div>
-                            <strong style={{ fontSize: "0.92rem", color: "#1c1917" }}>
+                            <strong className="admin-table-prod-name">
                               {p.name}
                             </strong>
                           </div>
@@ -229,7 +299,13 @@ const AdminDashboardPage = () => {
                       <td style={{ fontSize: "0.85rem", color: "#44403c" }}>
                         {p.variants?.length || 0} variants
                       </td>
-                      <td style={{ fontSize: "0.88rem", fontWeight: "600", color: "#1c1917" }}>
+                      <td
+                        style={{
+                          fontSize: "0.88rem",
+                          fontWeight: "600",
+                          color: "#1c1917",
+                        }}
+                      >
                         ₹{minPrice.toLocaleString("en-IN")}
                       </td>
                       <td>
@@ -242,7 +318,10 @@ const AdminDashboardPage = () => {
                           {p.isListed ? "Listed" : "Unlisted"}
                         </span>
                       </td>
-                      <td className="admin-date-text" style={{ textAlign: "right" }}>
+                      <td
+                        className="admin-date-text"
+                        style={{ textAlign: "right" }}
+                      >
                         {p.createdAt
                           ? new Date(p.createdAt).toLocaleDateString("en-US", {
                               year: "numeric",
@@ -256,7 +335,14 @@ const AdminDashboardPage = () => {
                 })}
                 {recentProducts.length === 0 && !loading && (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: "2.5rem 1rem", color: "#78716c" }}>
+                    <td
+                      colSpan="6"
+                      style={{
+                        textAlign: "center",
+                        padding: "2.5rem 1rem",
+                        color: "#78716c",
+                      }}
+                    >
                       No products added yet.
                     </td>
                   </tr>
@@ -325,7 +411,14 @@ const AdminDashboardPage = () => {
                 ))}
                 {recentUsers.length === 0 && !loading && (
                   <tr>
-                    <td colSpan="4" style={{ textAlign: "center", padding: "2.5rem 1rem", color: "#78716c" }}>
+                    <td
+                      colSpan="4"
+                      style={{
+                        textAlign: "center",
+                        padding: "2.5rem 1rem",
+                        color: "#78716c",
+                      }}
+                    >
                       No users registered yet.
                     </td>
                   </tr>

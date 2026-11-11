@@ -23,6 +23,7 @@ export const CartPage = () => {
   const { toggleWishlist } = useWishlist();
   const navigate = useNavigate();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState(null);
   const [isValidatingCheckout, setIsValidatingCheckout] = useState(false);
   const [checkoutWarning, setCheckoutWarning] = useState("");
 
@@ -277,7 +278,7 @@ export const CartPage = () => {
                             <button
                               type="button"
                               className="cart-action-btn btn-remove-item"
-                              onClick={() => removeFromCart(item.cartItemId)}
+                              onClick={() => setItemToRemove(item)}
                               title="Remove item from bag"
                             >
                               <span className="action-icon">✕</span>
@@ -500,6 +501,46 @@ export const CartPage = () => {
                 }}
               >
                 Clear Bag
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Single Item Confirmation Modal */}
+      {itemToRemove && (
+        <div className="modal-backdrop" onClick={() => setItemToRemove(null)}>
+          <div
+            className="cart-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cart-confirm-icon">🗑️</div>
+            <h3 className="cart-confirm-title">Remove Garment?</h3>
+            <p className="cart-confirm-desc">
+              Are you sure you want to remove{" "}
+              <strong>"{itemToRemove.title}"</strong>
+              {itemToRemove.color || itemToRemove.size
+                ? ` (${itemToRemove.color || ""}${itemToRemove.color && itemToRemove.size ? " · " : ""}${itemToRemove.size ? `Size: ${itemToRemove.size}` : ""})`
+                : ""}{" "}
+              from your shopping bag?
+            </p>
+            <div className="cart-confirm-actions">
+              <button
+                type="button"
+                className="btn btn-secondary cart-confirm-btn"
+                onClick={() => setItemToRemove(null)}
+              >
+                Keep Item
+              </button>
+              <button
+                type="button"
+                className="cart-confirm-btn cart-confirm-btn-danger"
+                onClick={async () => {
+                  await removeFromCart(itemToRemove.cartItemId);
+                  setItemToRemove(null);
+                }}
+              >
+                Remove Item
               </button>
             </div>
           </div>

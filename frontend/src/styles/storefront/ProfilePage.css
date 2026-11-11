@@ -634,3 +634,133 @@
     font-size: 1.15rem;
   }
 }
+
+/* ==========================================================================
+   Mobile & Tablet Responsiveness for Profile Page (< 680px & < 480px)
+   ========================================================================== */
+
+/* Wallet overview default grid (desktop) */
+.wallet-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.wallet-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.wallet-table-container table {
+  min-width: 520px; /* Ensures table columns don't crush on phones */
+}
+
+/* Tablets & Smartphones (< 680px) */
+@media (max-width: 680px) {
+  .profile-page-root {
+    margin: 1.25rem auto 3rem;
+    padding: 0 14px;
+  }
+
+  /* 1. Profile Header Card: Center and stack vertically */
+  .profile-header-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.75rem 1rem;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-meta-tags {
+    justify-content: center;
+  }
+
+  .profile-user-name {
+    font-size: 1.5rem;
+  }
+
+  /* 2. Nav Tabs: Touch-scrollable horizontally */
+  .profile-nav-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 2px;
+    scrollbar-width: none; /* Hide scrollbar for clean look */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .profile-nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .profile-tab-button {
+    flex-shrink: 0;
+    font-size: 0.88rem;
+    padding: 0.65rem 0.6rem;
+  }
+
+  /* 3. Addresses Tab */
+  .section-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .section-header-row button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .address-grid {
+    grid-template-columns: 1fr; /* 1 card per row */
+    gap: 1rem;
+  }
+
+  .address-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .address-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .card-action-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* 4. Security Tab: Expand to fill screen comfortably */
+  .profile-security-card {
+    padding: 1.5rem 1rem;
+    max-width: 100%;
+  }
+
+  .security-card-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .security-form-actions button {
+    width: 100%;
+  }
+
+  /* 5. Wallet Tab: Stack cards vertically */
+  .wallet-overview-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .wallet-topup-form {
+    flex-direction: column;
+  }
+
+  .wallet-topup-form button {
+    width: 100%;
+  }
+}

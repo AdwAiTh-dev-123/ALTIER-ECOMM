@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   getAdminCategories,
   createAdminProduct,
@@ -47,6 +47,10 @@ const AddProductModal = ({
   const [uploadingVariants, setUploadingVariants] = useState({}); // { [variantId]: count }
   const isAnyUploading = Object.values(uploadingVariants).some((count) => count > 0);
 
+  // In-DOM Category Dropdown State
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const categoryDropdownRef = useRef(null);
+
   // Product Core State
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -54,6 +58,27 @@ const AddProductModal = ({
 
   // Variants State
   const [variants, setVariants] = useState([createEmptyVariant()]);
+
+  // Close category dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(e.target)
+      ) {
+        setIsCategoryDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const selectedCategoryName =
+    categories.find((cat) => cat._id === categoryId)?.name || "";
 
   const loadCategories = async () => {
     setCategoriesLoading(true);
@@ -271,38 +296,16 @@ const AddProductModal = ({
   return (
     <div className="admin-modal-backdrop">
       <div
-        className="admin-modal-box"
-        style={{
-          maxWidth: "800px",
-          width: "95%",
-          maxHeight: "90vh",
-          display: "flex",
-          flexDirection: "column",
-          padding: 0,
-          overflow: "hidden",
-        }}
+        className="admin-product-modal-dialog"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div
-          style={{
-            padding: "1.25rem 1.75rem",
-            borderBottom: "1px solid #e7e5e4",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div className="admin-product-modal-header">
           <div>
-            <h2 className="admin-modal-title" style={{ margin: 0 }}>
+            <h2 className="admin-product-modal-title">
               {productToEdit ? "Edit Product" : "Add New Product"}
             </h2>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "0.82rem",
-                color: "#78716c",
-              }}
-            >
+            <p className="admin-product-modal-subtitle">
               {productToEdit
                 ? "Update product details and configure size/color variants."
                 : "Define base details and configure unique size/color variants."}
@@ -311,53 +314,23 @@ const AddProductModal = ({
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "1.25rem",
-              cursor: "pointer",
-              color: "#78716c",
-            }}
+            className="admin-product-modal-close-btn"
+            aria-label="Close modal"
           >
             ✕
           </button>
         </div>
 
         {/* Modal Body - Scrollable */}
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            flex: 1,
-          }}
-        >
-          <div
-            style={{
-              padding: "1.5rem 1.75rem",
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1.5rem",
-            }}
-          >
+        <form onSubmit={handleSubmit} className="admin-product-modal-form">
+          <div className="admin-product-modal-body">
             {error && (
               <div className="admin-alert-banner alert-danger">{error}</div>
             )}
 
             {/* BASE PRODUCT DETAILS */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1rem",
-              }}
-            >
-              <div
-                className="admin-form-group"
-                style={{ gridColumn: "span 2" }}
-              >
+            <div className="admin-product-grid">
+              <div className="admin-form-group">
                 <label className="admin-form-label">Product Name *</label>
                 <input
                   type="text"
@@ -365,151 +338,120 @@ const AddProductModal = ({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Heavyweight Organic Tee"
                   className="admin-search-input"
-                  style={{ width: "100%", paddingLeft: "0.85rem" }}
                   required
                 />
               </div>
 
               <div className="admin-form-group">
                 <label className="admin-form-label">Category *</label>
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="admin-select"
-                  style={{ width: "100%" }}
-                  disabled={categoriesLoading}
+                <div
+                  className="admin-modal-custom-dropdown-wrap"
+                  ref={categoryDropdownRef}
                 >
-                  {categories.length === 0 ? (
-                    <option value="">No active categories available</option>
-                  ) : (
-                    categories.map((cat) => (
-                      <option key={cat._id} value={cat._id}>
-                        {cat.name}
-                      </option>
-                    ))
+                  <button
+                    type="button"
+                    className="admin-modal-dropdown-btn"
+                    onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
+                    disabled={categoriesLoading}
+                    aria-expanded={isCategoryDropdownOpen}
+                  >
+                    <span className="admin-modal-dropdown-text">
+                      {selectedCategoryName ||
+                        (categoriesLoading
+                          ? "Loading categories..."
+                          : "Select a category")}
+                    </span>
+                    <span
+                      className={`admin-dropdown-chevron ${isCategoryDropdownOpen ? "open" : ""}`}
+                    >
+                      ▾
+                    </span>
+                  </button>
+
+                  {isCategoryDropdownOpen && (
+                    <div className="admin-modal-dropdown-menu">
+                      {categories.length === 0 ? (
+                        <div className="admin-modal-dropdown-empty">
+                          No active categories available
+                        </div>
+                      ) : (
+                        categories.map((cat) => {
+                          const isSelected = cat._id === categoryId;
+                          return (
+                            <button
+                              key={cat._id}
+                              type="button"
+                              className={`admin-modal-dropdown-item ${isSelected ? "selected" : ""}`}
+                              onClick={() => {
+                                setCategoryId(cat._id);
+                                setIsCategoryDropdownOpen(false);
+                              }}
+                            >
+                              <span>{cat.name}</span>
+                              {isSelected && (
+                                <span className="admin-dropdown-check">✓</span>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
                   )}
-                </select>
+                </div>
               </div>
 
-              <div
-                className="admin-form-group"
-                style={{ gridColumn: "span 2" }}
-              >
+              <div className="admin-form-group admin-col-span-2">
                 <label className="admin-form-label">Description</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe material composition, garment fit, and care instructions..."
                   rows={3}
-                  className="admin-search-input"
-                  style={{
-                    width: "100%",
-                    paddingLeft: "0.85rem",
-                    resize: "vertical",
-                  }}
+                  className="admin-product-textarea"
                 />
               </div>
             </div>
 
             {/* VARIANTS SECTION */}
-            <div
-              style={{ borderTop: "1px solid #e7e5e4", paddingTop: "1.25rem" }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "1rem",
-                }}
-              >
+            <div className="admin-variants-section">
+              <div className="admin-variants-header">
                 <div>
-                  <h3
-                    style={{ fontSize: "1rem", fontWeight: "600", margin: 0 }}
-                  >
-                    Product Variants
-                  </h3>
-                  <span style={{ fontSize: "0.8rem", color: "#78716c" }}>
+                  <h3 className="admin-variants-title">Product Variants</h3>
+                  <span className="admin-variants-subtitle">
                     Each variant holds separate color, size, stock, and photos.
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleAddVariant}
-                  className="admin-btn-secondary"
-                  style={{ fontSize: "0.82rem", padding: "0.4rem 0.85rem" }}
+                  className="admin-btn-secondary admin-btn-add-variant admin-btn-add-variant-desktop"
                 >
                   + Add Variant
                 </button>
               </div>
 
               {/* Dynamic Variant List */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1rem",
-                }}
-              >
+              <div className="admin-variants-list">
                 {variants.map((v, index) => (
-                  <div
-                    key={v.id}
-                    style={{
-                      border: "1px solid #e7e5e4",
-                      borderRadius: "8px",
-                      padding: "1rem",
-                      backgroundColor: "#fafaf9",
-                      position: "relative",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "0.85rem",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "0.82rem",
-                          fontWeight: "700",
-                          color: "#1c1917",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
+                  <div key={v.id} className="admin-variant-card">
+                    <div className="admin-variant-header">
+                      <span className="admin-variant-badge">
                         Variant #{index + 1}
                       </span>
                       {variants.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveVariant(v.id)}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#dc2626",
-                            fontSize: "0.82rem",
-                            cursor: "pointer",
-                            fontWeight: "500",
-                          }}
+                          className="admin-variant-delete-btn"
                         >
                           🗑 Delete Variant
                         </button>
                       )}
                     </div>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(140px, 1fr))",
-                        gap: "0.75rem",
-                        marginBottom: "0.85rem",
-                      }}
-                    >
+                    <div className="admin-variant-fields-grid">
                       {/* Color Dropdown */}
-                      <div>
+                      <div className="admin-form-group">
                         <label className="admin-form-label">Colour</label>
                         <select
                           value={v.color}
@@ -521,7 +463,6 @@ const AddProductModal = ({
                             )
                           }
                           className="admin-select"
-                          style={{ width: "100%" }}
                         >
                           {AVAILABLE_COLORS.map((c) => (
                             <option key={c} value={c}>
@@ -532,7 +473,7 @@ const AddProductModal = ({
                       </div>
 
                       {/* Size Dropdown */}
-                      <div>
+                      <div className="admin-form-group">
                         <label className="admin-form-label">Size</label>
                         <select
                           value={v.size}
@@ -544,7 +485,6 @@ const AddProductModal = ({
                             )
                           }
                           className="admin-select"
-                          style={{ width: "100%" }}
                         >
                           {AVAILABLE_SIZES.map((s) => (
                             <option key={s} value={s}>
@@ -555,7 +495,7 @@ const AddProductModal = ({
                       </div>
 
                       {/* Price */}
-                      <div>
+                      <div className="admin-form-group">
                         <label className="admin-form-label">Price (₹) *</label>
                         <input
                           type="number"
@@ -570,13 +510,12 @@ const AddProductModal = ({
                             )
                           }
                           className="admin-search-input"
-                          style={{ width: "100%", paddingLeft: "0.65rem" }}
                           required
                         />
                       </div>
 
                       {/* Stock */}
-                      <div>
+                      <div className="admin-form-group">
                         <label className="admin-form-label">Stock *</label>
                         <input
                           type="number"
@@ -591,7 +530,6 @@ const AddProductModal = ({
                             )
                           }
                           className="admin-search-input"
-                          style={{ width: "100%", paddingLeft: "0.65rem" }}
                           required
                         />
                       </div>
@@ -599,10 +537,7 @@ const AddProductModal = ({
 
                     {/* Professional Square Image Upload for this Variant */}
                     <div className="admin-image-upload-wrapper">
-                      <label
-                        className="admin-form-label"
-                        style={{ marginBottom: "6px" }}
-                      >
+                      <label className="admin-image-label">
                         Product Photos (Multiple Allowed)
                       </label>
 
@@ -668,25 +603,10 @@ const AddProductModal = ({
                         }).map((_, i) => (
                           <div
                             key={`uploading-${i}`}
-                            className="admin-preview-square-tile"
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: "#f5f4f0",
-                              border: "1px dashed #a8a29e",
-                              gap: "6px",
-                            }}
+                            className="admin-preview-square-tile admin-preview-skeleton"
                           >
                             <div className="admin-spinner" />
-                            <span
-                              style={{
-                                fontSize: "0.68rem",
-                                fontWeight: 600,
-                                color: "#78716c",
-                              }}
-                            >
+                            <span className="admin-skeleton-text">
                               Uploading...
                             </span>
                           </div>
@@ -696,31 +616,31 @@ const AddProductModal = ({
                   </div>
                 ))}
               </div>
+
+              {/* Mobile Add Variant Button placed at the bottom */}
+              <button
+                type="button"
+                onClick={handleAddVariant}
+                className="admin-btn-secondary admin-btn-add-variant-mobile"
+              >
+                + Add Variant
+              </button>
             </div>
           </div>
 
           {/* Modal Footer Controls */}
-          <div
-            style={{
-              padding: "1rem 1.75rem",
-              borderTop: "1px solid #e7e5e4",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "0.75rem",
-              backgroundColor: "#ffffff",
-            }}
-          >
+          <div className="admin-product-modal-footer">
             <button
               type="button"
               onClick={onClose}
-              className="admin-btn-secondary"
+              className="admin-btn-secondary admin-modal-btn"
               disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="admin-btn-primary"
+              className="admin-btn-primary admin-modal-btn"
               disabled={submitting || isAnyUploading}
             >
               {isAnyUploading

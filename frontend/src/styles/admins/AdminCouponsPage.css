@@ -1,0 +1,1239 @@
+/* frontend/src/styles/admins/AdminCouponsPage.css */
+
+/* ==========================================================================
+   PAGE BASE LAYOUT
+   ========================================================================== */
+.admin-page-container {
+  padding: 1.75rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.admin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-page-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary, #1c1917);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.admin-page-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-muted, #78716c);
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+.admin-btn-create-coupon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.15rem;
+  background-color: #1c1917;
+  color: #ffffff;
+  border: 1px solid #1c1917;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.admin-btn-create-coupon:hover {
+  background-color: #292524;
+  border-color: #292524;
+}
+
+/* ==========================================================================
+   STATS GRID (3 Cards Desktop / Compact Row on Mobile)
+   ========================================================================== */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-stat-card {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.admin-stat-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted, #78716c);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+}
+
+.admin-stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary, #1c1917);
+  margin-top: 0.4rem;
+  line-height: 1.2;
+}
+
+.admin-stat-active {
+  color: #15803d !important;
+}
+
+.admin-stat-expired {
+  color: #dc2626 !important;
+}
+
+/* ==========================================================================
+   TOOLBAR: SEARCH & IN-DOM STATUS DROPDOWN
+   ========================================================================== */
+.admin-table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background-color: #ffffff;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.admin-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 260px;
+  max-width: 480px;
+}
+
+.admin-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  color: var(--text-muted, #a8a29e);
+  pointer-events: none;
+}
+
+.admin-search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 2rem 0 2.3rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, #d6d3d1);
+  font-size: 0.88rem;
+  color: var(--text-primary, #1c1917);
+  background: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-search-input:focus {
+  border-color: var(--text-primary, #1c1917);
+  box-shadow: 0 0 0 2px rgba(28, 25, 23, 0.08);
+}
+
+.admin-search-clear {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--text-muted, #a8a29e);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.admin-search-clear:hover {
+  color: var(--text-primary, #1c1917);
+}
+
+/* In-DOM Status Dropdown */
+.admin-coupon-dropdown-wrap {
+  position: relative;
+  min-width: 200px;
+}
+
+.admin-coupon-dropdown-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  padding: 0 0.85rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, #d6d3d1);
+  font-size: 0.88rem;
+  background: #ffffff;
+  color: var(--text-primary, #1c1917);
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.admin-coupon-dropdown-btn:hover {
+  background-color: #fafaf9;
+  border-color: #a8a29e;
+}
+
+.admin-coupon-dropdown-btn-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-coupon-dropdown-btn-text strong {
+  font-weight: 600;
+  color: #1c1917;
+}
+
+.admin-dropdown-chevron {
+  font-size: 0.75rem;
+  color: #78716c;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.admin-dropdown-chevron.open {
+  transform: rotate(180deg);
+}
+
+.admin-coupon-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  max-height: 240px;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  padding: 4px 0;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-coupon-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: var(--text-primary, #1c1917);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.admin-coupon-dropdown-item:hover {
+  background-color: #f5f4f0;
+}
+
+.admin-coupon-dropdown-item.selected {
+  background-color: #f0fdf4;
+  color: #166534;
+  font-weight: 600;
+}
+
+.admin-coupon-check {
+  color: #166534;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   COUPONS TABLE
+   ========================================================================== */
+.admin-table-container {
+  background-color: #ffffff;
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.5rem;
+}
+
+.admin-table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+  min-width: 840px;
+}
+
+.admin-table thead th {
+  background-color: #fafaf9;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  color: #44403c;
+  border-bottom: 1px solid var(--border-subtle, #e7e5e4);
+  white-space: nowrap;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-table tbody td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #f5f5f4;
+  vertical-align: middle;
+  color: var(--text-primary, #1c1917);
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background-color: #fafaf9;
+}
+
+/* Coupon Details in Cell */
+.coupon-code-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.coupon-code-text {
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 0.92rem;
+  color: #1c1917;
+  letter-spacing: 0.04em;
+}
+
+.coupon-desc-text {
+  font-size: 0.78rem;
+  color: var(--text-muted, #78716c);
+  margin-top: 2px;
+}
+
+.coupon-discount-text {
+  font-weight: 600;
+  color: #1c1917;
+}
+
+.coupon-min-order {
+  font-size: 0.75rem;
+  color: var(--text-muted, #78716c);
+  margin-top: 2px;
+}
+
+.coupon-scope-store {
+  font-size: 0.82rem;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.coupon-scope-category {
+  font-weight: 600;
+  color: #7c3aed;
+  font-size: 0.82rem;
+}
+
+.coupon-scope-product {
+  font-weight: 600;
+  color: #0891b2;
+  font-size: 0.82rem;
+}
+
+.coupon-scope-names {
+  color: #57534e;
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
+.coupon-dates-text {
+  font-size: 0.8rem;
+  color: #44403c;
+  line-height: 1.4;
+}
+
+/* Status Badges */
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-status-badge.status-active {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.admin-status-badge.status-blocked {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.admin-status-badge.status-upcoming {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* Table Actions */
+.admin-coupon-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.admin-btn-action-toggle {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.admin-btn-action-toggle.deactivate {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.admin-btn-action-toggle.deactivate:hover {
+  background-color: #fecaca;
+}
+
+.admin-btn-action-toggle.activate {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.admin-btn-action-toggle.activate:hover {
+  background-color: #bbf7d0;
+}
+
+.admin-btn-action-delete {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #fecaca;
+  background-color: #fee2e2;
+  color: #991b1b;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.admin-btn-action-delete:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+/* Empty State */
+.admin-empty-state-cell {
+  text-align: center;
+  padding: 3rem 1.5rem !important;
+  color: #78716c;
+}
+
+.admin-empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-empty-icon {
+  font-size: 2.25rem;
+  opacity: 0.85;
+}
+
+.admin-empty-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1c1917;
+  margin: 0;
+}
+
+.admin-empty-desc {
+  font-size: 0.88rem;
+  color: #78716c;
+  margin: 0;
+  max-width: 380px;
+}
+
+/* ==========================================================================
+   MODALS (CREATE COUPON & DELETE CONFIRMATION)
+   ========================================================================== */
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(28, 25, 23, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: couponModalFadeIn 0.2s ease-out;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+@keyframes couponModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes couponModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Create Coupon Dialog Container */
+.admin-coupon-modal-dialog {
+  max-width: 640px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: couponModalSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.admin-modal-header {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--border-subtle, #e7e5e4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  flex-shrink: 0;
+}
+
+.admin-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #1c1917);
+  margin: 0;
+}
+
+.admin-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.35rem;
+  cursor: pointer;
+  color: var(--text-muted, #78716c);
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  transition: all 0.15s ease;
+}
+
+.admin-modal-close-btn:hover {
+  background-color: #f5f4f0;
+  color: #1c1917;
+}
+
+.admin-coupon-modal-body {
+  padding: 1.5rem 1.75rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-coupon-error-banner {
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid #fecaca;
+}
+
+/* 2-Column Responsive Form Grids */
+.admin-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.admin-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #44403c;
+}
+
+.admin-form-input,
+.admin-form-select {
+  width: 100%;
+  height: 40px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--border-subtle, #d6d3d1);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  color: var(--text-primary, #1c1917);
+  background-color: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-form-input:focus,
+.admin-form-select:focus {
+  border-color: var(--text-primary, #1c1917);
+  box-shadow: 0 0 0 2px rgba(28, 25, 23, 0.08);
+}
+
+.admin-form-input.uppercase {
+  text-transform: uppercase;
+}
+
+/* In-DOM Select Trigger Button */
+.admin-in-dom-select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  background-color: #ffffff;
+  text-align: left;
+}
+
+/* In-DOM Date Picker Styles */
+.admin-datepicker-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.admin-datepicker-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 40px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--border-subtle, #d6d3d1);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  background-color: #ffffff;
+  color: var(--text-primary, #1c1917);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-datepicker-btn:hover {
+  border-color: #a8a29e;
+}
+
+.admin-datepicker-btn.active {
+  border-color: #1c1917;
+  box-shadow: 0 0 0 2px rgba(28, 25, 23, 0.08);
+}
+
+.admin-datepicker-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 300px;
+  max-width: 90vw;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+  padding: 0.85rem;
+  z-index: 100;
+  box-sizing: border-box;
+  animation: couponModalSlideIn 0.15s ease-out;
+}
+
+.admin-datepicker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.admin-datepicker-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.admin-datepicker-nav-btn {
+  background: #f5f5f4;
+  border: none;
+  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #44403c;
+  font-size: 0.85rem;
+  transition: background-color 0.15s;
+}
+
+.admin-datepicker-nav-btn:hover {
+  background: #e7e5e4;
+  color: #1c1917;
+}
+
+.admin-datepicker-presets {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f5f5f4;
+}
+
+.admin-datepicker-preset-btn {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  background: #f5f5f4;
+  border: 1px solid #e7e5e4;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #57534e;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.admin-datepicker-preset-btn:hover {
+  background: #1c1917;
+  color: #ffffff;
+  border-color: #1c1917;
+}
+
+.admin-datepicker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.admin-datepicker-day-name {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #a8a29e;
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+
+.admin-datepicker-day-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #1c1917;
+  height: 30px;
+  width: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  padding: 0;
+}
+
+.admin-datepicker-day-btn:hover:not(:disabled) {
+  background: #f5f4f0;
+}
+
+.admin-datepicker-day-btn.selected {
+  background: #1c1917 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.admin-datepicker-day-btn.today {
+  border: 1px solid #d6d3d1;
+  font-weight: 600;
+}
+
+.admin-datepicker-day-btn:disabled {
+  color: #d6d3d1;
+  cursor: not-allowed;
+}
+
+.admin-datepicker-time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.65rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f5f5f4;
+  gap: 0.5rem;
+}
+
+.admin-datepicker-time-label {
+  font-size: 0.75rem;
+  color: #78716c;
+  font-weight: 500;
+}
+
+.admin-datepicker-time-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.admin-datepicker-time-input {
+  width: 42px;
+  height: 28px;
+  padding: 0 4px;
+  border: 1px solid #d6d3d1;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.admin-datepicker-done-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #1c1917;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.admin-datepicker-done-btn:hover {
+  background: #292524;
+}
+
+/* Applicability Selection */
+.admin-applicability-box {
+  border-top: 1px solid var(--border-subtle, #e7e5e4);
+  padding-top: 1rem;
+}
+
+.admin-applicability-radio-group {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.admin-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary, #1c1917);
+  cursor: pointer;
+}
+
+.admin-picker-container {
+  border: 1px solid var(--border-subtle, #e7e5e4);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background-color: #fafaf9;
+}
+
+.admin-picker-help {
+  font-size: 0.78rem;
+  color: var(--text-muted, #78716c);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.admin-category-checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.admin-product-picker-search {
+  width: 100%;
+  height: 36px;
+  padding: 0 0.75rem;
+  font-size: 0.82rem;
+  border: 1px solid var(--border-subtle, #d6d3d1);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+.admin-product-checkbox-list {
+  max-height: 150px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.admin-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #1c1917;
+  cursor: pointer;
+}
+
+/* Modal Footer */
+.admin-coupon-modal-footer {
+  padding: 1rem 1.75rem;
+  border-top: 1px solid var(--border-subtle, #e7e5e4);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background-color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* Global Alert Banners */
+.admin-alert-banner {
+  padding: 0.85rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.admin-alert-success {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.admin-alert-danger {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* Delete Modal */
+.admin-confirm-modal-box {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.75rem;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: couponModalSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.admin-confirm-modal-msg {
+  font-size: 0.9rem;
+  color: #57534e;
+  line-height: 1.5;
+  margin: 0.75rem 0 1.5rem;
+}
+
+.admin-confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.admin-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.15rem;
+  background-color: #ffffff;
+  color: #1c1917;
+  border: 1px solid #d6d3d1;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-btn-secondary:hover:not(:disabled) {
+  background-color: #f5f4f0;
+  border-color: #a8a29e;
+}
+
+.admin-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.15rem;
+  background-color: #1c1917;
+  color: #ffffff;
+  border: 1px solid #1c1917;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-btn-primary:hover:not(:disabled) {
+  background-color: #292524;
+  border-color: #292524;
+}
+
+.admin-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.15rem;
+  background-color: #dc2626;
+  color: #ffffff;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-btn-danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS (<= 768px & <= 480px)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .admin-page-container {
+    padding: 1rem 0.85rem;
+  }
+
+  .admin-page-header {
+    margin-bottom: 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .admin-page-title {
+    font-size: 1.35rem;
+  }
+
+  .admin-btn-create-coupon {
+    width: 100%;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+  }
+
+  /* 3 Compact Stat Cards in 1 Row on Mobile */
+  .admin-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .admin-stat-card {
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    border-radius: 8px;
+  }
+
+  .admin-stat-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+  }
+
+  .admin-stat-value {
+    font-size: 1.25rem;
+    margin-top: 0.25rem;
+  }
+
+  /* Toolbar: Stack Search and Dropdown vertically */
+  .admin-table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    padding: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .admin-search-wrap {
+    max-width: 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-coupon-dropdown-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-coupon-dropdown-btn {
+    width: 100%;
+  }
+
+  .admin-coupon-dropdown-menu {
+    left: 0;
+    right: 0;
+    width: 100%;
+  }
+
+  /* Create Modal becomes full-screen sheet on mobile */
+  .admin-modal-backdrop {
+    padding: 0;
+  }
+
+  .admin-coupon-modal-dialog {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .admin-modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .admin-coupon-modal-body {
+    padding: 1rem 1.25rem;
+    gap: 1rem;
+  }
+
+  /* Stack form 2-column grids into 1 column on mobile */
+  .admin-form-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .admin-datepicker-popover {
+    width: 100%;
+    max-width: 100%;
+    left: 0;
+    right: 0;
+  }
+
+  .admin-applicability-radio-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .admin-category-checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-coupon-modal-footer {
+    padding: 0.85rem 1.25rem;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+
+  .admin-coupon-modal-footer button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+  }
+
+  .admin-confirm-modal-box {
+    width: 95%;
+    padding: 1.25rem;
+  }
+
+  .admin-confirm-modal-actions {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+
+  .admin-confirm-modal-actions button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-page-container {
+    padding: 0.75rem 0.65rem;
+  }
+
+  .admin-page-title {
+    font-size: 1.2rem;
+  }
+
+  .admin-stat-label {
+    font-size: 0.62rem;
+  }
+
+  .admin-stat-value {
+    font-size: 1.15rem;
+  }
+}

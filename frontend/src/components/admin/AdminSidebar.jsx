@@ -3,24 +3,33 @@ import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "../../styles/admins/AdminSidebar.css";
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="admin-sidebar">
+    <aside className={`admin-sidebar ${isOpen ? "open" : ""}`}>
+      {" "}
       <div className="admin-sidebar-header">
-        <Link to="/admin" className="admin-brand">
+        <Link to="/admin" className="admin-brand" onClick={onClose}>
           <img src="/logo.png" alt="ALTIER" className="admin-logo-img" />
           <span className="admin-brand-badge">ADMIN</span>
         </Link>
+        <button
+          type="button"
+          className="admin-sidebar-close-btn"
+          onClick={onClose}
+          aria-label="Close sidebar"
+        >
+          ✕
+        </button>
       </div>
-
       <div className="admin-sidebar-nav">
         <span className="admin-nav-section-label">MAIN MENU</span>
 
         {/* Dashboard Link */}
         <NavLink
           to="/admin"
+          onClick={onClose}
           end
           className={({ isActive }) =>
             `admin-nav-item ${isActive ? "active" : ""}`
@@ -44,6 +53,7 @@ const AdminSidebar = () => {
         {/* Users Link */}
         <NavLink
           to="/admin/users"
+          onClick={onClose}
           className={({ isActive }) =>
             `admin-nav-item ${isActive ? "active" : ""}`
           }
@@ -66,6 +76,7 @@ const AdminSidebar = () => {
         {/* Categories Link */}
         <NavLink
           to="/admin/categories"
+          onClick={onClose}
           className={({ isActive }) =>
             `admin-nav-item ${isActive ? "active" : ""}`
           }
@@ -85,6 +96,7 @@ const AdminSidebar = () => {
         {/* Products Link */}
         <NavLink
           to="/admin/products"
+          onClick={onClose}
           className={({ isActive }) =>
             `admin-nav-item ${isActive ? "active" : ""}`
           }
@@ -106,6 +118,7 @@ const AdminSidebar = () => {
         {/* Orders Link */}
         <NavLink
           to="/admin/orders"
+          onClick={onClose}
           className={({ isActive }) =>
             `admin-nav-item ${isActive ? "active" : ""}`
           }
@@ -127,6 +140,7 @@ const AdminSidebar = () => {
         {/* Coupons Link */}
         <NavLink
           to="/admin/coupons"
+          onClick={onClose}
           className={({ isActive }) =>
             `admin-nav-item ${isActive ? "active" : ""}`
           }
@@ -147,6 +161,7 @@ const AdminSidebar = () => {
         {/* Offers Link */}
         <NavLink
           to="/admin/offers"
+          onClick={onClose}
           className={({ isActive }) =>
             `admin-nav-item ${isActive ? "active" : ""}`
           }
@@ -166,6 +181,7 @@ const AdminSidebar = () => {
         {/* Sales Report Link */}
         <NavLink
           to="/admin/sales-report"
+          onClick={onClose}
           className={({ isActive }) =>
             `admin-nav-item ${isActive ? "active" : ""}`
           }
@@ -184,7 +200,6 @@ const AdminSidebar = () => {
           <span>Sales Report</span>
         </NavLink>
       </div>
-
       <div className="admin-sidebar-footer">
         <div className="admin-user-profile-card">
           <div className="admin-avatar">

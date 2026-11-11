@@ -22,6 +22,7 @@ export const WishlistPage = () => {
   }, [fetchWishlist]);
 
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState(null);
   const [localFeedback, setLocalFeedback] = useState(null);
 
   const handleMoveToCart = async (item) => {
@@ -116,12 +117,7 @@ export const WishlistPage = () => {
                     <button
                       type="button"
                       className="wishlist-remove-btn"
-                      onClick={() =>
-                        removeFromWishlist(
-                          item._id,
-                          item.variantId || item.selectedVariant?._id,
-                        )
-                      }
+                      onClick={() => setItemToRemove(item)}
                       title="Remove from saved garments"
                       aria-label="Remove item"
                     >
@@ -217,6 +213,56 @@ export const WishlistPage = () => {
                 }}
               >
                 Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Single Item Remove Confirmation Modal */}
+      {itemToRemove && (
+        <div className="modal-backdrop" onClick={() => setItemToRemove(null)}>
+          <div
+            className="wishlist-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wishlist-confirm-icon">🔖</div>
+            <h3 className="wishlist-confirm-title">Remove from Wishlist?</h3>
+            <p className="wishlist-confirm-desc">
+              Are you sure you want to remove{" "}
+              <strong>
+                "{itemToRemove.name || itemToRemove.title || "this garment"}"
+              </strong>
+              {(itemToRemove.color || itemToRemove.size) && (
+                <span>
+                  {" "}
+                  ({itemToRemove.color || ""}
+                  {itemToRemove.color && itemToRemove.size ? " · " : ""}
+                  {itemToRemove.size ? `Size: ${itemToRemove.size}` : ""})
+                </span>
+              )}{" "}
+              from your saved silhouettes?
+            </p>
+            <div className="wishlist-confirm-actions">
+              <button
+                type="button"
+                className="btn btn-secondary wishlist-confirm-btn"
+                onClick={() => setItemToRemove(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="wishlist-confirm-btn wishlist-confirm-btn-danger"
+                onClick={() => {
+                  removeFromWishlist(
+                    itemToRemove._id,
+                    itemToRemove.variantId || itemToRemove.selectedVariant?._id,
+                  );
+                  setItemToRemove(null);
+                }}
+              >
+                Remove
               </button>
             </div>
           </div>

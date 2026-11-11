@@ -1121,14 +1121,7 @@ export const ProfilePage = () => {
           {/* TAB 3: My Wallet */}
           {activeTab === "wallet" && (
             <section className="profile-wallet-section">
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "1.5rem",
-                  marginBottom: "2rem",
-                }}
-              >
+              <div className="wallet-overview-grid">
                 {/* Balance Card */}
                 <div
                   style={{
@@ -1174,6 +1167,7 @@ export const ProfilePage = () => {
                   <h3 style={{ margin: "0 0 1rem 0" }}>Add Money to Wallet</h3>
                   <form
                     onSubmit={handleAddMoney}
+                    className="wallet-topup-form"
                     style={{ display: "flex", gap: "0.75rem" }}
                   >
                     <input
@@ -1246,99 +1240,104 @@ export const ProfilePage = () => {
                       marginTop: "1rem",
                     }}
                   >
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        textAlign: "left",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      <thead
+                    <div className="wallet-table-container">
+                      <table
                         style={{
-                          background: "#f8f8f8",
-                          borderBottom: "1px solid #e5e5e5",
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          textAlign: "left",
+                          fontSize: "0.9rem",
                         }}
                       >
-                        <tr>
-                          <th style={{ padding: "0.75rem 1rem" }}>Date</th>
-                          <th style={{ padding: "0.75rem 1rem" }}>
-                            Description
-                          </th>
-                          <th style={{ padding: "0.75rem 1rem" }}>Type</th>
-                          <th
-                            style={{
-                              padding: "0.75rem 1rem",
-                              textAlign: "right",
-                            }}
-                          >
-                            Amount
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {wallet.transactions.map((tx) => (
-                          <tr
-                            key={tx._id || tx.transactionId}
-                            style={{ borderBottom: "1px solid #f0f0f0" }}
-                          >
-                            <td
-                              style={{ padding: "0.75rem 1rem", color: "#666" }}
-                            >
-                              {new Date(tx.date).toLocaleDateString()}
-                            </td>
-                            <td style={{ padding: "0.75rem 1rem" }}>
-                              {tx.description}
-                              {tx.orderId && (
-                                <span
-                                  style={{
-                                    color: "#888",
-                                    display: "block",
-                                    fontSize: "0.8rem",
-                                  }}
-                                >
-                                  Order ID: {tx.orderId}
-                                </span>
-                              )}
-                            </td>
-                            <td style={{ padding: "0.75rem 1rem" }}>
-                              <span
-                                style={{
-                                  display: "inline-block",
-                                  padding: "0.2rem 0.5rem",
-                                  borderRadius: "4px",
-                                  fontSize: "0.75rem",
-                                  fontWeight: "600",
-                                  background:
-                                    tx.type === "CREDIT"
-                                      ? "#e6f4ea"
-                                      : "#fce8e6",
-                                  color:
-                                    tx.type === "CREDIT"
-                                      ? "#137333"
-                                      : "#c5221f",
-                                }}
-                              >
-                                {tx.type}
-                              </span>
-                            </td>
-                            <td
+                        <thead
+                          style={{
+                            background: "#f8f8f8",
+                            borderBottom: "1px solid #e5e5e5",
+                          }}
+                        >
+                          <tr>
+                            <th style={{ padding: "0.75rem 1rem" }}>Date</th>
+                            <th style={{ padding: "0.75rem 1rem" }}>
+                              Description
+                            </th>
+                            <th style={{ padding: "0.75rem 1rem" }}>Type</th>
+                            <th
                               style={{
                                 padding: "0.75rem 1rem",
                                 textAlign: "right",
-                                fontWeight: "600",
-                                color:
-                                  tx.type === "CREDIT" ? "#137333" : "#111",
                               }}
                             >
-                              {tx.type === "CREDIT"
-                                ? `+₹${tx.amount}`
-                                : `-₹${tx.amount}`}
-                            </td>
+                              Amount
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {wallet.transactions.map((tx) => (
+                            <tr
+                              key={tx._id || tx.transactionId}
+                              style={{ borderBottom: "1px solid #f0f0f0" }}
+                            >
+                              <td
+                                style={{
+                                  padding: "0.75rem 1rem",
+                                  color: "#666",
+                                }}
+                              >
+                                {new Date(tx.date).toLocaleDateString()}
+                              </td>
+                              <td style={{ padding: "0.75rem 1rem" }}>
+                                {tx.description}
+                                {tx.orderId && (
+                                  <span
+                                    style={{
+                                      color: "#888",
+                                      display: "block",
+                                      fontSize: "0.8rem",
+                                    }}
+                                  >
+                                    Order ID: {tx.orderId}
+                                  </span>
+                                )}
+                              </td>
+                              <td style={{ padding: "0.75rem 1rem" }}>
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "0.2rem 0.5rem",
+                                    borderRadius: "4px",
+                                    fontSize: "0.75rem",
+                                    fontWeight: "600",
+                                    background:
+                                      tx.type === "CREDIT"
+                                        ? "#e6f4ea"
+                                        : "#fce8e6",
+                                    color:
+                                      tx.type === "CREDIT"
+                                        ? "#137333"
+                                        : "#c5221f",
+                                  }}
+                                >
+                                  {tx.type}
+                                </span>
+                              </td>
+                              <td
+                                style={{
+                                  padding: "0.75rem 1rem",
+                                  textAlign: "right",
+                                  fontWeight: "600",
+                                  color:
+                                    tx.type === "CREDIT" ? "#137333" : "#111",
+                                }}
+                              >
+                                {tx.type === "CREDIT"
+                                  ? `+₹${tx.amount}`
+                                  : `-₹${tx.amount}`}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>

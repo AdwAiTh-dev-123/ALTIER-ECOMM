@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getAdminOrders,
   updateAdminOrderStatus,
   reviewAdminReturnRequest,
 } from "../../api/adminApi";
 import Pagination from "../../components/common/Pagination";
-import "../../styles/admins/AdminProductsPage.css";
 import "../../styles/admins/AdminOrdersPage.css";
 
 const STATUS_TRANSITIONS = {
@@ -18,6 +17,18 @@ const STATUS_TRANSITIONS = {
   "Return Requested": [],
   Returned: [],
 };
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "Pending", label: "Pending" },
+  { value: "Confirmed", label: "Confirmed" },
+  { value: "Shipped", label: "Shipped" },
+  { value: "Out for Delivery", label: "Out for Delivery" },
+  { value: "Delivered", label: "Delivered" },
+  { value: "Return Requested", label: "Return Requested" },
+  { value: "Returned", label: "Returned" },
+  { value: "Cancelled", label: "Cancelled" },
+];
 
 export const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -36,6 +47,32 @@ export const AdminOrdersPage = () => {
     totalOrders: 0,
     limit: 10,
   });
+
+  // Custom In-DOM Status Dropdown State
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const filterDropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(e.target)
+      ) {
+        setOpenDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const currentStatusLabel =
+    STATUS_OPTIONS.find((opt) => opt.value === statusFilter)?.label ||
+    "All Statuses";
 
   //debounce search
   useEffect(() => {
@@ -211,37 +248,77 @@ export const AdminOrdersPage = () => {
       )}
 
       {/* Search & Filters */}
-      <div className="admin-controls-card admin-order-modal-field">
+      <div className="admin-controls-card">
         <div className="admin-orders-controls-row">
-          <input
-            type="text"
-            placeholder="Search by Order ID, Customer, Phone..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="admin-orders-search-input"
-          />
+          <div className="admin-orders-search-wrap">
+            <span className="admin-orders-search-icon">🔍</span>
+            <input
+              type="text"
+              placeholder="Search by Order ID, Customer, Phone..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="admin-orders-search-input"
+            />
+            {search && (
+              <button
+                type="button"
+                className="admin-orders-search-clear"
+                onClick={() => {
+                  setSearch("");
+                  setCurrentPage(1);
+                }}
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="admin-orders-select"
-          >
-            <option value="all">All Statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Shipped">Shipped</option>
-            <option value="Out for Delivery">Out for Delivery</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Return Requested">Return Requested</option>
-            <option value="Returned">Returned</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
+          <div className="admin-orders-dropdown-wrap" ref={filterDropdownRef}>
+            <button
+              type="button"
+              className="admin-orders-dropdown-btn"
+              onClick={() => setOpenDropdown((prev) => !prev)}
+              aria-expanded={openDropdown}
+            >
+              <span className="admin-orders-dropdown-btn-text">
+                Status: <strong>{currentStatusLabel}</strong>
+              </span>
+              <span
+                className={`admin-orders-chevron ${openDropdown ? "open" : ""}`}
+              >
+                ▾
+              </span>
+            </button>
+
+            {openDropdown && (
+              <div className="admin-orders-dropdown-menu">
+                {STATUS_OPTIONS.map((opt) => {
+                  const isSelected = statusFilter === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`admin-orders-dropdown-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => {
+                        setStatusFilter(opt.value);
+                        setCurrentPage(1);
+                        setOpenDropdown(false);
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && (
+                        <span className="admin-orders-check">✓</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -253,7 +330,27 @@ export const AdminOrdersPage = () => {
           </div>
         ) : orders.length === 0 ? (
           <div className="admin-orders-empty-state">
-            <p>No customer orders found.</p>
+            <div className="admin-orders-empty-icon">📦</div>
+            <h3 className="admin-orders-empty-title">No orders found</h3>
+            <p className="admin-orders-empty-desc">
+              {search || statusFilter !== "all"
+                ? "Try adjusting your search query or status filter."
+                : "Customer orders will appear here once placed."}
+            </p>
+            {(search || statusFilter !== "all") && (
+              <button
+                type="button"
+                className="admin-btn-secondary"
+                style={{ marginTop: "0.5rem" }}
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                  setCurrentPage(1);
+                }}
+              >
+                Clear All Filters
+              </button>
+            )}
           </div>
         ) : (
           <table className="admin-table">
@@ -407,7 +504,10 @@ export const AdminOrdersPage = () => {
       {/* 1. Status Update Modal */}
       {statusModal.isOpen && (
         <div className="admin-order-modal-backdrop">
-          <div className="admin-order-modal-card">
+          <div
+            className="admin-order-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="admin-order-modal-header">
               <h3 className="admin-order-modal-title">Update Order Status</h3>
               <button
@@ -422,6 +522,7 @@ export const AdminOrdersPage = () => {
                     comment: "",
                   });
                 }}
+                aria-label="Close modal"
               >
                 ✕
               </button>
@@ -517,7 +618,10 @@ export const AdminOrdersPage = () => {
       {/* 2. Return Review Modal */}
       {returnModal.isOpen && (
         <div className="admin-order-modal-backdrop">
-          <div className="admin-order-modal-card">
+          <div
+            className="admin-order-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="admin-order-modal-header">
               <h3 className="admin-order-modal-title">
                 Process Return Request
@@ -533,63 +637,32 @@ export const AdminOrdersPage = () => {
                     adminNote: "",
                   })
                 }
+                aria-label="Close modal"
               >
                 ✕
               </button>
             </div>
 
-            <p
-              style={{
-                fontSize: "0.85rem",
-                color: "#666",
-                marginBottom: "0.75rem",
-              }}
-            >
+            <p className="admin-order-modal-subtext">
               Order:{" "}
-              <strong style={{ fontFamily: "monospace" }}>
+              <strong className="admin-orders-code">
                 {returnModal.order?.orderId}
               </strong>
             </p>
 
-            <div
-              style={{
-                background: "#fffbeb",
-                padding: "0.85rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.85rem",
-                marginBottom: "1.25rem",
-                border: "1px solid #fde68a",
-              }}
-            >
-              <strong
-                style={{
-                  color: "#92400e",
-                  display: "block",
-                  marginBottom: "0.2rem",
-                }}
-              >
+            <div className="admin-return-reason-box">
+              <strong className="admin-return-reason-label">
                 Customer's Reason:
               </strong>
-              <p style={{ margin: 0, color: "#78350f" }}>
+              <p className="admin-return-reason-text">
                 "{returnModal.order?.returnRequest?.reason}"
               </p>
             </div>
 
-            <div style={{ marginBottom: "1.25rem" }}>
+            <div className="admin-order-modal-field">
               <label className="admin-order-form-label">Decision:</label>
-              <div
-                style={{ display: "flex", gap: "1.25rem", marginTop: "0.5rem" }}
-              >
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.45rem",
-                    cursor: "pointer",
-                    fontSize: "0.85rem",
-                    fontWeight: 500,
-                  }}
-                >
+              <div className="admin-decision-options">
+                <label className="admin-decision-radio-label">
                   <input
                     type="radio"
                     name="decision"
@@ -601,16 +674,7 @@ export const AdminOrdersPage = () => {
                   />
                   <span>Approve Return (Restores Stock)</span>
                 </label>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.45rem",
-                    cursor: "pointer",
-                    fontSize: "0.85rem",
-                    fontWeight: 500,
-                  }}
-                >
+                <label className="admin-decision-radio-label">
                   <input
                     type="radio"
                     name="decision"
@@ -625,21 +689,17 @@ export const AdminOrdersPage = () => {
               </div>
             </div>
 
-            <div style={{ marginBottom: "1.5rem" }}>
+            <div className="admin-order-modal-field">
               <label className="admin-order-form-label">
                 Admin Note for Customer:
               </label>
               <textarea
-                className="admin-order-input"
+                className="admin-order-input admin-return-textarea"
                 placeholder="Reason for approval or rejection..."
                 value={returnModal.adminNote}
                 onChange={(e) =>
                   setReturnModal({ ...returnModal, adminNote: e.target.value })
                 }
-                style={{
-                  minHeight: "75px",
-                  resize: "vertical",
-                }}
               />
             </div>
 
@@ -674,7 +734,10 @@ export const AdminOrdersPage = () => {
       {/* 3. Order Details Drawer Modal */}
       {detailsModal.isOpen && detailsModal.order && (
         <div className="admin-order-modal-backdrop">
-          <div className="admin-order-modal-card details-modal">
+          <div
+            className="admin-order-modal-card details-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="admin-order-modal-header">
               <h3 className="admin-order-modal-title">
                 Order Details: {detailsModal.order.orderId}
@@ -683,270 +746,157 @@ export const AdminOrdersPage = () => {
                 type="button"
                 className="admin-order-modal-close"
                 onClick={() => setDetailsModal({ isOpen: false, order: null })}
+                aria-label="Close modal"
               >
                 ✕
               </button>
             </div>
 
-            {/* Pending Return Request Alert in Details Modal */}
-            {detailsModal.order.returnRequest?.status === "Pending" && (
-              <div className="admin-return-alert-banner">
-                <div className="admin-return-alert-content">
-                  <span className="admin-return-alert-title">
-                    ⚠️ Return Requested by Customer
-                  </span>
-                  <p className="admin-return-alert-reason">
-                    <strong>Reason:</strong> "
-                    {detailsModal.order.returnRequest?.reason}"
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="admin-return-alert-btn"
-                  onClick={() => {
-                    const currentOrder = detailsModal.order;
-                    setDetailsModal({ isOpen: false, order: null });
-                    setReturnModal({
-                      isOpen: true,
-                      order: currentOrder,
-                      action: "APPROVE",
-                      adminNote: "",
-                    });
-                  }}
-                >
-                  Review Return Now &rarr;
-                </button>
-              </div>
-            )}
-
-            {/* Shipping Address */}
-            <div className="admin-order-section-box">
-              <h4 className="admin-order-section-title">Delivery Address</h4>
-              <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600 }}>
-                {detailsModal.order.shippingAddress?.fullName} |{" "}
-                {detailsModal.order.shippingAddress?.phone}
-              </p>
-              <p
-                style={{
-                  margin: "0.25rem 0 0",
-                  fontSize: "0.85rem",
-                  color: "#57534e",
-                }}
-              >
-                {detailsModal.order.shippingAddress?.streetAddress},{" "}
-                {detailsModal.order.shippingAddress?.city},{" "}
-                {detailsModal.order.shippingAddress?.state} -{" "}
-                {detailsModal.order.shippingAddress?.postalCode}
-              </p>
-            </div>
-
-            {/* Items */}
-            <h4
-              className="admin-order-section-title"
-              style={{ marginTop: "1rem" }}
-            >
-              Purchased Items
-            </h4>
-            <div className="admin-order-items-scroll">
-              {detailsModal.order.items.map((item) => {
-                const isCancelled = item.status === "Cancelled";
-                const isReturned = item.status === "Returned";
-                const isReturnRequested =
-                  item.status === "Return Requested" ||
-                  item.returnRequest?.status === "Pending";
-
-                return (
-                  <div
-                    key={item._id}
-                    className="admin-order-item-row"
-                    style={{
-                      opacity: isCancelled ? 0.6 : 1,
-                      backgroundColor: isCancelled ? "#fafafa" : "transparent",
-                      borderLeft: isCancelled ? "3px solid #dc2626" : "none",
-                      paddingLeft: isCancelled ? "0.5rem" : "0",
+            <div className="admin-order-details-body">
+              {/* Pending Return Request Alert in Details Modal */}
+              {detailsModal.order.returnRequest?.status === "Pending" && (
+                <div className="admin-return-alert-banner">
+                  <div className="admin-return-alert-content">
+                    <span className="admin-return-alert-title">
+                      ⚠️ Return Requested by Customer
+                    </span>
+                    <p className="admin-return-alert-reason">
+                      <strong>Reason:</strong> "
+                      {detailsModal.order.returnRequest?.reason}"
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="admin-return-alert-btn"
+                    onClick={() => {
+                      const currentOrder = detailsModal.order;
+                      setDetailsModal({ isOpen: false, order: null });
+                      setReturnModal({
+                        isOpen: true,
+                        order: currentOrder,
+                        action: "APPROVE",
+                        adminNote: "",
+                      });
                     }}
                   >
+                    Review Return Now &rarr;
+                  </button>
+                </div>
+              )}
+
+              {/* Shipping Address */}
+              <div className="admin-order-section-box">
+                <h4 className="admin-order-section-title">Delivery Address</h4>
+                <p className="admin-order-address-name">
+                  {detailsModal.order.shippingAddress?.fullName} |{" "}
+                  {detailsModal.order.shippingAddress?.phone}
+                </p>
+                <p className="admin-order-address-text">
+                  {detailsModal.order.shippingAddress?.streetAddress},{" "}
+                  {detailsModal.order.shippingAddress?.city},{" "}
+                  {detailsModal.order.shippingAddress?.state} -{" "}
+                  {detailsModal.order.shippingAddress?.postalCode}
+                </p>
+              </div>
+
+              {/* Items */}
+              <h4 className="admin-order-section-title">Purchased Items</h4>
+              <div className="admin-order-items-scroll">
+                {detailsModal.order.items.map((item) => {
+                  const isCancelled = item.status === "Cancelled";
+                  const isReturned = item.status === "Returned";
+                  const isReturnRequested =
+                    item.status === "Return Requested" ||
+                    item.returnRequest?.status === "Pending";
+
+                  return (
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.85rem",
-                      }}
+                      key={item._id}
+                      className={`admin-order-item-row ${isCancelled ? "cancelled" : ""}`}
                     >
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        style={{
-                          width: "48px",
-                          height: "60px",
-                          objectFit: "cover",
-                          borderRadius: "6px",
-                          border: "1px solid #e7e5e4",
-                          filter: isCancelled ? "grayscale(50%)" : "none",
-                        }}
-                      />
-                      <div>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "0.9rem",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.4rem",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <span
-                            style={{
-                              textDecoration: isCancelled
-                                ? "line-through"
-                                : "none",
-                              color: isCancelled ? "#78716c" : "inherit",
-                            }}
-                          >
-                            {item.title}
-                          </span>
-
-                          {/* Item Status Badges */}
-                          {isCancelled && (
+                      <div className="admin-order-item-left">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="admin-order-item-img"
+                        />
+                        <div className="admin-order-item-info">
+                          <div className="admin-order-item-title-row">
                             <span
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 700,
-                                padding: "1px 6px",
-                                borderRadius: "4px",
-                                background: "#fee2e2",
-                                color: "#991b1b",
-                              }}
+                              className={`admin-order-item-title ${isCancelled ? "cancelled" : ""}`}
                             >
-                              Cancelled
+                              {item.title}
                             </span>
-                          )}
 
-                          {isReturnRequested && (
-                            <span
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 700,
-                                padding: "1px 6px",
-                                borderRadius: "4px",
-                                background: "#fef3c7",
-                                color: "#b45309",
-                              }}
-                            >
-                              Return Requested
-                            </span>
-                          )}
+                            {/* Item Status Badges */}
+                            {isCancelled && (
+                              <span className="admin-item-status-badge badge-cancelled">
+                                Cancelled
+                              </span>
+                            )}
+                            {isReturnRequested && (
+                              <span className="admin-item-status-badge badge-return-requested">
+                                Return Requested
+                              </span>
+                            )}
+                            {isReturned && (
+                              <span className="admin-item-status-badge badge-returned">
+                                Returned
+                              </span>
+                            )}
+                          </div>
 
-                          {isReturned && (
-                            <span
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 700,
-                                padding: "1px 6px",
-                                borderRadius: "4px",
-                                background: "#f3e8ff",
-                                color: "#6b21a8",
-                              }}
-                            >
-                              Returned
-                            </span>
+                          <div className="admin-order-item-meta">
+                            {item.color} | Size: {item.size} | Qty:{" "}
+                            {item.quantity}
+                          </div>
+
+                          {/* Cancellation Reason note */}
+                          {isCancelled && item.cancellation?.reason && (
+                            <div className="admin-order-item-reason">
+                              Reason: {item.cancellation.reason}
+                            </div>
                           )}
                         </div>
+                      </div>
 
-                        <div
-                          style={{
-                            fontSize: "0.8rem",
-                            color: "#78716c",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {item.color} | Size: {item.size} | Qty:{" "}
-                          {item.quantity}
-                        </div>
-
-                        {/* Cancellation Reason note */}
-                        {isCancelled && item.cancellation?.reason && (
-                          <div
-                            style={{
-                              fontSize: "0.75rem",
-                              color: "#dc2626",
-                              marginTop: "3px",
-                            }}
-                          >
-                            Reason: {item.cancellation.reason}
+                      <div
+                        className={`admin-order-item-pricing ${isCancelled ? "cancelled" : ""}`}
+                      >
+                        ₹{item.itemTotal.toLocaleString()}
+                        {isCancelled && (
+                          <div className="admin-order-item-refunded">
+                            Refunded
                           </div>
                         )}
                       </div>
                     </div>
+                  );
+                })}
+              </div>
 
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: "0.92rem",
-                        textDecoration: isCancelled ? "line-through" : "none",
-                        color: isCancelled ? "#a8a29e" : "inherit",
-                        textAlign: "right",
-                      }}
-                    >
-                      ₹{item.itemTotal.toLocaleString()}
-                      {isCancelled && (
-                        <div
-                          style={{
-                            fontSize: "0.7rem",
-                            color: "#dc2626",
-                            fontWeight: 500,
-                            textDecoration: "none",
-                          }}
-                        >
-                          Refunded
-                        </div>
-                      )}
-                    </div>
+              {/* Status Timeline */}
+              <h4 className="admin-order-section-title">
+                Status & Audit History
+              </h4>
+              <div className="admin-order-history-list">
+                {detailsModal.order.statusHistory?.map((h, i) => (
+                  <div key={i} className="admin-order-timeline-entry">
+                    <span className="admin-order-timeline-text">
+                      ● <strong>{h.status}</strong> - {h.comment} ({h.updatedBy})
+                    </span>
+                    <span className="admin-order-timeline-date">
+                      {new Date(h.timestamp).toLocaleString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Status Timeline */}
-            <h4
-              className="admin-order-section-title"
-              style={{ marginTop: "1rem" }}
-            >
-              Status & Audit History
-            </h4>
-            <div className="admin-order-history-list">
-              {detailsModal.order.statusHistory?.map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: "1rem",
-                  }}
-                >
-                  <span>
-                    ● <strong style={{ color: "#1c1917" }}>{h.status}</strong> -{" "}
-                    {h.comment} ({h.updatedBy})
-                  </span>
-                  <span
-                    style={{
-                      color: "#78716c",
-                      fontSize: "0.78rem",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {new Date(h.timestamp).toLocaleString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <div className="admin-order-modal-actions">

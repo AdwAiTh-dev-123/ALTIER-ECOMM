@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { getStorefrontCategories, getStorefrontProducts } from '../../api/shopApi';
-import { ProductCard } from '../../components/product/ProductCard';
-import { BannerSlider } from '../../components/common/BannerSlider';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  getStorefrontCategories,
+  getStorefrontProducts,
+} from "../../api/shopApi";
+import { ProductCard } from "../../components/product/ProductCard";
+import { BannerSlider } from "../../components/common/BannerSlider";
+import "../../styles/storefront/HomePage.css";
 
 export const HomePage = () => {
   const [newArrivals, setNewArrivals] = useState([]);
@@ -16,12 +20,12 @@ export const HomePage = () => {
       try {
         const [categoriesRes, productsRes] = await Promise.all([
           getStorefrontCategories(),
-          getStorefrontProducts({ limit: 8, sortBy: 'newest' }) // Fetch only 8 newest pieces
+          getStorefrontProducts({ limit: 8, sortBy: "newest" }), // Fetch only 8 newest pieces
         ]);
         setCategories(categoriesRes.data?.data || []);
         setNewArrivals(productsRes.data?.data || []);
       } catch (err) {
-        console.error('Failed to load home page data:', err);
+        console.error("Failed to load home page data:", err);
       } finally {
         setLoading(false);
       }
@@ -30,10 +34,10 @@ export const HomePage = () => {
   }, []);
 
   const handleBannerCategorySelect = (categoryId) => {
-    if (categoryId && categoryId !== 'all') {
+    if (categoryId && categoryId !== "all") {
       navigate(`/collections?category=${categoryId}`);
     } else {
-      navigate('/collections');
+      navigate("/collections");
     }
   };
 
@@ -129,7 +133,10 @@ export const HomePage = () => {
             </div>
 
             <div className="home-cta-center">
-              <Link to="/collections" className="btn btn-primary btn-lg home-view-all-btn">
+              <Link
+                to="/collections"
+                className="btn btn-primary btn-lg home-view-all-btn"
+              >
                 Browse Full Catalog &rarr;
               </Link>
             </div>

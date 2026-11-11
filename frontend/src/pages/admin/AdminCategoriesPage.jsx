@@ -1,5 +1,5 @@
 // frontend/src/pages/admin/AdminCategoriesPage.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   getAdminCategories,
@@ -29,6 +29,39 @@ const AdminCategoriesPage = () => {
     totalItems: 0,
     limit: 10,
   });
+
+  // Custom In-DOM Sort Dropdown state
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(e.target)
+      ) {
+        setIsSortDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const SORT_OPTIONS = [
+    { value: "createdAt-desc", label: "Newest First" },
+    { value: "createdAt-asc", label: "Oldest First" },
+    { value: "name-asc", label: "Name (A – Z)" },
+    { value: "name-desc", label: "Name (Z – A)" },
+  ];
+
+  const currentSortLabel =
+    SORT_OPTIONS.find((o) => o.value === `${sortBy}-${sortOrder}`)?.label ||
+    "Newest First";
 
   // Confirmation modal state for unlisting/listing
   const [confirmModal, setConfirmModal] = useState({
@@ -364,27 +397,48 @@ const AdminCategoriesPage = () => {
         </div>
 
         <div className="admin-controls-right">
-          {/*Sort*/}
-          <div className="admin-sort-wrap">
-            <label htmlFor="category-sort" className="admin-sort-label">
-              Sort By:
-            </label>
-            <select
-              id="category-sort"
-              className="admin-select"
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [newField, newOrder] = e.target.value.split("-");
-                setSortBy(newField);
-                setSortOrder(newOrder);
-                setCurrentPage(1);
-              }}
+          {/* Custom In-DOM Sort Dropdown */}
+          <div className="admin-sort-wrap" ref={sortDropdownRef}>
+            <button
+              type="button"
+              className="admin-custom-dropdown-btn"
+              onClick={() => setIsSortDropdownOpen((prev) => !prev)}
+              aria-expanded={isSortDropdownOpen}
             >
-              <option value="createdAt-desc">Newest First</option>
-              <option value="createdAt-asc">Oldest First</option>
-              <option value="name-asc">Name (A – Z)</option>
-              <option value="name-desc">Name (Z – A)</option>
-            </select>
+              <span className="admin-dropdown-btn-text">
+                Sort: <strong>{currentSortLabel}</strong>
+              </span>
+              <span
+                className={`admin-dropdown-chevron ${isSortDropdownOpen ? "open" : ""}`}
+              >
+                ▾
+              </span>
+            </button>
+
+            {isSortDropdownOpen && (
+              <div className="admin-custom-dropdown-menu">
+                {SORT_OPTIONS.map((opt) => {
+                  const isSelected = `${sortBy}-${sortOrder}` === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`admin-dropdown-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => {
+                        const [newField, newOrder] = opt.value.split("-");
+                        setSortBy(newField);
+                        setSortOrder(newOrder);
+                        setCurrentPage(1);
+                        setIsSortDropdownOpen(false);
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && <span className="dropdown-check">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="admin-filter-tabs">
@@ -419,38 +473,19 @@ const AdminCategoriesPage = () => {
                 <th>Description</th>
                 <th>Created Date</th>
                 <th>Visibility</th>
-                <th style={{ textAlign: "right", width: "240px" }}>Actions</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
-            <tbody
-              style={{
-                opacity: tableLoading ? 0.6 : 1,
-                transition: "opacity 0.15s ease",
-              }}
-            >
+            <tbody className={tableLoading ? "admin-tbody-loading" : "admin-tbody"}>
               {initialLoading ? (
                 <tr>
-                  <td
-                    colSpan="5"
-                    style={{
-                      textAlign: "center",
-                      padding: "3rem",
-                      color: "var(--text-muted, #78716c)",
-                    }}
-                  >
-                    Loading categories...
+                  <td colSpan="5" className="admin-loading-cell">
+                    <div className="admin-spinner-inline"></div> Loading categories...
                   </td>
                 </tr>
               ) : categories.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan="5"
-                    style={{
-                      textAlign: "center",
-                      padding: "2rem",
-                      color: "var(--text-muted, #78716c)",
-                    }}
-                  >
+                  <td colSpan="5" className="admin-empty-cell">
                     No categories found. Click <strong>+ Add Category</strong>{" "}
                     to create your first one.
                   </td>
@@ -465,19 +500,11 @@ const AdminCategoriesPage = () => {
                       className={!item.isListed ? "row-blocked" : ""}
                     >
                       <td>
-                        <strong
-                          style={{ fontSize: "0.92rem", color: "#1c1917" }}
-                        >
+                        <strong className="category-name-text">
                           {item.name}
                         </strong>
                       </td>
-                      <td
-                        style={{
-                          maxWidth: "260px",
-                          color: "var(--text-secondary, #44403c)",
-                          fontSize: "0.82rem",
-                        }}
-                      >
+                      <td className="category-description-cell">
                         {item.description || "—"}
                       </td>
                       <td className="admin-date-text">
@@ -502,21 +529,8 @@ const AdminCategoriesPage = () => {
                           {item.isListed ? "Listed" : "Unlisted"}
                         </span>
                       </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          width: "240px",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "flex-end",
-                            gap: "0.5rem",
-                          }}
-                        >
+                      <td className="admin-actions-cell text-right">
+                        <div className="admin-actions-group">
                           <button
                             type="button"
                             disabled={isActionLoading}
@@ -536,11 +550,7 @@ const AdminCategoriesPage = () => {
                             type="button"
                             disabled={isActionLoading}
                             onClick={() => handleOpenEdit(item)}
-                            className="admin-action-btn admin-btn-secondary"
-                            style={{
-                              padding: "0.35rem 0.75rem",
-                              fontSize: "0.8rem",
-                            }}
+                            className="admin-action-btn btn-edit"
                           >
                             Edit
                           </button>

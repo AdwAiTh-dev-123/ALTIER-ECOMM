@@ -1,6 +1,6 @@
 import Product from "../../models/Product.js";
 import Variant from "../../models/Variant.js";
-import Category from '../../models/Category.js'
+import Category from "../../models/Category.js";
 import {
   getPagination,
   formatPaginatedResponse,
@@ -27,10 +27,9 @@ export const fetchAllAdminProducts = async (query) => {
       stock: { $gt: 0 },
     });
     if (query.stock === "inStock") {
-      filter._id = { $in: inStockProductIds }
-    }
-    else {
-      filter._id = { $nin: inStockProductIds }
+      filter._id = { $in: inStockProductIds };
+    } else {
+      filter._id = { $nin: inStockProductIds };
     }
   }
 
@@ -40,22 +39,20 @@ export const fetchAllAdminProducts = async (query) => {
       ? { name: sortDirection }
       : { createdAt: sortDirection };
 
-
-
-
-
-  const [total, products, totalCatalog, listedCatalog, unlistedCatalog] = await Promise.all([
-    Product.countDocuments(filter),
-    Product.find(filter)
-      .populate("category", "name")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    Product.countDocuments({ isDeleted: { $ne: true } }),
-    Product.countDocuments({ isDeleted: { $ne: true }, isListed: true }),
-    Product.countDocuments({ isDeleted: { $ne: true }, isListed: false }),
-  ])
+  const [total, products, totalCatalog, listedCatalog, unlistedCatalog] =
+    await Promise.all([
+      Product.countDocuments(filter),
+      Product.find(filter)
+        .populate("category", "name")
+        .collation({ locale: "en", strength: 2 })
+        .sort(sortStage)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments({ isDeleted: { $ne: true } }),
+      Product.countDocuments({ isDeleted: { $ne: true }, isListed: true }),
+      Product.countDocuments({ isDeleted: { $ne: true }, isListed: false }),
+    ]);
 
   const productIds = products.map((p) => p._id);
   const variants = await Variant.find({
@@ -80,8 +77,8 @@ export const fetchAllAdminProducts = async (query) => {
         total: totalCatalog,
         listed: listedCatalog,
         unlisted: unlistedCatalog,
-      }
-    }
+      },
+    },
   );
 };
 

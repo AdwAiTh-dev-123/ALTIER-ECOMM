@@ -1,5 +1,4 @@
-// frontend/src/pages/admin/AdminUsersPage.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { getAdminUsers, toggleBlockUserStatus } from "../../api/adminApi";
 import { useAuth } from "../../context/AuthContext";
 import Pagination from "../../components/common/Pagination";
@@ -24,6 +23,41 @@ const AdminUsersPage = () => {
   });
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
+
+  // Custom In-DOM Sort Dropdown state
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(e.target)
+      ) {
+        setIsSortDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const SORT_OPTIONS = [
+    { value: "createdAt-desc", label: "Newest First" },
+    { value: "createdAt-asc", label: "Oldest First" },
+    { value: "name-asc", label: "Name (A – Z)" },
+    { value: "name-desc", label: "Name (Z – A)" },
+    { value: "email-asc", label: "Email (A – Z)" },
+    { value: "email-desc", label: "Email (Z – A)" },
+  ];
+
+  const currentSortLabel =
+    SORT_OPTIONS.find((o) => o.value === `${sortBy}-${sortOrder}`)?.label ||
+    "Newest First";
 
   // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState({
@@ -160,29 +194,48 @@ const AdminUsersPage = () => {
         </div>
 
         <div className="admin-controls-right">
-          {/*Sort*/}
-          <div className="admin-sort-wrap">
-            <label htmlFor="user-sort" className="admin-sort-label">
-              Sort By:
-            </label>
-            <select
-              id="user-sort"
-              className="admin-select"
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [newField, newOrder] = e.target.value.split("-");
-                setSortBy(newField);
-                setSortOrder(newOrder);
-                setCurrentPage(1);
-              }}
+          {/* Custom In-DOM Sort Dropdown */}
+          <div className="admin-sort-wrap" ref={sortDropdownRef}>
+            <button
+              type="button"
+              className="admin-custom-dropdown-btn"
+              onClick={() => setIsSortDropdownOpen((prev) => !prev)}
+              aria-expanded={isSortDropdownOpen}
             >
-              <option value="createdAt-desc">Newest First</option>
-              <option value="createdAt-asc">Oldest First</option>
-              <option value="name-asc">Name (A – Z)</option>
-              <option value="name-desc">Name (Z – A)</option>
-              <option value="email-asc">Email (A – Z)</option>
-              <option value="email-desc">Email (Z – A)</option>
-            </select>
+              <span className="admin-dropdown-btn-text">
+                Sort: <strong>{currentSortLabel}</strong>
+              </span>
+              <span
+                className={`admin-dropdown-chevron ${isSortDropdownOpen ? "open" : ""}`}
+              >
+                ▾
+              </span>
+            </button>
+
+            {isSortDropdownOpen && (
+              <div className="admin-custom-dropdown-menu">
+                {SORT_OPTIONS.map((opt) => {
+                  const isSelected = `${sortBy}-${sortOrder}` === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`admin-dropdown-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => {
+                        const [newField, newOrder] = opt.value.split("-");
+                        setSortBy(newField);
+                        setSortOrder(newOrder);
+                        setCurrentPage(1);
+                        setIsSortDropdownOpen(false);
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && <span className="dropdown-check">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="admin-filter-tabs">

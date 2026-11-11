@@ -14,6 +14,7 @@ import {
   applyCouponApi,
 } from "../../api/shopApi";
 import AddressModal from "../../components/common/AddressModal";
+import "../../styles/storefront/CheckoutPage.css";
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
