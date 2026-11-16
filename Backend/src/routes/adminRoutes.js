@@ -147,6 +147,11 @@ router.patch(
   validateReturnReview,
   reviewReturnRequest,
 );
+router.patch(
+  "/orders/:id/items/:itemId/return-review",
+  validateReturnReview,
+  reviewReturnRequest,
+);
 
 //Sales report routes
 router.get("/sales-report", getAdminSalesReport);

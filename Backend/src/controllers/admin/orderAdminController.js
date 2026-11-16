@@ -3,6 +3,7 @@ import {
   fetchAdminOrderById,
   updateOrderStatusWorkflow,
   reviewCustomerReturnRequest,
+  reviewCustomerItemReturnRequest,
 } from "../../services/admin/index.js";
 
 export const getAllAdminOrders = async (req, res, next) => {
@@ -46,11 +47,23 @@ export const reviewReturnRequest = async (req, res, next) => {
   try {
     const decision = req.body.decision || req.body.action;
     const adminNotes = req.body.adminNote || req.body.adminNotes;
-    const order = await reviewCustomerReturnRequest({
-      id: req.params.id,
-      decision,
-      adminNotes,
-    });
+    const itemId = req.params.itemId || req.body.itemId;
+
+    let order;
+    if (itemId) {
+      order = await reviewCustomerItemReturnRequest({
+        orderId: req.params.id,
+        itemId,
+        decision,
+        adminNotes,
+      });
+    } else {
+      order = await reviewCustomerReturnRequest({
+        id: req.params.id,
+        decision,
+        adminNotes,
+      });
+    }
 
     return res.status(200).json({
       success: true,

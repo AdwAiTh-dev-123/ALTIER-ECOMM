@@ -7,6 +7,7 @@ export { fetchAllOrdersForAdmin } from "./fetchAllOrdersForAdmin.js";
 export { fetchAdminOrderById } from "./fetchAdminOrderById.js";
 export { updateOrderStatusWorkflow } from "./updateOrderStatusWorkflow.js";
 export { reviewCustomerReturnRequest } from "./reviewCustomerReturnRequest.js";
+export { reviewCustomerItemReturnRequest } from "./reviewCustomerItemReturnRequest.js";
 export { fetchAllAdminProducts } from "./fetchAllAdminProducts.js";
 export { createProductWithVariantsService } from "./createProductWithVariantsService.js";
 export { updateProductWithVariantsService } from "./updateProductWithVariantsService.js";

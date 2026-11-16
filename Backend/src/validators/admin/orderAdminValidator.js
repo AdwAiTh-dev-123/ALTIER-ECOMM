@@ -41,13 +41,21 @@ export const validateOrderStatusUpdate = (req, res, next) => {
 };
 
 export const validateReturnReview = (req, res, next) => {
-  const { id } = req.params;
+  const { id, itemId } = req.params;
+  const targetItemId = itemId || req.body.itemId;
   const decision = req.body.decision || req.body.action;
 
   if (!isValidOrderId(id)) {
     return res.status(400).json({
       success: false,
       message: "Invalid order ID",
+    });
+  }
+
+  if (targetItemId && typeof targetItemId !== "string") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid item ID",
     });
   }
 

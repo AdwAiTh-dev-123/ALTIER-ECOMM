@@ -445,6 +445,26 @@
   background-color: #92400e;
 }
 
+.admin-order-btn-item-return {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
+  background-color: #d97706;
+  border: 1px solid #b45309;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.admin-order-btn-item-return:hover {
+  background-color: #b45309;
+}
+
 /* Empty State */
 .admin-orders-empty-state {
   display: flex;
@@ -721,6 +741,57 @@
   line-height: 1.4;
 }
 
+.admin-return-reason-comment {
+  margin: 0.35rem 0 0;
+  color: #78350f;
+  font-size: 0.82rem;
+}
+
+/* Modal Stacking & Item Summary in Return Review Modal */
+.return-modal-backdrop {
+  z-index: 1100;
+}
+
+.admin-return-item-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.admin-return-item-summary-info {
+  flex: 1;
+}
+
+.admin-return-item-summary-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.admin-return-item-summary-meta {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.admin-return-item-summary-amount {
+  font-size: 0.85rem;
+  color: #0f172a;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.admin-return-item-summary-amount strong {
+  color: #059669;
+  font-size: 0.95rem;
+}
+
 .admin-decision-options {
   display: flex;
   gap: 1.25rem;
@@ -786,17 +857,31 @@
 
 .admin-order-item-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.65rem 0.5rem;
+  flex-direction: column;
+  padding: 0.75rem 0.65rem;
   border-bottom: 1px solid #f0ede8;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease;
 }
 
 .admin-order-item-row.cancelled {
   opacity: 0.65;
   background-color: #fafaf9;
   border-left: 3px solid #dc2626;
+}
+
+.admin-order-item-row.return-requested {
+  background-color: #fffdf5;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+}
+
+.admin-order-item-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.75rem;
 }
 
 .admin-order-item-left {
@@ -857,6 +942,34 @@
   color: #6b21a8;
 }
 
+.admin-item-status-badge.badge-rejected {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-item-returned-note {
+  font-size: 0.74rem;
+  color: #6b21a8;
+  background: #faf5ff;
+  border: 1px solid #f3e8ff;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.admin-item-declined-note {
+  font-size: 0.74rem;
+  color: #4b5563;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
 .admin-order-item-meta {
   font-size: 0.8rem;
   color: #78716c;
@@ -887,6 +1000,94 @@
   color: #dc2626;
   font-weight: 500;
   text-decoration: none;
+}
+
+/* Individual Item Return Panel inside Details Modal */
+.admin-item-return-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #fffbeb;
+  border: 1px dashed #fcd34d;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.admin-item-return-panel-content {
+  flex: 1;
+  min-width: 220px;
+}
+
+.admin-item-return-reason-line,
+.admin-item-return-comment-line {
+  font-size: 0.8rem;
+  color: #78350f;
+  margin-bottom: 2px;
+}
+
+.admin-item-return-label {
+  font-weight: 600;
+  color: #92400e;
+}
+
+.admin-item-return-reason-val,
+.admin-item-return-comment-val {
+  font-style: italic;
+}
+
+.admin-item-return-impact-note {
+  font-size: 0.74rem;
+  color: #b45309;
+  margin-top: 3px;
+}
+
+.admin-item-return-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.admin-item-btn-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.38rem 0.8rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: #059669;
+  border: 1px solid #047857;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-item-btn-approve:hover {
+  background: #047857;
+}
+
+.admin-item-btn-reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.38rem 0.8rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #dc2626;
+  background: #ffffff;
+  border: 1px solid #fca5a5;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-item-btn-reject:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
 }
 
 .admin-order-history-list {

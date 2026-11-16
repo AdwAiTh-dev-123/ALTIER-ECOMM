@@ -3,6 +3,7 @@ import {
   getAdminOrders,
   updateAdminOrderStatus,
   reviewAdminReturnRequest,
+  reviewAdminItemReturnRequest,
 } from "../../api/adminApi";
 import Pagination from "../../components/common/Pagination";
 import "../../styles/admins/AdminOrdersPage.css";
@@ -97,6 +98,7 @@ export const AdminOrdersPage = () => {
   const [returnModal, setReturnModal] = useState({
     isOpen: false,
     order: null,
+    item: null,
     action: "APPROVE",
     adminNote: "",
   });
@@ -183,19 +185,38 @@ export const AdminOrdersPage = () => {
     try {
       setIsSubmitting(true);
       const targetId = returnModal.order._id || returnModal.order.orderId;
-      const res = await reviewAdminReturnRequest(targetId, {
+      const payload = {
         decision: returnModal.action === "APPROVE" ? "APPROVE" : "REJECTED",
         action: returnModal.action,
         adminNote: returnModal.adminNote,
-      });
+      };
+
+      const res = returnModal.item
+        ? await reviewAdminItemReturnRequest(
+            targetId,
+            returnModal.item._id,
+            payload,
+          )
+        : await reviewAdminReturnRequest(targetId, payload);
 
       if (res.data.success) {
         showToast(
-          `Return request ${returnModal.action === "APPROVE" ? "Approved" : "Rejected"}.`,
+          returnModal.item
+            ? `Return for "${returnModal.item.title}" ${returnModal.action === "APPROVE" ? "Approved" : "Rejected"}.`
+            : `Return request ${returnModal.action === "APPROVE" ? "Approved" : "Rejected"}.`,
         );
+
+        if (detailsModal.isOpen && res.data.order) {
+          setDetailsModal({
+            isOpen: true,
+            order: res.data.order,
+          });
+        }
+
         setReturnModal({
           isOpen: false,
           order: null,
+          item: null,
           action: "APPROVE",
           adminNote: "",
         });
@@ -471,15 +492,35 @@ export const AdminOrdersPage = () => {
                               setReturnModal({
                                 isOpen: true,
                                 order,
+                                item: null,
                                 action: "APPROVE",
                                 adminNote: "",
                               })
                             }
-                            title="Review return request"
+                            title="Review order return request"
                           >
                             Review Return
                           </button>
                         )}
+
+                        {/* Item-level Return Indicator Button */}
+                        {order.orderStatus !== "Return Requested" &&
+                          order.items?.some(
+                            (it) =>
+                              it.status === "Return Requested" ||
+                              it.returnRequest?.status === "Pending",
+                          ) && (
+                            <button
+                              type="button"
+                              className="admin-order-btn-item-return"
+                              onClick={() =>
+                                setDetailsModal({ isOpen: true, order })
+                              }
+                              title="Order has pending item returns - View Details to review"
+                            >
+                              Review Item Return ▾
+                            </button>
+                          )}
                       </div>
                     </td>
                   </tr>
@@ -617,14 +658,14 @@ export const AdminOrdersPage = () => {
 
       {/* 2. Return Review Modal */}
       {returnModal.isOpen && (
-        <div className="admin-order-modal-backdrop">
+        <div className="admin-order-modal-backdrop return-modal-backdrop">
           <div
             className="admin-order-modal-card"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="admin-order-modal-header">
               <h3 className="admin-order-modal-title">
-                Process Return Request
+                {returnModal.item ? "Review Item Return" : "Process Return Request"}
               </h3>
               <button
                 type="button"
@@ -633,6 +674,7 @@ export const AdminOrdersPage = () => {
                   setReturnModal({
                     isOpen: false,
                     order: null,
+                    item: null,
                     action: "APPROVE",
                     adminNote: "",
                   })
@@ -650,13 +692,37 @@ export const AdminOrdersPage = () => {
               </strong>
             </p>
 
+            {returnModal.item && (
+              <div className="admin-return-item-summary">
+                <div className="admin-return-item-summary-info">
+                  <div className="admin-return-item-summary-title">
+                    {returnModal.item.title}
+                  </div>
+                  <div className="admin-return-item-summary-meta">
+                    {returnModal.item.color} | Size: {returnModal.item.size} | Qty: {returnModal.item.quantity}
+                  </div>
+                </div>
+                <div className="admin-return-item-summary-amount">
+                  Refund Amount:{" "}
+                  <strong>₹{returnModal.item.itemTotal?.toLocaleString()}</strong>
+                </div>
+              </div>
+            )}
+
             <div className="admin-return-reason-box">
               <strong className="admin-return-reason-label">
                 Customer's Reason:
               </strong>
               <p className="admin-return-reason-text">
-                "{returnModal.order?.returnRequest?.reason}"
+                "{returnModal.item?.returnRequest?.reason ||
+                  returnModal.order?.returnRequest?.reason ||
+                  "No reason specified"}"
               </p>
+              {returnModal.item?.returnRequest?.comment && (
+                <p className="admin-return-reason-comment">
+                  <strong>Customer Note:</strong> "{returnModal.item.returnRequest.comment}"
+                </p>
+              )}
             </div>
 
             <div className="admin-order-modal-field">
@@ -672,7 +738,11 @@ export const AdminOrdersPage = () => {
                       setReturnModal({ ...returnModal, action: "APPROVE" })
                     }
                   />
-                  <span>Approve Return (Restores Stock)</span>
+                  <span>
+                    {returnModal.item
+                      ? `Approve Return (Restores +${returnModal.item.quantity} Stock & Refunds ₹${returnModal.item.itemTotal?.toLocaleString()} to User Wallet)`
+                      : "Approve Return (Restores Stock & Refunds to Wallet)"}
+                  </span>
                 </label>
                 <label className="admin-decision-radio-label">
                   <input
@@ -684,7 +754,7 @@ export const AdminOrdersPage = () => {
                       setReturnModal({ ...returnModal, action: "REJECT" })
                     }
                   />
-                  <span>Reject Return</span>
+                  <span>Reject Return (Leaves Status Delivered, No Refund)</span>
                 </label>
               </div>
             </div>
@@ -711,6 +781,7 @@ export const AdminOrdersPage = () => {
                   setReturnModal({
                     isOpen: false,
                     order: null,
+                    item: null,
                     action: "APPROVE",
                     adminNote: "",
                   })
@@ -812,64 +883,162 @@ export const AdminOrdersPage = () => {
                   return (
                     <div
                       key={item._id}
-                      className={`admin-order-item-row ${isCancelled ? "cancelled" : ""}`}
+                      className={`admin-order-item-row ${isCancelled ? "cancelled" : ""} ${isReturnRequested ? "return-requested" : ""}`}
                     >
-                      <div className="admin-order-item-left">
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="admin-order-item-img"
-                        />
-                        <div className="admin-order-item-info">
-                          <div className="admin-order-item-title-row">
-                            <span
-                              className={`admin-order-item-title ${isCancelled ? "cancelled" : ""}`}
-                            >
-                              {item.title}
-                            </span>
+                      <div className="admin-order-item-row-main">
+                        <div className="admin-order-item-left">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="admin-order-item-img"
+                          />
+                          <div className="admin-order-item-info">
+                            <div className="admin-order-item-title-row">
+                              <span
+                                className={`admin-order-item-title ${isCancelled ? "cancelled" : ""}`}
+                              >
+                                {item.title}
+                              </span>
 
-                            {/* Item Status Badges */}
-                            {isCancelled && (
-                              <span className="admin-item-status-badge badge-cancelled">
-                                Cancelled
-                              </span>
+                              {/* Item Status Badges */}
+                              {isCancelled && (
+                                <span className="admin-item-status-badge badge-cancelled">
+                                  Cancelled
+                                </span>
+                              )}
+                              {isReturnRequested && (
+                                <span className="admin-item-status-badge badge-return-requested">
+                                  Return Requested
+                                </span>
+                              )}
+                              {isReturned && (
+                                <span className="admin-item-status-badge badge-returned">
+                                  Returned
+                                </span>
+                              )}
+                              {!isReturned &&
+                                !isReturnRequested &&
+                                item.returnRequest?.status === "Rejected" && (
+                                  <span className="admin-item-status-badge badge-rejected">
+                                    Return Declined
+                                  </span>
+                                )}
+                            </div>
+
+                            <div className="admin-order-item-meta">
+                              {item.color} | Size: {item.size} | Qty:{" "}
+                              {item.quantity}
+                            </div>
+
+                            {/* Cancellation Reason note */}
+                            {isCancelled && item.cancellation?.reason && (
+                              <div className="admin-order-item-reason">
+                                Reason: {item.cancellation.reason}
+                              </div>
                             )}
-                            {isReturnRequested && (
-                              <span className="admin-item-status-badge badge-return-requested">
-                                Return Requested
-                              </span>
-                            )}
+
+                            {/* Returned Note */}
                             {isReturned && (
-                              <span className="admin-item-status-badge badge-returned">
-                                Returned
-                              </span>
+                              <div className="admin-item-returned-note">
+                                ✓ Returned &amp; refunded ({item.quantity} restored to stock)
+                                {item.returnRequest?.adminNote &&
+                                  ` • Admin: "${item.returnRequest.adminNote}"`}
+                              </div>
                             )}
-                          </div>
 
-                          <div className="admin-order-item-meta">
-                            {item.color} | Size: {item.size} | Qty:{" "}
-                            {item.quantity}
+                            {/* Return Declined Note */}
+                            {!isReturned &&
+                              !isReturnRequested &&
+                              item.returnRequest?.status === "Rejected" && (
+                                <div className="admin-item-declined-note">
+                                  ✕ Return declined
+                                  {item.returnRequest?.adminNote &&
+                                    ` • Admin: "${item.returnRequest.adminNote}"`}
+                                </div>
+                              )}
                           </div>
+                        </div>
 
-                          {/* Cancellation Reason note */}
-                          {isCancelled && item.cancellation?.reason && (
-                            <div className="admin-order-item-reason">
-                              Reason: {item.cancellation.reason}
+                        <div
+                          className={`admin-order-item-pricing ${isCancelled ? "cancelled" : ""}`}
+                        >
+                          ₹{item.itemTotal.toLocaleString()}
+                          {isCancelled && (
+                            <div className="admin-order-item-refunded">
+                              Refunded
+                            </div>
+                          )}
+                          {isReturned && (
+                            <div className="admin-order-item-refunded">
+                              Refunded
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div
-                        className={`admin-order-item-pricing ${isCancelled ? "cancelled" : ""}`}
-                      >
-                        ₹{item.itemTotal.toLocaleString()}
-                        {isCancelled && (
-                          <div className="admin-order-item-refunded">
-                            Refunded
+                      {/* Individual Item Return Request Action Box */}
+                      {isReturnRequested && (
+                        <div className="admin-item-return-panel">
+                          <div className="admin-item-return-panel-content">
+                            <div className="admin-item-return-reason-line">
+                              <span className="admin-item-return-label">
+                                Reason:
+                              </span>{" "}
+                              <span className="admin-item-return-reason-val">
+                                "{item.returnRequest?.reason || "Not specified"}"
+                              </span>
+                            </div>
+                            {item.returnRequest?.comment && (
+                              <div className="admin-item-return-comment-line">
+                                <span className="admin-item-return-label">
+                                  Customer Comment:
+                                </span>{" "}
+                                <span className="admin-item-return-comment-val">
+                                  "{item.returnRequest.comment}"
+                                </span>
+                              </div>
+                            )}
+                            <div className="admin-item-return-impact-note">
+                              Approve will restore <strong>+{item.quantity}</strong> stock &amp; credit{" "}
+                              <strong>₹{item.itemTotal.toLocaleString()}</strong> to user's wallet.
+                            </div>
                           </div>
-                        )}
-                      </div>
+                          <div className="admin-item-return-actions">
+                            <button
+                              type="button"
+                              className="admin-item-btn-approve"
+                              onClick={() => {
+                                setReturnModal({
+                                  isOpen: true,
+                                  order: detailsModal.order,
+                                  item: item,
+                                  action: "APPROVE",
+                                  adminNote: "",
+                                });
+                              }}
+                              title="Approve item return and refund amount"
+                            >
+                              ✓ Approve Return
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-item-btn-reject"
+                              onClick={() => {
+                                setReturnModal({
+                                  isOpen: true,
+                                  order: detailsModal.order,
+                                  item: item,
+                                  action: "REJECT",
+                                  adminNote: "",
+                                });
+                              }}
+                              title="Decline item return request"
+                            >
+                              ✕ Decline Return
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
