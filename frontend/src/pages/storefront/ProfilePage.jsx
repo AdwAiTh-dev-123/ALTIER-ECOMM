@@ -98,6 +98,7 @@ export const ProfilePage = () => {
   });
   const [emailFieldError, setEmailFieldError] = useState("");
   const [passwordFieldErrors, setPasswordFieldErrors] = useState({});
+  const [walletFieldError, setWalletFieldError] = useState("");
 
   // Global toast
   const [toast, setToast] = useState(null);
@@ -444,16 +445,23 @@ export const ProfilePage = () => {
 
   const handleAddMoney = async (e) => {
     e.preventDefault();
-    const amountNum = parseFloat(topupAmount);
-    if (!amountNum || amountNum < 1) {
-      showToast("Please enter a valid amount (minimum 1)", "error");
+    setWalletFieldError("");
+
+    const trimmed = String(topupAmount).trim();
+    if (!trimmed) {
+      setWalletFieldError("Please enter an amount.");
+      return;
+    }
+
+    const amountNum = parseFloat(trimmed);
+    if (isNaN(amountNum) || amountNum < 1) {
+      setWalletFieldError("Please enter a valid amount (minimum ₹1).");
       return;
     }
 
     if (amountNum > 50000) {
-      showToast(
+      setWalletFieldError(
         "Maximum wallet recharge limit is ₹50,000 per transaction.",
-        "error",
       );
       return;
     }
@@ -501,6 +509,7 @@ export const ProfilePage = () => {
             if (verifyRes.data.success) {
               setWallet(verifyRes.data.wallet);
               setTopupAmount("");
+              setWalletFieldError("");
               showToast(`₹${amountNum} added to your wallet!`, "success");
             }
           } catch (err) {
@@ -1201,24 +1210,39 @@ export const ProfilePage = () => {
                   <h3 style={{ margin: "0 0 1rem 0" }}>Add Money to Wallet</h3>
                   <form
                     onSubmit={handleAddMoney}
+                    noValidate
                     className="wallet-topup-form"
-                    style={{ display: "flex", gap: "0.75rem" }}
+                    style={{
+                      display: "flex",
+                      gap: "0.75rem",
+                      alignItems: "flex-start",
+                    }}
                   >
-                    <input
-                      type="number"
-                      min="1"
-                      max="50000"
-                      step="any"
-                      placeholder="Enter amount (₹)"
-                      value={topupAmount}
-                      onChange={(e) => setTopupAmount(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: "0.6rem 0.8rem",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                      }}
-                    />
+                    <div style={{ flex: 1, width: "100%" }}>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Enter amount (₹)"
+                        value={topupAmount}
+                        onChange={(e) => {
+                          setTopupAmount(e.target.value);
+                          if (walletFieldError) setWalletFieldError("");
+                        }}
+                        className={`wallet-topup-input ${walletFieldError ? "input-error" : ""}`}
+                        style={{
+                          width: "100%",
+                          padding: "0.6rem 0.8rem",
+                          border: "1px solid #ccc",
+                          borderRadius: "4px",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                      {walletFieldError && (
+                        <span className="error-message">
+                          {walletFieldError}
+                        </span>
+                      )}
+                    </div>
                     <button
                       type="submit"
                       disabled={isProcessingTopup}
@@ -1238,7 +1262,10 @@ export const ProfilePage = () => {
                       <button
                         key={quickAmt}
                         type="button"
-                        onClick={() => setTopupAmount(quickAmt)}
+                        onClick={() => {
+                          setTopupAmount(quickAmt);
+                          if (walletFieldError) setWalletFieldError("");
+                        }}
                         style={{
                           padding: "0.3rem 0.6rem",
                           border: "1px solid #ddd",
