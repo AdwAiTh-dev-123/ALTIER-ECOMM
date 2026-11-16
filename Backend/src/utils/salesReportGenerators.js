@@ -16,7 +16,7 @@ export const generateExcelSalesReport = async (orders, summary, dateRange) => {
   const worksheet = workbook.addWorksheet("Sales Report");
 
   // Title Block
-  worksheet.mergeCells("A1:G1");
+  worksheet.mergeCells("A1:J1");
   const titleCell = worksheet.getCell("A1");
   titleCell.value = "ATELIER LUXURY APPAREL - SALES REPORT";
   titleCell.font = {
@@ -34,7 +34,7 @@ export const generateExcelSalesReport = async (orders, summary, dateRange) => {
   worksheet.getRow(1).height = 30;
 
   // Metadata Subtitle
-  worksheet.mergeCells("A2:G2");
+  worksheet.mergeCells("A2:J2");
   const subCell = worksheet.getCell("A2");
   subCell.value = `Period: ${formatDate(dateRange.start)} to ${formatDate(dateRange.end)} | Generated on: ${formatDate(new Date())}`;
   subCell.font = { italic: true, size: 10, color: { argb: "FF555555" } };
@@ -45,14 +45,20 @@ export const generateExcelSalesReport = async (orders, summary, dateRange) => {
   const summaryHeaderRow = worksheet.addRow([
     "Total Orders",
     "Gross Sales",
-    "Items Sold",
+    "Total Refunds",
+    "Net Revenue",
+    "Units Retained",
+    "Returned Units",
     "Avg Order Value",
   ]);
   summaryHeaderRow.font = { bold: true };
   const summaryValRow = worksheet.addRow([
-    summary.totalOrders,
-    `₹${Number(summary.totalSalesAmount || 0).toLocaleString("en-IN")}`,
-    summary.totalItemsSold,
+    summary.totalOrders || 0,
+    `₹${Number(summary.grossSalesAmount || summary.totalSalesAmount || 0).toLocaleString("en-IN")}`,
+    `-₹${Number(summary.totalRefundAmount || 0).toLocaleString("en-IN")}`,
+    `₹${Number(summary.netSalesAmount || 0).toLocaleString("en-IN")}`,
+    summary.totalItemsSold || 0,
+    summary.totalReturnedItems || 0,
     `₹${Number(summary.averageOrderValue || 0).toLocaleString("en-IN")}`,
   ]);
   summaryValRow.font = { size: 11, bold: true, color: { argb: "FF15803D" } };
@@ -65,9 +71,12 @@ export const generateExcelSalesReport = async (orders, summary, dateRange) => {
     { header: "Date", key: "date", width: 14 },
     { header: "Customer Name", key: "customer", width: 22 },
     { header: "Payment Method", key: "paymentMethod", width: 16 },
-    { header: "Items Count", key: "itemsCount", width: 12 },
+    { header: "Payment Status", key: "paymentStatus", width: 16 },
     { header: "Order Status", key: "status", width: 16 },
-    { header: "Total Amount (₹)", key: "total", width: 18 },
+    { header: "Items (Units)", key: "itemsCount", width: 14 },
+    { header: "Gross Total (₹)", key: "grossTotal", width: 16 },
+    { header: "Refund (₹)", key: "refund", width: 14 },
+    { header: "Net Amount (₹)", key: "netTotal", width: 16 },
   ];
 
   // Re-style the table header row (Row 6)
@@ -77,9 +86,12 @@ export const generateExcelSalesReport = async (orders, summary, dateRange) => {
     "Date",
     "Customer Name",
     "Payment Method",
-    "Items Count",
+    "Payment Status",
     "Order Status",
-    "Total Amount (₹)",
+    "Items (Units)",
+    "Gross Total (₹)",
+    "Refund (₹)",
+    "Net Amount (₹)",
   ];
   headerRow.eachCell((cell) => {
     cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -100,18 +112,19 @@ export const generateExcelSalesReport = async (orders, summary, dateRange) => {
       customer:
         order.shippingAddress?.fullName || order.user?.name || "Customer",
       paymentMethod: order.paymentMethod,
-      itemsCount: order.items?.length || 0,
+      paymentStatus: order.paymentStatus || "Pending",
       status: order.orderStatus,
-      total: order.pricing?.totalAmount || 0,
+      itemsCount: order.activeItemsCount ?? (order.items?.length || 0),
+      grossTotal: order.pricing?.totalAmount || 0,
+      refund: order.refundAmount || 0,
+      netTotal: order.netAmount ?? (order.pricing?.totalAmount || 0),
     });
   });
 
   return await workbook.xlsx.writeBuffer();
 };
 
-
 //Generate PDF Report using PDFKit
- 
 export const generatePdfSalesReport = (orders, summary, dateRange) => {
   return new Promise((resolve, reject) => {
     try {
@@ -140,55 +153,64 @@ export const generatePdfSalesReport = (orders, summary, dateRange) => {
           84,
         );
 
-      // Metric Summary Cards
+      // Metric Summary Cards (5 cards across width 523)
       const cardY = 104;
-      const cardWidth = 125;
+      const cardWidth = 99;
       const cardHeight = 44;
       const metrics = [
-        { label: "TOTAL ORDERS", value: String(summary.totalOrders) },
+        { label: "TOTAL ORDERS", value: String(summary.totalOrders || 0) },
         {
-          label: "TOTAL REVENUE",
-          value: `INR ${Number(summary.totalSalesAmount || 0).toLocaleString("en-IN")}`,
+          label: "GROSS SALES",
+          value: `INR ${Number(summary.grossSalesAmount || summary.totalSalesAmount || 0).toLocaleString("en-IN")}`,
         },
-        { label: "ITEMS SOLD", value: String(summary.totalItemsSold) },
         {
-          label: "AVG ORDER VALUE",
-          value: `INR ${Number(summary.averageOrderValue || 0).toLocaleString("en-IN")}`,
+          label: "TOTAL REFUNDS",
+          value: `-INR ${Number(summary.totalRefundAmount || 0).toLocaleString("en-IN")}`,
+        },
+        {
+          label: "NET REVENUE",
+          value: `INR ${Number(summary.netSalesAmount || 0).toLocaleString("en-IN")}`,
+        },
+        {
+          label: "UNITS SOLD",
+          value: String(summary.totalItemsSold || 0),
         },
       ];
 
       metrics.forEach((m, idx) => {
-        const x = 36 + idx * (cardWidth + 8);
+        const x = 36 + idx * (cardWidth + 7);
         doc
           .rect(x, cardY, cardWidth, cardHeight)
           .fillAndStroke("#f5f4f0", "#e7e5e4");
         doc
           .fillColor("#78716c")
-          .fontSize(7)
+          .fontSize(6.5)
           .font("Helvetica-Bold")
-          .text(m.label, x + 8, cardY + 8);
+          .text(m.label, x + 6, cardY + 8);
         doc
-          .fillColor("#1c1917")
-          .fontSize(11)
+          .fillColor(m.label === "TOTAL REFUNDS" && summary.totalRefundAmount > 0 ? "#dc2626" : "#1c1917")
+          .fontSize(9.5)
           .font("Helvetica-Bold")
-          .text(m.value, x + 8, cardY + 22);
+          .text(m.value, x + 6, cardY + 22);
       });
 
       // Table Header
       let tableY = 165;
       doc.rect(36, tableY, 523, 20).fill("#292524");
-      doc.fillColor("#ffffff").fontSize(8).font("Helvetica-Bold");
-      doc.text("ORDER ID", 42, tableY + 6, { width: 90 });
-      doc.text("DATE", 136, tableY + 6, { width: 65 });
-      doc.text("CUSTOMER", 205, tableY + 6, { width: 110 });
-      doc.text("METHOD", 320, tableY + 6, { width: 60 });
-      doc.text("STATUS", 385, tableY + 6, { width: 80 });
-      doc.text("TOTAL", 470, tableY + 6, { width: 80, align: "right" });
+      doc.fillColor("#ffffff").fontSize(7.5).font("Helvetica-Bold");
+      doc.text("ORDER ID", 40, tableY + 6, { width: 75 });
+      doc.text("DATE", 116, tableY + 6, { width: 55 });
+      doc.text("CUSTOMER", 172, tableY + 6, { width: 85 });
+      doc.text("PAYMENT", 258, tableY + 6, { width: 58 });
+      doc.text("STATUS", 318, tableY + 6, { width: 62 });
+      doc.text("GROSS", 382, tableY + 6, { width: 45, align: "right" });
+      doc.text("REFUND", 429, tableY + 6, { width: 45, align: "right" });
+      doc.text("NET", 476, tableY + 6, { width: 45, align: "right" });
 
       tableY += 22;
 
       // Table Rows
-      doc.font("Helvetica").fontSize(8);
+      doc.font("Helvetica").fontSize(7.5);
       orders.forEach((order, index) => {
         // Page overflow check
         if (tableY > 750) {
@@ -202,25 +224,37 @@ export const generatePdfSalesReport = (orders, summary, dateRange) => {
         }
 
         doc.fillColor("#1c1917");
-        doc.text(order.orderId || "N/A", 42, tableY, { width: 90 });
-        doc.text(formatDate(order.createdAt), 136, tableY, { width: 65 });
+        doc.text(order.orderId || "N/A", 40, tableY, { width: 75 });
+        doc.text(formatDate(order.createdAt), 116, tableY, { width: 55 });
         doc.text(
           (
             order.shippingAddress?.fullName ||
             order.user?.name ||
             "Customer"
-          ).slice(0, 18),
-          205,
+          ).slice(0, 14),
+          172,
           tableY,
-          { width: 110 },
+          { width: 85 },
         );
-        doc.text(order.paymentMethod || "COD", 320, tableY, { width: 60 });
-        doc.text(order.orderStatus || "Pending", 385, tableY, { width: 80 });
+        doc.text(order.paymentMethod || "COD", 258, tableY, { width: 58 });
+        doc.text(order.orderStatus || "Pending", 318, tableY, { width: 62 });
         doc.text(
           `INR ${Number(order.pricing?.totalAmount || 0).toLocaleString("en-IN")}`,
-          470,
+          382,
           tableY,
-          { width: 80, align: "right" },
+          { width: 45, align: "right" },
+        );
+        doc.text(
+          order.refundAmount ? `-INR ${Number(order.refundAmount).toLocaleString("en-IN")}` : "-",
+          429,
+          tableY,
+          { width: 45, align: "right" },
+        );
+        doc.text(
+          `INR ${Number(order.netAmount ?? order.pricing?.totalAmount ?? 0).toLocaleString("en-IN")}`,
+          476,
+          tableY,
+          { width: 45, align: "right" },
         );
 
         tableY += 18;

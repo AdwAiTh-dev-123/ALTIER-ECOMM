@@ -131,9 +131,15 @@
    ========================================================================== */
 .admin-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 0.75rem;
   margin-bottom: 1.15rem;
+}
+
+@media (max-width: 1200px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .admin-stat-card {
@@ -151,6 +157,26 @@
 .admin-stat-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+}
+
+.admin-stat-card.stat-gross {
+  border-left: 3px solid #3b82f6;
+}
+
+.admin-stat-card.stat-refunds {
+  border-left: 3px solid #ef4444;
+}
+
+.admin-stat-card.stat-net {
+  border-left: 3px solid #10b981;
+}
+
+.admin-stat-refund-val {
+  color: #dc2626 !important;
+}
+
+.admin-stat-net-val {
+  color: #15803d !important;
 }
 
 .admin-stat-card.stat-revenue {
@@ -847,3 +873,87 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   TABLE CELL ENHANCEMENTS: PAYMENT, REFUND & NET AMOUNT
+   ========================================================================== */
+.admin-payment-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.admin-payment-status-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.admin-payment-status-badge.payment-paid {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.admin-payment-status-badge.payment-refunded {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-payment-status-badge.payment-partially-refunded {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.admin-payment-status-badge.payment-pending {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.admin-payment-status-badge.payment-failed {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.admin-items-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.admin-items-returned-note {
+  font-size: 0.72rem;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.admin-refund-cell-val {
+  font-weight: 600;
+  color: #dc2626;
+  font-size: 0.85rem;
+}
+
+.admin-refund-none {
+  color: #a8a29e;
+}
+
+.admin-amount-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.admin-net-amount {
+  font-weight: 700;
+  color: #1c1917;
+  font-size: 0.92rem;
+}
+
+.admin-gross-subtext {
+  font-size: 0.72rem;
+  color: #78716c;
+}
+

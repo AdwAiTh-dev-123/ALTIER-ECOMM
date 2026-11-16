@@ -41,8 +41,14 @@ const AdminSalesReportPage = () => {
   const [orders, setOrders] = useState([]);
   const [summary, setSummary] = useState({
     totalOrders: 0,
+    grossSalesAmount: 0,
     totalSalesAmount: 0,
+    netSalesAmount: 0,
+    totalRefundAmount: 0,
+    totalCouponDiscount: 0,
     totalItemsSold: 0,
+    totalReturnedItems: 0,
+    returnedOrdersCount: 0,
     averageOrderValue: 0,
   });
 
@@ -208,6 +214,21 @@ const AdminSalesReportPage = () => {
     }
   };
 
+  const getPaymentBadgeClass = (paymentStatus) => {
+    switch (paymentStatus) {
+      case "Paid":
+        return "payment-paid";
+      case "Refunded":
+        return "payment-refunded";
+      case "Partially Refunded":
+        return "payment-partially-refunded";
+      case "Failed":
+        return "payment-failed";
+      default:
+        return "payment-pending";
+    }
+  };
+
   const hasActiveFilters =
     dateRange !== "month" ||
     statusFilter !== "all" ||
@@ -263,44 +284,68 @@ const AdminSalesReportPage = () => {
 
       {/* Metric Summary Cards */}
       <div className="admin-stats-grid">
-        <div className="admin-stat-card stat-revenue">
+        <div className="admin-stat-card stat-gross">
           <div className="admin-stat-header">
-            <span className="admin-stat-label">Total Revenue</span>
+            <span className="admin-stat-label">Gross Sales</span>
             <span className="admin-stat-icon-wrap">💰</span>
           </div>
           <div className="admin-stat-value">
-            ₹{Number(summary.totalSalesAmount || 0).toLocaleString("en-IN")}
+            ₹{Number(summary.grossSalesAmount || summary.totalSalesAmount || 0).toLocaleString("en-IN")}
           </div>
-          <span className="admin-stat-note">Gross sales in selected range</span>
+          <span className="admin-stat-note">Gross order value before deductions</span>
+        </div>
+
+        <div className="admin-stat-card stat-refunds">
+          <div className="admin-stat-header">
+            <span className="admin-stat-label">Total Refunds</span>
+            <span className="admin-stat-icon-wrap">🔄</span>
+          </div>
+          <div className="admin-stat-value admin-stat-refund-val">
+            -₹{Number(summary.totalRefundAmount || 0).toLocaleString("en-IN")}
+          </div>
+          <span className="admin-stat-note">
+            {summary.returnedOrdersCount || 0} returned orders ({summary.totalReturnedItems || 0} items)
+          </span>
+        </div>
+
+        <div className="admin-stat-card stat-net">
+          <div className="admin-stat-header">
+            <span className="admin-stat-label">Net Revenue</span>
+            <span className="admin-stat-icon-wrap">📈</span>
+          </div>
+          <div className="admin-stat-value admin-stat-net-val">
+            ₹{Number(summary.netSalesAmount || 0).toLocaleString("en-IN")}
+          </div>
+          <span className="admin-stat-note">Real revenue retained after refunds</span>
         </div>
 
         <div className="admin-stat-card stat-orders">
           <div className="admin-stat-header">
-            <span className="admin-stat-label">Completed Orders</span>
+            <span className="admin-stat-label">Orders</span>
             <span className="admin-stat-icon-wrap">📦</span>
           </div>
           <div className="admin-stat-value">{summary.totalOrders}</div>
-          <span className="admin-stat-note">Successful fulfillment count</span>
+          <span className="admin-stat-note">Matching orders in period</span>
         </div>
 
         <div className="admin-stat-card stat-units">
           <div className="admin-stat-header">
-            <span className="admin-stat-label">Units Sold</span>
+            <span className="admin-stat-label">Units Retained</span>
             <span className="admin-stat-icon-wrap">🏷️</span>
           </div>
           <div className="admin-stat-value">{summary.totalItemsSold}</div>
-          <span className="admin-stat-note">Total pieces dispatched</span>
+          <span className="admin-stat-note">Active units kept by customers</span>
         </div>
 
         <div className="admin-stat-card stat-aov">
           <div className="admin-stat-header">
-            <span className="admin-stat-label">Average Order Value</span>
-            <span className="admin-stat-icon-wrap">📈</span>
+            <span className="admin-stat-label">Avg Order Value</span>
+            <span className="admin-stat-icon-wrap">📊</span>
           </div>
           <div className="admin-stat-value">
             ₹{Number(summary.averageOrderValue || 0).toLocaleString("en-IN")}
           </div>
-          <span className="admin-stat-note">Average spend per customer order</span>
+          <span className="admin-stat-note">Net average spend per customer</span>
         </div>
       </div>
 
@@ -515,19 +560,20 @@ const AdminSalesReportPage = () => {
                 <th>Payment</th>
                 <th>Items</th>
                 <th>Status</th>
-                <th style={{ textAlign: "right" }}>Total Amount</th>
+                <th style={{ textAlign: "right" }}>Refund</th>
+                <th style={{ textAlign: "right" }}>Net Amount</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="7" className="admin-empty-state-cell">
+                  <td colSpan="8" className="admin-empty-state-cell">
                     Loading sales records...
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="admin-empty-state-cell">
+                  <td colSpan="8" className="admin-empty-state-cell">
                     <div className="admin-empty-state-content">
                       <div className="admin-empty-icon">📊</div>
                       <h3 className="admin-empty-title">
@@ -578,15 +624,33 @@ const AdminSalesReportPage = () => {
                       </div>
                     </td>
                     <td>
-                      <span className="admin-payment-pill">
-                        {order.paymentMethod}
-                      </span>
+                      <div className="admin-payment-cell">
+                        <span className="admin-payment-pill">
+                          {order.paymentMethod}
+                        </span>
+                        {order.paymentStatus && (
+                          <span
+                            className={`admin-payment-status-badge ${getPaymentBadgeClass(order.paymentStatus)}`}
+                          >
+                            {order.paymentStatus}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
-                      <span className="admin-items-count">
-                        {order.items?.length || 0}{" "}
-                        {order.items?.length === 1 ? "item" : "items"}
-                      </span>
+                      <div className="admin-items-cell">
+                        <span className="admin-items-count">
+                          {order.activeItemsCount ?? (order.items?.length || 0)}{" "}
+                          {(order.activeItemsCount ?? order.items?.length) === 1
+                            ? "item"
+                            : "items"}
+                        </span>
+                        {order.returnedItemsCount > 0 && (
+                          <span className="admin-items-returned-note">
+                            ({order.returnedItemsCount} returned)
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <span
@@ -596,11 +660,34 @@ const AdminSalesReportPage = () => {
                         {order.orderStatus}
                       </span>
                     </td>
-                    <td className="admin-amount-cell">
-                      ₹
-                      {(order.pricing?.totalAmount || 0).toLocaleString(
-                        "en-IN",
+                    <td style={{ textAlign: "right" }}>
+                      {order.refundAmount > 0 ? (
+                        <span className="admin-refund-cell-val">
+                          -₹{Number(order.refundAmount).toLocaleString("en-IN")}
+                        </span>
+                      ) : (
+                        <span className="admin-refund-none">-</span>
                       )}
+                    </td>
+                    <td className="admin-amount-cell">
+                      <div className="admin-amount-wrap">
+                        <span className="admin-net-amount">
+                          ₹
+                          {(
+                            order.netAmount ??
+                            order.pricing?.totalAmount ??
+                            0
+                          ).toLocaleString("en-IN")}
+                        </span>
+                        {order.refundAmount > 0 && (
+                          <span className="admin-gross-subtext">
+                            Gross: ₹
+                            {(order.pricing?.totalAmount || 0).toLocaleString(
+                              "en-IN",
+                            )}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

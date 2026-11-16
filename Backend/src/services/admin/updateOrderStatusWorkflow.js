@@ -62,7 +62,7 @@ export const updateOrderStatusWorkflow = async ({ id, status, comment }) => {
         $inc: { stock: item.quantity },
       });
     }
-    if (orderPaymentStatus === "Paid") {
+    if (order.paymentStatus === "Paid") {
       order.paymentStatus = "Refunded";
 
       await creditWalletRefund({
