@@ -13,6 +13,7 @@ import {
   updateAvatarApi,
   sendChangeEmailOtpApi,
   changeEmailApi,
+  updateProfileApi,
 } from "../../api/authApi";
 import OtpInput from "../../components/auth/OtpInput";
 import AddressModal from "../../components/common/AddressModal";
@@ -39,11 +40,73 @@ const loadRazorpayScript = () => {
 };
 
 export const ProfilePage = () => {
-  const { user, checkSession } = useAuth();
+  const { user, checkSession, updateUser } = useAuth();
   const isAdmin = user?.role === "admin";
 
   // Tab navigation: "addresses" | "security"
   const [activeTab, setActiveTab] = useState("addresses");
+
+  // Username / Name state
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(user?.name || "");
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [nameFieldError, setNameFieldError] = useState("");
+  const [nameCardSuccess, setNameCardSuccess] = useState("");
+
+  useEffect(() => {
+    if (user?.name) {
+      setNameInput(user.name);
+    }
+  }, [user?.name]);
+
+  const handleSaveName = async (e) => {
+    if (e) e.preventDefault();
+    const trimmed = nameInput.trim();
+    if (!trimmed) {
+      setNameFieldError("Please enter your name.");
+      return;
+    }
+    if (
+      trimmed.length < 2 ||
+      trimmed.length > 50 ||
+      !/^[a-zA-Z\s'-]+$/.test(trimmed)
+    ) {
+      setNameFieldError(
+        "Please enter a valid name (2-50 characters, letters, spaces, hyphens, and apostrophes only).",
+      );
+      return;
+    }
+
+    if (trimmed === user?.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsSavingName(true);
+    setNameFieldError("");
+    setNameCardSuccess("");
+
+    try {
+      const res = await updateProfileApi({ name: trimmed });
+      if (res.data?.success) {
+        showToast("Username updated successfully!");
+        setNameCardSuccess("Username updated successfully!");
+        if (updateUser) {
+          updateUser({ name: trimmed });
+        }
+        if (checkSession) {
+          await checkSession();
+        }
+        setIsEditingName(false);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to update username";
+      setNameFieldError(msg);
+      showToast(msg, "error");
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   //Wallet State
   const [wallet, setWallet] = useState(null);
@@ -608,7 +671,79 @@ export const ProfilePage = () => {
 
         <div className="profile-user-details">
           <span className="editorial-eyebrow">ACCOUNT OVERVIEW</span>
-          <h1 className="profile-user-name">{user?.name || "Customer"}</h1>
+          {isEditingName ? (
+            <form onSubmit={handleSaveName} className="profile-inline-name-form">
+              <input
+                type="text"
+                className={`profile-inline-name-input ${nameFieldError ? "input-error" : ""}`}
+                value={nameInput}
+                onChange={(e) => {
+                  setNameInput(e.target.value);
+                  if (nameFieldError) setNameFieldError("");
+                }}
+                disabled={isSavingName}
+                autoFocus
+                placeholder="Enter full name"
+                aria-label="Edit Full Name"
+              />
+              <button
+                type="submit"
+                className="profile-inline-save-btn"
+                disabled={isSavingName}
+              >
+                {isSavingName ? "Saving..." : "Save"}
+              </button>
+              <button
+                type="button"
+                className="profile-inline-cancel-btn"
+                onClick={() => {
+                  setIsEditingName(false);
+                  setNameInput(user?.name || "");
+                  setNameFieldError("");
+                }}
+                disabled={isSavingName}
+              >
+                Cancel
+              </button>
+              {nameFieldError && (
+                <div
+                  className="error-message"
+                  style={{ width: "100%", marginTop: "4px", fontSize: "0.8rem", color: "#dc2626" }}
+                >
+                  {nameFieldError}
+                </div>
+              )}
+            </form>
+          ) : (
+            <div className="profile-name-row">
+              <h1 className="profile-user-name">{user?.name || "Customer"}</h1>
+              <button
+                type="button"
+                className="profile-edit-name-btn"
+                onClick={() => {
+                  setNameInput(user?.name || "");
+                  setNameFieldError("");
+                  setIsEditingName(true);
+                }}
+                title="Change username"
+                aria-label="Change username"
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+                <span>Edit</span>
+              </button>
+            </div>
+          )}
           <p className="profile-user-email">{user?.email}</p>
           <div className="profile-meta-tags">
             <span className="profile-role-pill">
@@ -756,6 +891,70 @@ export const ProfilePage = () => {
           {/* TAB 2: Security & Password */}
           {activeTab === "security" && (
             <>
+              {/* Change Username / Name Card */}
+              <div
+                className="profile-security-card"
+                style={{ marginBottom: "2rem" }}
+              >
+                <div className="security-card-header">
+                  <span className="editorial-eyebrow">PERSONAL DETAILS</span>
+                  <h2>Change Username</h2>
+                  <p>
+                    Current Name: <strong>{user?.name || "N/A"}</strong>
+                  </p>
+                </div>
+
+                {nameCardSuccess && (
+                  <div className="profile-status-banner success">
+                    ✓ {nameCardSuccess}
+                  </div>
+                )}
+
+                <form
+                  onSubmit={handleSaveName}
+                  className="password-change-form"
+                >
+                  <div className="profile-form-group">
+                    <label
+                      className="profile-form-label"
+                      htmlFor="personalNameInput"
+                    >
+                      Full Name / Username *
+                    </label>
+                    <input
+                      id="personalNameInput"
+                      type="text"
+                      className={`profile-form-input ${nameFieldError ? "input-error" : ""}`}
+                      placeholder="Enter your full name"
+                      value={nameInput}
+                      onChange={(e) => {
+                        setNameInput(e.target.value);
+                        if (nameFieldError) setNameFieldError("");
+                        if (nameCardSuccess) setNameCardSuccess("");
+                      }}
+                      disabled={isSavingName}
+                    />
+                    {nameFieldError && (
+                      <span className="error-message">{nameFieldError}</span>
+                    )}
+                  </div>
+
+                  <div className="security-form-actions">
+                    <button
+                      type="submit"
+                      className="btn-update-password"
+                      disabled={
+                        isSavingName ||
+                        !nameInput.trim() ||
+                        nameInput.trim() === user?.name
+                      }
+                    >
+                      {isSavingName ? "Saving..." : "Save Username"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
               {/* Change Email Card */}
               <div
                 className="profile-security-card"

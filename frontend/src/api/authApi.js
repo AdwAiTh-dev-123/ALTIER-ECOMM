@@ -59,3 +59,7 @@ export function sendChangeEmailOtpApi({ newEmail }) {
 export function changeEmailApi({ newEmail, otp }) {
   return api.put("/auth/change-email", { newEmail, otp });
 }
+
+export function updateProfileApi({ name }) {
+  return api.patch("/auth/profile", { name });
+}

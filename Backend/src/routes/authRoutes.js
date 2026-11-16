@@ -13,6 +13,7 @@ import updateAvatar from "../controllers/auth/updateAvatar.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import sendChangeEmailOtpController from "../controllers/auth/sendChangeEmailOtp.js";
 import changeEmailController from "../controllers/auth/changeEmail.js";
+import updateProfile from "../controllers/auth/updateProfile.js";
 import { authLimiter, loginLimiter } from "../middlewares/rateLimiter.js";
 import {
   validateChangePassword,
@@ -23,6 +24,7 @@ import {
   validateSendChangeEmailOtp,
   validateChangeEmail,
   validateSendOtp,
+  validateUpdateProfile,
 } from "../validators/auth/index.js";
 
 const imageFileFilter = (req, file, cb) => {
@@ -89,6 +91,13 @@ router.put(
   authMiddleware,
   validateChangeEmail,
   changeEmailController,
+);
+
+router.patch(
+  "/profile",
+  authMiddleware,
+  validateUpdateProfile,
+  updateProfile,
 );
 
 export default router;

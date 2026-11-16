@@ -8,3 +8,4 @@ export { authenticateWithGoogle } from "./authenticateWithGoogle.js";
 export { updateUserAvatarService } from "./updateUserAvatarService.js";
 export { sendChangeEmailOtp } from "./sendChangeEmailOtp.js";
 export { changeUserEmail } from "./changeUserEmail.js";
+export { updateUserProfile } from "./updateUserProfile.js";

@@ -78,6 +78,12 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const handleUpdateUser = (updatedUserData) => {
+    setUser((prev) =>
+      prev ? { ...prev, ...updatedUserData } : updatedUserData,
+    );
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -86,6 +92,8 @@ export const AuthProvider = ({ children }) => {
         isAdmin: user?.role === "admin",
         loading,
         checkSession,
+        updateUser: handleUpdateUser,
+        setUser,
         login: handleLogin,
         register: handleRegister,
         logout: handleLogout,
