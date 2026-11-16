@@ -5,6 +5,7 @@ import {
   reviewCustomerReturnRequest,
   reviewCustomerItemReturnRequest,
 } from "../../services/admin/index.js";
+import { generatePdfInvoice } from "../../utils/invoicePdfGenerator.js";
 
 export const getAllAdminOrders = async (req, res, next) => {
   try {
@@ -19,6 +20,24 @@ export const getAdminOrderById = async (req, res, next) => {
   try {
     const order = await fetchAdminOrderById(req.params.id);
     return res.status(200).json({ success: true, order });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const downloadAdminOrderInvoice = async (req, res, next) => {
+  try {
+    const order = await fetchAdminOrderById(req.params.id);
+    await order.populate("user", "name email phone");
+
+    const pdfBuffer = await generatePdfInvoice(order);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=invoice-${order.orderId}.pdf`,
+    );
+    return res.send(pdfBuffer);
   } catch (err) {
     next(err);
   }

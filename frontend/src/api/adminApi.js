@@ -63,6 +63,12 @@ export function reviewAdminItemReturnRequest(orderId, itemId, data) {
   return api.patch(`/admin/orders/${orderId}/items/${itemId}/return-review`, data);
 }
 
+export function downloadAdminOrderInvoiceApi(orderId) {
+  return api.get(`/admin/orders/${orderId}/invoice`, {
+    responseType: "blob",
+  });
+}
+
 export function getAdminSalesReport(params = {}) {
   return api.get("/admin/sales-report", { params });
 }

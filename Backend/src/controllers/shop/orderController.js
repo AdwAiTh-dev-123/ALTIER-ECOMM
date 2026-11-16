@@ -10,6 +10,7 @@ import {
   cancelOrderItem,
   requestOrderItemReturn,
 } from "../../services/shop/index.js";
+import { generatePdfInvoice } from "../../utils/invoicePdfGenerator.js";
 
 export const createCodOrder = async (req, res, next) => {
   try {
@@ -97,6 +98,28 @@ export const getOrderById = async (req, res, next) => {
       user: req.user,
     });
     return res.status(200).json({ success: true, order });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const downloadOrderInvoice = async (req, res, next) => {
+  try {
+    const order = await fetchOrderDetails({
+      orderId: req.params.id,
+      user: req.user,
+    });
+
+    await order.populate("user", "name email phone");
+
+    const pdfBuffer = await generatePdfInvoice(order);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=invoice-${order.orderId}.pdf`,
+    );
+    return res.send(pdfBuffer);
   } catch (err) {
     next(err);
   }

@@ -4,6 +4,7 @@ import {
   updateAdminOrderStatus,
   reviewAdminReturnRequest,
   reviewAdminItemReturnRequest,
+  downloadAdminOrderInvoiceApi,
 } from "../../api/adminApi";
 import Pagination from "../../components/common/Pagination";
 import "../../styles/admins/AdminOrdersPage.css";
@@ -37,6 +38,29 @@ export const AdminOrdersPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successToast, setSuccessToast] = useState("");
   const [modalError, setModalError] = useState("");
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+
+  const handleDownloadInvoice = async (orderId) => {
+    if (!orderId) return;
+    setIsDownloadingInvoice(true);
+    try {
+      const res = await downloadAdminOrderInvoiceApi(orderId);
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute("download", `invoice-${orderId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error("Failed to download invoice:", err);
+      setErrorMessage("Failed to download invoice PDF.");
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
+  };
 
   // Filters & Pagination
   const [search, setSearch] = useState("");
@@ -1068,7 +1092,37 @@ export const AdminOrdersPage = () => {
               </div>
             </div>
 
-            <div className="admin-order-modal-actions">
+            <div
+              className="admin-order-modal-actions"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <button
+                type="button"
+                className="admin-btn-export-pdf"
+                onClick={() =>
+                  handleDownloadInvoice(detailsModal.order.orderId)
+                }
+                disabled={isDownloadingInvoice}
+                style={{
+                  height: "36px",
+                  fontSize: "0.82rem",
+                  padding: "0 0.95rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span>📄</span>
+                <span>
+                  {isDownloadingInvoice
+                    ? "Generating PDF..."
+                    : "Download Invoice (PDF)"}
+                </span>
+              </button>
               <button
                 type="button"
                 className="admin-btn-secondary"

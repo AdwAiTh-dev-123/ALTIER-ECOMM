@@ -141,3 +141,10 @@ export function requestOrderItemReturnApi(
 export function applyCouponApi(couponCode) {
   return api.post("/coupons/apply", { couponCode });
 }
+
+export function downloadOrderInvoiceApi(orderId) {
+  return api.get(`/orders/${orderId}/invoice`, {
+    responseType: "blob",
+  });
+}
+

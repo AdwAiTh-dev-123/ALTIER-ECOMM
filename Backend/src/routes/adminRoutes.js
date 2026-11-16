@@ -24,6 +24,7 @@ import {
 import {
   getAllAdminOrders,
   getAdminOrderById,
+  downloadAdminOrderInvoice,
   updateOrderStatus,
   reviewReturnRequest,
 } from "../controllers/admin/orderAdminController.js";
@@ -137,6 +138,7 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 //order management
 router.get("/orders", getAllAdminOrders);
 router.get("/orders/:id", getAdminOrderById);
+router.get("/orders/:id/invoice", downloadAdminOrderInvoice);
 router.patch(
   "/orders/:id/status",
   validateOrderStatusUpdate,

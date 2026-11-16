@@ -6,6 +6,7 @@ import {
   requestReturnApi,
   cancelOrderItemApi,
   requestOrderItemReturnApi,
+  downloadOrderInvoiceApi,
 } from "../../api/shopApi";
 
 const ORDER_STEPS = [
@@ -34,6 +35,34 @@ export const OrderDetailsPage = () => {
   const [returnReason, setReturnReason] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+  const [invoiceError, setInvoiceError] = useState("");
+
+  const handleDownloadInvoice = async () => {
+    if (!order?.orderId) return;
+    setIsDownloadingInvoice(true);
+    setInvoiceError("");
+    try {
+      const res = await downloadOrderInvoiceApi(order.orderId);
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute("download", `invoice-${order.orderId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error("Failed to download invoice PDF:", err);
+      setInvoiceError(
+        err.response?.data?.message ||
+          "Failed to generate invoice PDF. Please try again.",
+      );
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
+  };
 
   const fetchOrderDetails = async () => {
     try {
@@ -279,17 +308,62 @@ export const OrderDetailsPage = () => {
           &larr; Back to Order History
         </Link>
 
-        <div style={{ display: "flex", gap: "0.75rem" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "0.75rem",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleDownloadInvoice}
+            disabled={isDownloadingInvoice}
+            style={{
+              padding: "0.45rem 1.15rem",
+              fontSize: "0.82rem",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontWeight: 600,
+            }}
+          >
+            <span>📄</span>
+            <span>
+              {isDownloadingInvoice
+                ? "Generating PDF..."
+                : "Download Invoice (PDF)"}
+            </span>
+          </button>
           <button
             type="button"
             className="btn btn-secondary"
             onClick={() => window.print()}
             style={{ padding: "0.45rem 1rem", fontSize: "0.82rem" }}
           >
-            🖨 Print Invoice
+            🖨 Print
           </button>
         </div>
       </div>
+
+      {invoiceError && (
+        <div
+          className="no-print"
+          style={{
+            background: "#fef2f2",
+            color: "#991b1b",
+            padding: "0.75rem 1.25rem",
+            borderRadius: "6px",
+            marginBottom: "1.25rem",
+            border: "1px solid #fecaca",
+            fontSize: "0.85rem",
+          }}
+        >
+          ⚠️ {invoiceError}
+        </div>
+      )}
 
       {actionSuccess && (
         <div

@@ -28,6 +28,7 @@ import {
 import {
   createCodOrder,
   getOrderById,
+  downloadOrderInvoice,
   createRazorpayOrder,
   verifyRazorpayPayment,
   handleRazorpayFailure,
@@ -108,6 +109,7 @@ router.patch(
 router.get("/orders", authMiddleware, getUserOrders);
 router.post("/orders/cod", authMiddleware, validateCodOrder, createCodOrder);
 router.get("/orders/:id", authMiddleware, getOrderById);
+router.get("/orders/:id/invoice", authMiddleware, downloadOrderInvoice);
 router.patch("/orders/:id/cancel", authMiddleware, cancelOrder);
 router.post(
   "/orders/:id/return",
