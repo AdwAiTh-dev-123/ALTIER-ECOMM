@@ -19,6 +19,7 @@ export const AddressModal = ({
     isDefault: false,
   });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export const AddressModal = ({
       });
     }
     setError("");
+    setFieldErrors({});
   }, [editAddress, isOpen]);
 
   if (!isOpen) return null;
@@ -60,33 +62,48 @@ export const AddressModal = ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    if (error) setError("");
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!formData.fullName.trim()) {
+      errs.fullName = "Full name is required.";
+    }
+    if (!formData.phone.trim()) {
+      errs.phone = "Mobile number is required.";
+    } else if (!/^\d{10}$/.test(formData.phone.trim())) {
+      errs.phone = "Please enter a valid 10-digit mobile number.";
+    }
+    if (!formData.streetAddress.trim()) {
+      errs.streetAddress = "Street address is required.";
+    }
+    if (!formData.city.trim()) {
+      errs.city = "City is required.";
+    }
+    if (!formData.state.trim()) {
+      errs.state = "State is required.";
+    }
+    if (!formData.postalCode.trim()) {
+      errs.postalCode = "Postal PIN code is required.";
+    } else if (!/^\d{6}$/.test(formData.postalCode.trim())) {
+      errs.postalCode = "Please enter a valid 6-digit postal PIN code.";
+    }
+    return errs;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (
-      !formData.fullName.trim() ||
-      !formData.phone.trim() ||
-      !formData.streetAddress.trim() ||
-      !formData.city.trim() ||
-      !formData.state.trim() ||
-      !formData.postalCode.trim()
-    ) {
-      setError("Please fill in all required fields.");
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
       return;
     }
-
-    if (!/^\d{6}$/.test(formData.postalCode.trim())) {
-      setError("Please enter a valid 6-digit postal PIN code.");
-      return;
-    }
-
-    if (!/^\d{10}$/.test(formData.phone.trim())) {
-      setError("Please enter a valid 10-digit mobile number.");
-      return;
-    }
+    setFieldErrors({});
 
     try {
       setIsSubmitting(true);
@@ -136,8 +153,11 @@ export const AddressModal = ({
               value={formData.fullName}
               onChange={handleChange}
               placeholder="Enter your name"
-              required
+              className={fieldErrors.fullName ? "input-error" : ""}
             />
+            {fieldErrors.fullName && (
+              <span className="error-message">{fieldErrors.fullName}</span>
+            )}
           </div>
 
           <div className="form-group full-width">
@@ -150,8 +170,11 @@ export const AddressModal = ({
               onChange={handleChange}
               placeholder="10-digit mobile number"
               maxLength={10}
-              required
+              className={fieldErrors.phone ? "input-error" : ""}
             />
+            {fieldErrors.phone && (
+              <span className="error-message">{fieldErrors.phone}</span>
+            )}
           </div>
 
           <div className="form-group full-width">
@@ -163,8 +186,11 @@ export const AddressModal = ({
               value={formData.streetAddress}
               onChange={handleChange}
               placeholder="Flat / House No., Building, Street Name"
-              required
+              className={fieldErrors.streetAddress ? "input-error" : ""}
             />
+            {fieldErrors.streetAddress && (
+              <span className="error-message">{fieldErrors.streetAddress}</span>
+            )}
           </div>
 
           <div className="form-group full-width">
@@ -188,8 +214,11 @@ export const AddressModal = ({
               value={formData.city}
               onChange={handleChange}
               placeholder="City"
-              required
+              className={fieldErrors.city ? "input-error" : ""}
             />
+            {fieldErrors.city && (
+              <span className="error-message">{fieldErrors.city}</span>
+            )}
           </div>
 
           <div className="form-group half-width">
@@ -201,8 +230,11 @@ export const AddressModal = ({
               value={formData.state}
               onChange={handleChange}
               placeholder="State"
-              required
+              className={fieldErrors.state ? "input-error" : ""}
             />
+            {fieldErrors.state && (
+              <span className="error-message">{fieldErrors.state}</span>
+            )}
           </div>
 
           <div className="form-group half-width">
@@ -215,8 +247,11 @@ export const AddressModal = ({
               onChange={handleChange}
               placeholder="6-digit PIN"
               maxLength={6}
-              required
+              className={fieldErrors.postalCode ? "input-error" : ""}
             />
+            {fieldErrors.postalCode && (
+              <span className="error-message">{fieldErrors.postalCode}</span>
+            )}
           </div>
 
           <div className="form-group half-width">

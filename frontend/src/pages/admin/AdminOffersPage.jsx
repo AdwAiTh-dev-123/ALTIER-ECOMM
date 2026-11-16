@@ -130,6 +130,7 @@ const AdminOffersPage = () => {
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const showToast = (text, type = "success") => {
     setToastMessage({ text, type });
@@ -260,6 +261,9 @@ const AdminOffersPage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   // Date Picker Formatting & Handlers
@@ -483,31 +487,42 @@ const AdminOffersPage = () => {
     e.preventDefault();
     setFormError("");
 
+    const errs = {};
     if (!formData.name.trim()) {
-      setFormError("Offer title is required.");
-      return;
+      errs.name = "Offer title is required.";
     }
 
-    const discount = Number(formData.discountPercentage);
-    if (!discount || discount < 1 || discount > 90) {
-      setFormError("Discount percentage must be between 1% and 90%.");
-      return;
+    if (
+      formData.discountPercentage === "" ||
+      formData.discountPercentage === undefined ||
+      formData.discountPercentage === null
+    ) {
+      errs.discountPercentage = "Discount percentage is required.";
+    } else {
+      const discount = Number(formData.discountPercentage);
+      if (isNaN(discount) || discount < 1 || discount > 90) {
+        errs.discountPercentage =
+          "Discount percentage must be between 1% and 90%.";
+      }
     }
 
     if (formData.offerType === "PRODUCT" && !formData.productId) {
-      setFormError("Please select a target product.");
-      return;
+      errs.target = "Please select a target product.";
     }
 
     if (formData.offerType === "CATEGORY" && !formData.categoryId) {
-      setFormError("Please select a target category.");
-      return;
+      errs.target = "Please select a target category.";
     }
 
     if (new Date(formData.endDate) <= new Date(formData.startDate)) {
-      setFormError("End date must be after start date.");
+      errs.endDate = "End date must be after start date.";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
       return;
     }
+    setFieldErrors({});
 
     try {
       setFormSubmitting(true);
@@ -1107,9 +1122,11 @@ const AdminOffersPage = () => {
                     placeholder="e.g. Summer Flash Sale"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="admin-form-input"
-                    required
+                    className={`admin-form-input ${fieldErrors.name ? "input-error" : ""}`}
                   />
+                  {fieldErrors.name && (
+                    <span className="error-message">{fieldErrors.name}</span>
+                  )}
                 </div>
 
                 {/* Offer Type & Target */}
@@ -1299,9 +1316,11 @@ const AdminOffersPage = () => {
                     placeholder="e.g. 20"
                     value={formData.discountPercentage}
                     onChange={handleInputChange}
-                    className="admin-form-input"
-                    required
+                    className={`admin-form-input ${fieldErrors.discountPercentage ? "input-error" : ""}`}
                   />
+                  {fieldErrors.discountPercentage && (
+                    <span className="error-message">{fieldErrors.discountPercentage}</span>
+                  )}
                 </div>
 
                 {/* Validity Dates (In-DOM Custom Date Pickers) */}

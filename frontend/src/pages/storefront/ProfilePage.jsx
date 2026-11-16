@@ -96,6 +96,8 @@ export const ProfilePage = () => {
     error: "",
     success: "",
   });
+  const [emailFieldError, setEmailFieldError] = useState("");
+  const [passwordFieldErrors, setPasswordFieldErrors] = useState({});
 
   // Global toast
   const [toast, setToast] = useState(null);
@@ -247,26 +249,33 @@ export const ProfilePage = () => {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     setPasswordStatus({ loading: true, error: "", success: "" });
+    setPasswordFieldErrors({});
 
-    // Validate strength against Brocamp Guideline 4
-    if (!isPasswordSecure) {
-      setPasswordStatus({
-        loading: false,
-        error:
-          "New password must be at least 8 characters long and contain uppercase, lowercase, numbers, and special characters.",
-        success: "",
-      });
-      return;
+    const errs = {};
+    if (!user?.googleId && !passwordData.currentPassword.trim()) {
+      errs.currentPassword = "Please enter your current password";
     }
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordStatus({
-        loading: false,
-        error: "New password and confirmation password do not match",
-        success: "",
-      });
+    if (!passwordData.newPassword) {
+      errs.newPassword = "Please enter a new password";
+    } else if (!isPasswordSecure) {
+      errs.newPassword =
+        "New password must be at least 8 characters long and contain uppercase, lowercase, numbers, and special characters.";
+    }
+
+    if (!passwordData.confirmPassword) {
+      errs.confirmPassword = "Please confirm your new password";
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errs.confirmPassword =
+        "New password and confirmation password do not match";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setPasswordStatus({ loading: false, error: "", success: "" });
+      setPasswordFieldErrors(errs);
       return;
     }
+    setPasswordFieldErrors({});
 
     try {
       const res = await changePasswordApi({
@@ -301,34 +310,26 @@ export const ProfilePage = () => {
   const handleInitiateChangeEmail = async (e) => {
     e.preventDefault();
     setEmailStatus({ loading: true, error: "", success: "" });
+    setEmailFieldError("");
 
     const trimmed = newEmail.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!trimmed) {
-      setEmailStatus({
-        loading: false,
-        error: "Please enter a new email address",
-        success: "",
-      });
+      setEmailStatus({ loading: false, error: "", success: "" });
+      setEmailFieldError("Please enter a new email address");
       return;
     }
 
     if (!emailRegex.test(trimmed)) {
-      setEmailStatus({
-        loading: false,
-        error: "Please provide a valid email format",
-        success: "",
-      });
+      setEmailStatus({ loading: false, error: "", success: "" });
+      setEmailFieldError("Please provide a valid email format");
       return;
     }
 
     if (trimmed === user?.email?.toLowerCase()) {
-      setEmailStatus({
-        loading: false,
-        error: "New email cannot be identical to your current email",
-        success: "",
-      });
+      setEmailStatus({ loading: false, error: "", success: "" });
+      setEmailFieldError("New email cannot be identical to your current email");
       return;
     }
 
@@ -795,24 +796,27 @@ export const ProfilePage = () => {
                       <input
                         id="newEmailInput"
                         type="email"
-                        className="profile-form-input"
+                        className={`profile-form-input ${emailFieldError ? "input-error" : ""}`}
                         placeholder="Enter your new email address"
                         value={newEmail}
                         onChange={(e) => {
                           setNewEmail(e.target.value);
+                          if (emailFieldError) setEmailFieldError("");
                           if (emailStatus.error)
                             setEmailStatus((prev) => ({ ...prev, error: "" }));
                         }}
                         disabled={emailStatus.loading}
-                        required
                       />
+                      {emailFieldError && (
+                        <span className="error-message">{emailFieldError}</span>
+                      )}
                     </div>
 
                     <div className="security-form-actions">
                       <button
                         type="submit"
                         className="btn-update-password"
-                        disabled={emailStatus.loading || !newEmail.trim()}
+                        disabled={emailStatus.loading}
                       >
                         {emailStatus.loading
                           ? "Sending Code..."
@@ -963,16 +967,21 @@ export const ProfilePage = () => {
                         <input
                           id="currentPassword"
                           type={showCurrentPassword ? "text" : "password"}
-                          className="profile-form-input"
+                          className={`profile-form-input ${passwordFieldErrors.currentPassword ? "input-error" : ""}`}
                           value={passwordData.currentPassword}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setPasswordData((prev) => ({
                               ...prev,
                               currentPassword: e.target.value,
-                            }))
-                          }
+                            }));
+                            if (passwordFieldErrors.currentPassword) {
+                              setPasswordFieldErrors((prev) => ({
+                                ...prev,
+                                currentPassword: "",
+                              }));
+                            }
+                          }}
                           placeholder="Enter your current password"
-                          required
                         />
                         <button
                           type="button"
@@ -985,6 +994,11 @@ export const ProfilePage = () => {
                           {showCurrentPassword ? "Hide" : "Show"}
                         </button>
                       </div>
+                      {passwordFieldErrors.currentPassword && (
+                        <span className="error-message">
+                          {passwordFieldErrors.currentPassword}
+                        </span>
+                      )}
                     </div>
                   )}
 
@@ -997,16 +1011,21 @@ export const ProfilePage = () => {
                       <input
                         id="newPassword"
                         type={showNewPassword ? "text" : "password"}
-                        className="profile-form-input"
+                        className={`profile-form-input ${passwordFieldErrors.newPassword ? "input-error" : ""}`}
                         value={passwordData.newPassword}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setPasswordData((prev) => ({
                             ...prev,
                             newPassword: e.target.value,
-                          }))
-                        }
+                          }));
+                          if (passwordFieldErrors.newPassword) {
+                            setPasswordFieldErrors((prev) => ({
+                              ...prev,
+                              newPassword: "",
+                            }));
+                          }
+                        }}
                         placeholder="At least 8 characters"
-                        required
                       />
                       <button
                         type="button"
@@ -1017,6 +1036,11 @@ export const ProfilePage = () => {
                         {showNewPassword ? "Hide" : "Show"}
                       </button>
                     </div>
+                    {passwordFieldErrors.newPassword && (
+                      <span className="error-message">
+                        {passwordFieldErrors.newPassword}
+                      </span>
+                    )}
 
                     {/* Live Criteria Checklist */}
                     <div className="profile-password-criteria">
@@ -1080,16 +1104,21 @@ export const ProfilePage = () => {
                       <input
                         id="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
-                        className="profile-form-input"
+                        className={`profile-form-input ${passwordFieldErrors.confirmPassword ? "input-error" : ""}`}
                         value={passwordData.confirmPassword}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setPasswordData((prev) => ({
                             ...prev,
                             confirmPassword: e.target.value,
-                          }))
-                        }
+                          }));
+                          if (passwordFieldErrors.confirmPassword) {
+                            setPasswordFieldErrors((prev) => ({
+                              ...prev,
+                              confirmPassword: "",
+                            }));
+                          }
+                        }}
                         placeholder="Re-enter new password"
-                        required
                       />
                       <button
                         type="button"
@@ -1100,13 +1129,18 @@ export const ProfilePage = () => {
                         {showConfirmPassword ? "Hide" : "Show"}
                       </button>
                     </div>
+                    {passwordFieldErrors.confirmPassword && (
+                      <span className="error-message">
+                        {passwordFieldErrors.confirmPassword}
+                      </span>
+                    )}
                   </div>
 
                   <div className="security-form-actions">
                     <button
                       type="submit"
                       className="btn-update-password"
-                      disabled={passwordStatus.loading || !isPasswordSecure}
+                      disabled={passwordStatus.loading}
                     >
                       {passwordStatus.loading
                         ? "Updating Password..."

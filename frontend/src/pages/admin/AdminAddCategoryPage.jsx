@@ -11,6 +11,7 @@ const AdminAddCategoryPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e) => {
@@ -19,6 +20,9 @@ const AdminAddCategoryPage = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -27,9 +31,10 @@ const AdminAddCategoryPage = () => {
     setSuccessMessage("");
 
     if (!formData.name.trim()) {
-      setErrorMessage("Category name is required.");
+      setFieldErrors({ name: "Category name is required." });
       return;
     }
+    setFieldErrors({});
 
     setLoading(true);
     try {
@@ -95,11 +100,12 @@ const AdminAddCategoryPage = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="e.g., Heavyweight Knitwear"
-              className="admin-search-input"
+              className={`admin-search-input ${fieldErrors.name ? "input-error" : ""}`}
               style={{ paddingLeft: "0.85rem", width: "100%" }}
-              required
             />
-        
+            {fieldErrors.name && (
+              <span className="error-message">{fieldErrors.name}</span>
+            )}
           </div>
 
           <div className="admin-form-group">

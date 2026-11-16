@@ -83,6 +83,7 @@ const AdminCategoriesPage = () => {
     isListed: true,
     loading: false,
     error: "",
+    fieldErrors: {},
   });
 
   // ✅ AFTER
@@ -234,6 +235,7 @@ const AdminCategoriesPage = () => {
       isListed: category.isListed,
       loading: false,
       error: "",
+      fieldErrors: {},
     });
   };
 
@@ -242,12 +244,12 @@ const AdminCategoriesPage = () => {
     if (!editModal.name.trim()) {
       setEditModal((prev) => ({
         ...prev,
-        error: "Category name is required.",
+        fieldErrors: { name: "Category name is required." },
       }));
       return;
     }
 
-    setEditModal((prev) => ({ ...prev, loading: true, error: "" }));
+    setEditModal((prev) => ({ ...prev, loading: true, error: "", fieldErrors: {} }));
 
     try {
       const res = await updateAdminCategory(editModal.categoryId, {
@@ -714,18 +716,23 @@ const AdminCategoriesPage = () => {
                 </label>
                 <input
                   type="text"
-                  className="admin-search-input"
+                  className={`admin-search-input ${editModal.fieldErrors?.name ? "input-error" : ""}`}
                   style={{ paddingLeft: "0.85rem", width: "100%" }}
                   value={editModal.name}
                   onChange={(e) =>
                     setEditModal((prev) => ({
                       ...prev,
                       name: e.target.value,
+                      fieldErrors: prev.fieldErrors?.name
+                        ? { ...prev.fieldErrors, name: "" }
+                        : prev.fieldErrors,
                     }))
                   }
                   placeholder="e.g., Heavyweight Knitwear"
-                  required
                 />
+                {editModal.fieldErrors?.name && (
+                  <span className="error-message">{editModal.fieldErrors.name}</span>
+                )}
               </div>
 
               <div style={{ marginBottom: "1rem" }}>

@@ -40,6 +40,7 @@ const AddProductModal = ({
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   // Image cropper queue state
   const [cropQueue, setCropQueue] = useState([]); // [{ fileSrc, variantId }]
   const [currentCropIndex, setCurrentCropIndex] = useState(0);
@@ -145,6 +146,9 @@ const AddProductModal = ({
     setVariants((prev) =>
       prev.map((v) => (v.id === id ? { ...v, [field]: value } : v)),
     );
+    if (fieldErrors[`${field}_${id}`]) {
+      setFieldErrors((prev) => ({ ...prev, [`${field}_${id}`]: "" }));
+    }
   };
 
   const handleVariantImageUpload = (variantId, e) => {
@@ -230,34 +234,40 @@ const AddProductModal = ({
     setName("");
     setDescription("");
     setError("");
+    setFieldErrors({});
     setVariants([createEmptyVariant()]);
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!name.trim()) {
+      errs.name = "Please enter a product name.";
+    }
+    if (!categoryId) {
+      errs.categoryId = "Please select a valid category.";
+    }
+    for (let i = 0; i < variants.length; i++) {
+      const v = variants[i];
+      if (v.price === "" || isNaN(v.price) || Number(v.price) <= 0) {
+        errs[`price_${v.id}`] = `Variant #${i + 1} requires a valid positive price.`;
+      }
+      if (v.stock === "" || isNaN(v.stock) || Number(v.stock) < 0) {
+        errs[`stock_${v.id}`] = `Variant #${i + 1} requires a valid stock count.`;
+      }
+    }
+    return errs;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!name.trim()) {
-      setError("Please enter a product name.");
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
       return;
     }
-    if (!categoryId) {
-      setError("Please select a valid category.");
-      return;
-    }
-
-    // Validate variant inputs
-    for (let i = 0; i < variants.length; i++) {
-      const v = variants[i];
-      if (!v.price || Number(v.price) < 0) {
-        setError(`Variant #${i + 1} requires a valid positive price.`);
-        return;
-      }
-      if (v.stock === "" || Number(v.stock) < 0) {
-        setError(`Variant #${i + 1} requires a valid stock count.`);
-        return;
-      }
-    }
+    setFieldErrors({});
 
     setSubmitting(true);
     try {
@@ -335,11 +345,16 @@ const AddProductModal = ({
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+                  }}
                   placeholder="e.g. Heavyweight Organic Tee"
-                  className="admin-search-input"
-                  required
+                  className={`admin-search-input ${fieldErrors.name ? "input-error" : ""}`}
                 />
+                {fieldErrors.name && (
+                  <span className="error-message">{fieldErrors.name}</span>
+                )}
               </div>
 
               <div className="admin-form-group">
@@ -350,7 +365,7 @@ const AddProductModal = ({
                 >
                   <button
                     type="button"
-                    className="admin-modal-dropdown-btn"
+                    className={`admin-modal-dropdown-btn ${fieldErrors.categoryId ? "input-error" : ""}`}
                     onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
                     disabled={categoriesLoading}
                     aria-expanded={isCategoryDropdownOpen}
@@ -385,6 +400,9 @@ const AddProductModal = ({
                               onClick={() => {
                                 setCategoryId(cat._id);
                                 setIsCategoryDropdownOpen(false);
+                                if (fieldErrors.categoryId) {
+                                  setFieldErrors((prev) => ({ ...prev, categoryId: "" }));
+                                }
                               }}
                             >
                               <span>{cat.name}</span>
@@ -398,6 +416,9 @@ const AddProductModal = ({
                     </div>
                   )}
                 </div>
+                {fieldErrors.categoryId && (
+                  <span className="error-message">{fieldErrors.categoryId}</span>
+                )}
               </div>
 
               <div className="admin-form-group admin-col-span-2">
@@ -509,9 +530,11 @@ const AddProductModal = ({
                               e.target.value,
                             )
                           }
-                          className="admin-search-input"
-                          required
+                          className={`admin-search-input ${fieldErrors[`price_${v.id}`] ? "input-error" : ""}`}
                         />
+                        {fieldErrors[`price_${v.id}`] && (
+                          <span className="error-message">{fieldErrors[`price_${v.id}`]}</span>
+                        )}
                       </div>
 
                       {/* Stock */}
@@ -529,9 +552,11 @@ const AddProductModal = ({
                               e.target.value,
                             )
                           }
-                          className="admin-search-input"
-                          required
+                          className={`admin-search-input ${fieldErrors[`stock_${v.id}`] ? "input-error" : ""}`}
                         />
+                        {fieldErrors[`stock_${v.id}`] && (
+                          <span className="error-message">{fieldErrors[`stock_${v.id}`]}</span>
+                        )}
                       </div>
                     </div>
 

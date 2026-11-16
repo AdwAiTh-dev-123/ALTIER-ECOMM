@@ -303,6 +303,7 @@
 }
 
 .error-message {
+  display: block;
   font-size: 12px;
   color: var(--danger);
   margin-top: 4px;

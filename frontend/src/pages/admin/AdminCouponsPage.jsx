@@ -143,6 +143,7 @@ const AdminCouponsPage = () => {
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const showToast = (text, type = "success") => {
     setToastMessage({ text, type });
@@ -216,6 +217,9 @@ const AdminCouponsPage = () => {
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -467,49 +471,60 @@ const AdminCouponsPage = () => {
     e.preventDefault();
     setFormError("");
 
-    if (!formData.code || formData.code.trim().length < 3) {
-      setFormError("Coupon code must be at least 3 characters.");
-      return;
+    const errs = {};
+    if (!formData.code || !formData.code.trim()) {
+      errs.code = "Coupon code is required.";
+    } else if (formData.code.trim().length < 3) {
+      errs.code = "Coupon code must be at least 3 characters.";
     }
-    if (!formData.discountValue || Number(formData.discountValue) <= 0) {
-      setFormError("Discount value must be greater than 0.");
-      return;
-    }
+
     if (
+      formData.discountValue === "" ||
+      formData.discountValue === undefined ||
+      formData.discountValue === null
+    ) {
+      errs.discountValue = "Discount value is required.";
+    } else if (Number(formData.discountValue) <= 0) {
+      errs.discountValue = "Discount value must be greater than 0.";
+    } else if (
       formData.discountType === "PERCENTAGE" &&
       Number(formData.discountValue) > 100
     ) {
-      setFormError("Percentage discount cannot exceed 100%.");
-      return;
+      errs.discountValue = "Percentage discount cannot exceed 100%.";
     }
+
     if (new Date(formData.endDate) <= new Date(formData.startDate)) {
-      setFormError("Expiry date must be after the start date.");
-      return;
+      errs.endDate = "Expiry date must be after the start date.";
     }
+
     if (
       formData.applicabilityType === "CATEGORY" &&
       formData.applicableCategories.length === 0
     ) {
-      setFormError(
-        "Please select at least one category, or switch to 'All Products'.",
-      );
-      return;
+      errs.applicability =
+        "Please select at least one category, or switch to 'All Products'.";
     }
+
     if (
       formData.applicabilityType === "PRODUCT" &&
       formData.applicableProducts.length === 0
     ) {
-      setFormError(
-        "Please select at least one product, or switch to 'All Products'.",
-      );
+      errs.applicability =
+        "Please select at least one product, or switch to 'All Products'.";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
       return;
     }
+    setFieldErrors({});
 
     try {
       setFormSubmitting(true);
       await createAdminCoupon(formData);
       showToast(`Coupon "${formData.code}" created successfully!`);
       setIsCreateModalOpen(false);
+      setFieldErrors({});
       setFormData({
         code: "",
         description: "",
@@ -917,12 +932,14 @@ const AdminCouponsPage = () => {
                     <input
                       type="text"
                       name="code"
-                      required
                       placeholder="e.g. SUMMER25"
                       value={formData.code}
                       onChange={handleInputChange}
-                      className="admin-form-input uppercase"
+                      className={`admin-form-input uppercase ${fieldErrors.code ? "input-error" : ""}`}
                     />
+                    {fieldErrors.code && (
+                      <span className="error-message">{fieldErrors.code}</span>
+                    )}
                   </div>
                   <div className="admin-form-group">
                     <label className="admin-form-label">
@@ -1014,7 +1031,6 @@ const AdminCouponsPage = () => {
                     <input
                       type="number"
                       name="discountValue"
-                      required
                       min="1"
                       max={
                         formData.discountType === "PERCENTAGE"
@@ -1028,8 +1044,11 @@ const AdminCouponsPage = () => {
                       }
                       value={formData.discountValue}
                       onChange={handleInputChange}
-                      className="admin-form-input"
+                      className={`admin-form-input ${fieldErrors.discountValue ? "input-error" : ""}`}
                     />
+                    {fieldErrors.discountValue && (
+                      <span className="error-message">{fieldErrors.discountValue}</span>
+                    )}
                   </div>
                 </div>
 
