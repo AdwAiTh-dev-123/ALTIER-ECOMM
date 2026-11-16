@@ -278,20 +278,33 @@
   margin-top: 2px;
 }
 
-.admin-btn-add-variant {
-  font-size: 0.82rem;
-  padding: 0.45rem 0.9rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-  cursor: pointer;
+.admin-add-variant-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.85rem;
 }
 
-.admin-btn-add-variant-desktop {
+.admin-btn-add-variant-bottom {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: auto;
+  padding: 0.55rem 1.15rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1.5px dashed var(--border-strong, #d6d3d1);
+  background-color: #ffffff;
+  color: var(--text-primary, #1c1917);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
-.admin-btn-add-variant-mobile {
-  display: none;
+.admin-btn-add-variant-bottom:hover {
+  background-color: var(--bg-muted, #f5f4f0);
+  border-color: var(--text-primary, #1c1917);
 }
 
 /* Variant List & Cards */
@@ -353,6 +366,20 @@
 .admin-variant-delete-btn:hover {
   opacity: 0.85;
   background-color: rgba(220, 38, 38, 0.08);
+}
+
+.variant-duplicate-warning {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Variant Fields Grid */
@@ -585,35 +612,6 @@
   .admin-modal-dropdown-item {
     padding: 0.75rem 0.85rem;
     font-size: 0.88rem;
-  }
-
-  /* Add Variant re-positioning on mobile: hide desktop header button and show prominent bottom button */
-  .admin-btn-add-variant-desktop {
-    display: none;
-  }
-
-  .admin-btn-add-variant-mobile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 0.88rem;
-    font-weight: 600;
-    border: 1.5px dashed var(--border-strong, #d6d3d1);
-    background-color: #ffffff;
-    color: var(--text-primary, #1c1917);
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 0.85rem;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-  }
-
-  .admin-btn-add-variant-mobile:hover {
-    background-color: var(--bg-muted, #f5f4f0);
-    border-color: var(--text-primary, #1c1917);
   }
 
   /* Variant fields: neat 2x2 grid (Colour & Size on Row 1, Price & Stock on Row 2) */

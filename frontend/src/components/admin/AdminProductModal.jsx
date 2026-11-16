@@ -21,14 +21,36 @@ const AVAILABLE_COLORS = [
   "Terracotta",
 ];
 
-const createEmptyVariant = () => ({
-  id: Date.now() + Math.random(),
-  size: "M",
-  color: "Black",
-  price: "",
-  stock: "",
-  images: [], // array of base64 preview strings
-});
+const findNextAvailableVariantOption = (existingVariants = []) => {
+  const existingCombos = new Set(
+    existingVariants.map(
+      (v) =>
+        `${(v.color || "").trim().toLowerCase()}_${(v.size || "").trim().toUpperCase()}`
+    )
+  );
+
+  for (const color of AVAILABLE_COLORS) {
+    for (const size of AVAILABLE_SIZES) {
+      const key = `${color.trim().toLowerCase()}_${size.trim().toUpperCase()}`;
+      if (!existingCombos.has(key)) {
+        return { color, size };
+      }
+    }
+  }
+  return null;
+};
+
+const createEmptyVariant = (existingVariants = []) => {
+  const nextCombo = findNextAvailableVariantOption(existingVariants);
+  return {
+    id: Date.now() + Math.random(),
+    size: nextCombo ? nextCombo.size : "M",
+    color: nextCombo ? nextCombo.color : "Black",
+    price: "",
+    stock: "",
+    images: [], // array of base64 preview strings
+  };
+};
 
 const AddProductModal = ({
   isOpen,
@@ -130,7 +152,28 @@ const AddProductModal = ({
   }, [isOpen, productToEdit]);
 
   const handleAddVariant = () => {
-    setVariants((prev) => [...prev, createEmptyVariant()]);
+    // Check if there are already unresolved duplicate variants
+    const seen = new Set();
+    for (const v of variants) {
+      const key = `${(v.color || "").trim().toLowerCase()}_${(v.size || "").trim().toUpperCase()}`;
+      if (seen.has(key)) {
+        setError(
+          "Please resolve existing duplicate variants before adding a new one."
+        );
+        return;
+      }
+      seen.add(key);
+    }
+
+    const nextCombo = findNextAvailableVariantOption(variants);
+    if (!nextCombo) {
+      setError(
+        "All available color and size combinations have already been added."
+      );
+      return;
+    }
+    setError("");
+    setVariants((prev) => [...prev, createEmptyVariant(prev)]);
   };
 
   const handleRemoveVariant = (idToRemove) => {
@@ -140,6 +183,14 @@ const AddProductModal = ({
     }
     setError("");
     setVariants((prev) => prev.filter((v) => v.id !== idToRemove));
+    // Clear any duplicate combo errors that might have been tied to removed variant
+    setFieldErrors((prev) => {
+      const updated = { ...prev };
+      delete updated[`combo_${idToRemove}`];
+      delete updated[`price_${idToRemove}`];
+      delete updated[`stock_${idToRemove}`];
+      return updated;
+    });
   };
 
   const handleVariantFieldChange = (id, field, value) => {
@@ -148,6 +199,25 @@ const AddProductModal = ({
     );
     if (fieldErrors[`${field}_${id}`]) {
       setFieldErrors((prev) => ({ ...prev, [`${field}_${id}`]: "" }));
+    }
+    if (field === "color" || field === "size") {
+      setFieldErrors((prev) => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach((key) => {
+          if (key.startsWith("combo_") || key === "duplicateVariants") {
+            delete updated[key];
+          }
+        });
+        return updated;
+      });
+      if (
+        error &&
+        (error.includes("duplicate") ||
+          error.includes("Duplicate") ||
+          error.includes("combinations"))
+      ) {
+        setError("");
+      }
     }
   };
 
@@ -246,6 +316,9 @@ const AddProductModal = ({
     if (!categoryId) {
       errs.categoryId = "Please select a valid category.";
     }
+
+    const comboMap = new Map();
+
     for (let i = 0; i < variants.length; i++) {
       const v = variants[i];
       if (v.price === "" || isNaN(v.price) || Number(v.price) <= 0) {
@@ -253,6 +326,15 @@ const AddProductModal = ({
       }
       if (v.stock === "" || isNaN(v.stock) || Number(v.stock) < 0) {
         errs[`stock_${v.id}`] = `Variant #${i + 1} requires a valid stock count.`;
+      }
+
+      const comboKey = `${(v.color || "").trim().toLowerCase()}_${(v.size || "").trim().toUpperCase()}`;
+      if (comboMap.has(comboKey)) {
+        const firstIndex = comboMap.get(comboKey);
+        errs[`combo_${v.id}`] = `Duplicate variant: ${v.color} / ${v.size} is already used in Variant #${firstIndex + 1}.`;
+        errs.duplicateVariants = "Duplicate variants detected. Each variant must have a unique Colour and Size.";
+      } else {
+        comboMap.set(comboKey, i);
       }
     }
     return errs;
@@ -265,6 +347,9 @@ const AddProductModal = ({
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setFieldErrors(validationErrors);
+      if (validationErrors.duplicateVariants) {
+        setError(validationErrors.duplicateVariants);
+      }
       return;
     }
     setFieldErrors({});
@@ -442,13 +527,6 @@ const AddProductModal = ({
                     Each variant holds separate color, size, stock, and photos.
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAddVariant}
-                  className="admin-btn-secondary admin-btn-add-variant admin-btn-add-variant-desktop"
-                >
-                  + Add Variant
-                </button>
               </div>
 
               {/* Dynamic Variant List */}
@@ -470,6 +548,12 @@ const AddProductModal = ({
                       )}
                     </div>
 
+                    {fieldErrors[`combo_${v.id}`] && (
+                      <div className="variant-duplicate-warning">
+                        ⚠️ {fieldErrors[`combo_${v.id}`]}
+                      </div>
+                    )}
+
                     <div className="admin-variant-fields-grid">
                       {/* Color Dropdown */}
                       <div className="admin-form-group">
@@ -483,7 +567,7 @@ const AddProductModal = ({
                               e.target.value,
                             )
                           }
-                          className="admin-select"
+                          className={`admin-select ${fieldErrors[`combo_${v.id}`] ? "input-error" : ""}`}
                         >
                           {AVAILABLE_COLORS.map((c) => (
                             <option key={c} value={c}>
@@ -505,7 +589,7 @@ const AddProductModal = ({
                               e.target.value,
                             )
                           }
-                          className="admin-select"
+                          className={`admin-select ${fieldErrors[`combo_${v.id}`] ? "input-error" : ""}`}
                         >
                           {AVAILABLE_SIZES.map((s) => (
                             <option key={s} value={s}>
@@ -642,14 +726,16 @@ const AddProductModal = ({
                 ))}
               </div>
 
-              {/* Mobile Add Variant Button placed at the bottom */}
-              <button
-                type="button"
-                onClick={handleAddVariant}
-                className="admin-btn-secondary admin-btn-add-variant-mobile"
-              >
-                + Add Variant
-              </button>
+              {/* Add Variant Button placed at the bottom right */}
+              <div className="admin-add-variant-actions">
+                <button
+                  type="button"
+                  onClick={handleAddVariant}
+                  className="admin-btn-secondary admin-btn-add-variant-bottom"
+                >
+                  + Add Variant
+                </button>
+              </div>
             </div>
           </div>
 

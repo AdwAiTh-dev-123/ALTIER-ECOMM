@@ -27,6 +27,7 @@ export const validateProductWithVariants = (req, res, next) => {
   }
 
   const validSizes = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
+  const seenVariants = new Set();
 
   for (let i = 0; i < variants.length; i++) {
     const v = variants[i];
@@ -56,6 +57,15 @@ export const validateProductWithVariants = (req, res, next) => {
         message: `Variant #${i + 1} stock must be a non-negative integer.`,
       });
     }
+
+    const comboKey = `${v.color.trim().toLowerCase()}_${v.size.trim().toUpperCase()}`;
+    if (seenVariants.has(comboKey)) {
+      return res.status(400).json({
+        success: false,
+        message: `Duplicate variant detected: Color "${v.color}" with Size "${v.size}" is added more than once. Each variant must have a unique color and size combination.`,
+      });
+    }
+    seenVariants.add(comboKey);
   }
   req.body.name = name.trim();
   next();
