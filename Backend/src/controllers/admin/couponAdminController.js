@@ -1,5 +1,6 @@
 import {
   createNewCoupon,
+  updateExistingCoupon,
   fetchAllCoupons,
   toggleCouponActiveStatus,
   softDeleteCoupon,
@@ -11,6 +12,19 @@ export const createCoupon = async (req, res, next) => {
     return res.status(201).json({
       success: true,
       message: `Coupon "${coupon.code}" created successfully!`,
+      data: coupon,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateCoupon = async (req, res, next) => {
+  try {
+    const coupon = await updateExistingCoupon(req.params.id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: `Coupon "${coupon.code}" updated successfully!`,
       data: coupon,
     });
   } catch (err) {

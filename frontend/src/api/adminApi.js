@@ -80,6 +80,10 @@ export function createAdminCoupon(data) {
   return api.post("/admin/coupons", data);
 }
 
+export function updateAdminCoupon(couponId, data) {
+  return api.put(`/admin/coupons/${couponId}`, data);
+}
+
 export function toggleAdminCouponStatus(couponId) {
   return api.patch(`/admin/coupons/${couponId}/toggle`);
 }

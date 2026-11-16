@@ -142,3 +142,66 @@ export const softDeleteCoupon = async (couponId) => {
 
   return coupon;
 };
+
+export const updateExistingCoupon = async (
+  couponId,
+  {
+    code,
+    description = "",
+    discountType,
+    discountValue,
+    maxDiscountAmount = null,
+    minPurchaseAmount = 0,
+    startDate,
+    endDate,
+    applicabilityType = "ALL",
+    applicableCategories = [],
+    applicableProducts = [],
+  },
+) => {
+  const coupon = await Coupon.findOne({ _id: couponId, isDeleted: false });
+  if (!coupon) {
+    const err = new Error("Coupon not found.");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const normalizedCode = code.trim().toUpperCase();
+
+  // Check for duplicate code among other non-deleted coupons
+  const existing = await Coupon.findOne({
+    _id: { $ne: couponId },
+    code: normalizedCode,
+    isDeleted: false,
+  });
+
+  if (existing) {
+    const err = new Error(
+      `Coupon with code "${normalizedCode}" already exists.`,
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+
+  coupon.code = normalizedCode;
+  coupon.description = description.trim();
+  coupon.discountType = discountType;
+  coupon.discountValue = discountValue;
+  coupon.maxDiscountAmount =
+    discountType === "PERCENTAGE" ? maxDiscountAmount : null;
+  coupon.minPurchaseAmount = minPurchaseAmount;
+  coupon.startDate = startDate;
+  coupon.endDate = endDate;
+  coupon.applicabilityType = applicabilityType;
+  coupon.applicableCategories =
+    applicabilityType === "CATEGORY" || applicabilityType === "ALL"
+      ? applicableCategories
+      : [];
+  coupon.applicableProducts =
+    applicabilityType === "PRODUCT" || applicabilityType === "ALL"
+      ? applicableProducts
+      : [];
+
+  await coupon.save();
+  return coupon;
+};

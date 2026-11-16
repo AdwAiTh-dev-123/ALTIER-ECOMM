@@ -146,3 +146,5 @@ export const validateCouponIdParam = (req, res, next) => {
   }
   next();
 };
+
+export const validateUpdateCoupon = validateCreateCoupon;

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getAdminCoupons,
   createAdminCoupon,
+  updateAdminCoupon,
   toggleAdminCouponStatus,
   deleteAdminCoupon,
   getAdminCategories,
@@ -108,6 +109,7 @@ const AdminCouponsPage = () => {
 
   // Modal States
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingCouponId, setEditingCouponId] = useState(null);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState({
     isOpen: false,
     coupon: null,
@@ -466,25 +468,96 @@ const AdminCouponsPage = () => {
     });
   };
 
-  // Submit Create Coupon
-  const handleCreateCoupon = async (e) => {
+
+  const resetForm = () => {
+    setFormData({
+      code: "",
+      description: "",
+      discountType: "PERCENTAGE",
+      discountValue: "",
+      maxDiscountAmount: "",
+      minPurchaseAmount: "",
+      startDate: defaultStartDate,
+      endDate: defaultEndDate,
+      applicabilityType: "ALL",
+      applicableCategories: [],
+      applicableProducts: [],
+    });
+    setEditingCouponId(null);
+    setFormError("");
+    setFieldErrors({});
+    setProductSearch("");
+  };
+
+  const handleOpenCreateModal = () => {
+    resetForm();
+    setIsCreateModalOpen(true);
+  };
+
+  const handleOpenEditModal = (coupon) => {
+    setEditingCouponId(coupon._id);
+    setFormError("");
+    setFieldErrors({});
+    setProductSearch("");
+
+    const formatDateTimeLocal = (dateString) => {
+      if (!dateString) return "";
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return "";
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    setFormData({
+      code: coupon.code || "",
+      description: coupon.description || "",
+      discountType: coupon.discountType || "PERCENTAGE",
+      discountValue:
+        coupon.discountValue !== undefined && coupon.discountValue !== null
+          ? coupon.discountValue
+          : "",
+      maxDiscountAmount:
+        coupon.maxDiscountAmount !== undefined &&
+        coupon.maxDiscountAmount !== null
+          ? coupon.maxDiscountAmount
+          : "",
+      minPurchaseAmount:
+        coupon.minPurchaseAmount !== undefined &&
+        coupon.minPurchaseAmount !== null
+          ? coupon.minPurchaseAmount
+          : "",
+      startDate: formatDateTimeLocal(coupon.startDate) || defaultStartDate,
+      endDate: formatDateTimeLocal(coupon.endDate) || defaultEndDate,
+      applicabilityType: coupon.applicabilityType || "ALL",
+      applicableCategories: Array.isArray(coupon.applicableCategories)
+        ? coupon.applicableCategories.map((c) =>
+            typeof c === "object" && c !== null ? c._id : c,
+          )
+        : [],
+      applicableProducts: Array.isArray(coupon.applicableProducts)
+        ? coupon.applicableProducts.map((p) =>
+            typeof p === "object" && p !== null ? p._id : p,
+          )
+        : [],
+    });
+    setIsCreateModalOpen(true);
+  };
+
+  const handleSubmitForm = async (e) => {
     e.preventDefault();
     setFormError("");
 
     const errs = {};
-    if (!formData.code || !formData.code.trim()) {
+    if (!formData.code.trim()) {
       errs.code = "Coupon code is required.";
-    } else if (formData.code.trim().length < 3) {
-      errs.code = "Coupon code must be at least 3 characters.";
+    } else if (
+      formData.code.trim().length < 3 ||
+      formData.code.trim().length > 20
+    ) {
+      errs.code = "Coupon code must be between 3 and 20 characters.";
     }
 
-    if (
-      formData.discountValue === "" ||
-      formData.discountValue === undefined ||
-      formData.discountValue === null
-    ) {
-      errs.discountValue = "Discount value is required.";
-    } else if (Number(formData.discountValue) <= 0) {
+    if (!formData.discountValue || Number(formData.discountValue) <= 0) {
       errs.discountValue = "Discount value must be greater than 0.";
     } else if (
       formData.discountType === "PERCENTAGE" &&
@@ -521,26 +594,23 @@ const AdminCouponsPage = () => {
 
     try {
       setFormSubmitting(true);
-      await createAdminCoupon(formData);
-      showToast(`Coupon "${formData.code}" created successfully!`);
+      if (editingCouponId) {
+        await updateAdminCoupon(editingCouponId, formData);
+        showToast(`Coupon "${formData.code}" updated successfully!`);
+      } else {
+        await createAdminCoupon(formData);
+        showToast(`Coupon "${formData.code}" created successfully!`);
+      }
       setIsCreateModalOpen(false);
-      setFieldErrors({});
-      setFormData({
-        code: "",
-        description: "",
-        discountType: "PERCENTAGE",
-        discountValue: "",
-        maxDiscountAmount: "",
-        minPurchaseAmount: "",
-        startDate: defaultStartDate,
-        endDate: defaultEndDate,
-        applicabilityType: "ALL",
-        applicableCategories: [],
-        applicableProducts: [],
-      });
+      resetForm();
       loadCoupons();
     } catch (err) {
-      setFormError(err.response?.data?.message || "Failed to create coupon.");
+      setFormError(
+        err.response?.data?.message ||
+          (editingCouponId
+            ? "Failed to update coupon."
+            : "Failed to create coupon."),
+      );
     } finally {
       setFormSubmitting(false);
     }
@@ -646,7 +716,7 @@ const AdminCouponsPage = () => {
         <button
           type="button"
           className="admin-btn-create-coupon"
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={handleOpenCreateModal}
         >
           <span>+ Create Coupon</span>
         </button>
@@ -854,6 +924,14 @@ const AdminCouponsPage = () => {
                       <div className="admin-coupon-actions">
                         <button
                           type="button"
+                          className="admin-btn-action-edit"
+                          disabled={actionLoadingId === c._id}
+                          onClick={() => handleOpenEditModal(c)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
                           className={`admin-btn-action-toggle ${c.isActive ? "deactivate" : "activate"}`}
                           disabled={actionLoadingId === c._id}
                           onClick={() =>
@@ -901,25 +979,33 @@ const AdminCouponsPage = () => {
       {isCreateModalOpen && (
         <div
           className="admin-modal-backdrop"
-          onClick={() => setIsCreateModalOpen(false)}
+          onClick={() => {
+            setIsCreateModalOpen(false);
+            resetForm();
+          }}
         >
           <div
             className="admin-coupon-modal-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="admin-modal-header">
-              <h2 className="admin-modal-title">Create New Coupon</h2>
+              <h2 className="admin-modal-title">
+                {editingCouponId ? "Edit Coupon" : "Create New Coupon"}
+              </h2>
               <button
                 type="button"
                 className="admin-modal-close-btn"
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  resetForm();
+                }}
                 aria-label="Close modal"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateCoupon} style={{ display: "contents" }}>
+            <form onSubmit={handleSubmitForm} style={{ display: "contents" }}>
               <div className="admin-coupon-modal-body">
                 {formError && (
                   <div className="admin-coupon-error-banner">{formError}</div>
@@ -1369,7 +1455,10 @@ const AdminCouponsPage = () => {
                 <button
                   type="button"
                   className="admin-btn-secondary"
-                  onClick={() => setIsCreateModalOpen(false)}
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
+                    resetForm();
+                  }}
                   disabled={formSubmitting}
                 >
                   Cancel
@@ -1379,7 +1468,13 @@ const AdminCouponsPage = () => {
                   className="admin-btn-primary"
                   disabled={formSubmitting}
                 >
-                  {formSubmitting ? "Creating..." : "Save Coupon"}
+                  {formSubmitting
+                    ? editingCouponId
+                      ? "Saving..."
+                      : "Creating..."
+                    : editingCouponId
+                      ? "Update Coupon"
+                      : "Save Coupon"}
                 </button>
               </div>
             </form>

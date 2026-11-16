@@ -43,6 +43,7 @@ import {
 import {
   createCoupon,
   getAllCoupons,
+  updateCoupon,
   toggleCouponStatus,
   deleteCoupon,
 } from "../controllers/admin/couponAdminController.js";
@@ -154,6 +155,12 @@ router.get("/sales-report/download", downloadAdminSalesReport);
 //Coupon
 router.get("/coupons", getAllCoupons);
 router.post("/coupons", validateCreateCoupon, createCoupon);
+router.put(
+  "/coupons/:id",
+  validateCouponIdParam,
+  validateCreateCoupon,
+  updateCoupon,
+);
 router.patch("/coupons/:id/toggle", validateCouponIdParam, toggleCouponStatus);
 router.delete("/coupons/:id", validateCouponIdParam, deleteCoupon);
 

@@ -10,5 +10,6 @@ export {
 
 export {
   validateCreateCoupon,
+  validateUpdateCoupon,
   validateCouponIdParam,
 } from "./couponValidator.js";

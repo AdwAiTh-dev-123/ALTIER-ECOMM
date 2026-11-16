@@ -17,6 +17,7 @@ export { toggleUserBlockStatus } from "./toggleUserBlockStatus.js";
 
 export {
   createNewCoupon,
+  updateExistingCoupon,
   fetchAllCoupons,
   toggleCouponActiveStatus,
   softDeleteCoupon,
